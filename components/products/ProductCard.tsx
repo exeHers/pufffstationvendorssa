@@ -1,5 +1,3 @@
-'use client'
-
 import type { Product } from '@/lib/types'
 import AddToCartButton from '@/components/cart/AddToCartButton'
 
@@ -14,12 +12,14 @@ export default function ProductCard({ product }: Props) {
       : 0
 
   const hasPrice =
-    product.price !== null && product.price !== undefined && !Number.isNaN(priceNumber)
+    product.price !== null &&
+    product.price !== undefined &&
+    !Number.isNaN(priceNumber)
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 shadow-md shadow-black/40 transition hover:-translate-y-1 hover:border-purple-400/60 hover:shadow-lg hover:shadow-purple-900/40">
-      {/* Image area */}
-      <div className="relative h-40 w-full overflow-hidden bg-gradient-to-br from-slate-900 to-slate-950">
+    <div className="group flex h-full flex-col overflow-hidden rounded-3xl border border-slate-800/80 bg-gradient-to-br from-slate-900/80 via-slate-950 to-slate-900/90 shadow-[0_18px_45px_rgba(0,0,0,0.65)] transition duration-200 hover:-translate-y-1.5 hover:border-purple-400/70 hover:shadow-[0_24px_60px_rgba(109,40,217,0.55)]">
+      {/* Image / top */}
+      <div className="relative h-40 w-full overflow-hidden">
         {product.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -28,30 +28,30 @@ export default function ProductCard({ product }: Props) {
             className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-[10px] uppercase tracking-[0.2em] text-slate-500">
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-900 to-slate-950 text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500">
             No image
           </div>
         )}
 
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/10 to-transparent opacity-80 group-hover:opacity-100" />
       </div>
 
       {/* Content */}
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <div>
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div className="space-y-1">
           <h3 className="line-clamp-2 text-sm font-semibold text-slate-50">
             {product.name}
           </h3>
           {product.description && (
-            <p className="mt-1 line-clamp-2 text-xs text-slate-300">
+            <p className="line-clamp-2 text-[11px] text-slate-300/90">
               {product.description}
             </p>
           )}
         </div>
 
-        <div className="mt-auto flex items-center justify-between pt-2">
-          <span className="text-sm font-semibold text-slate-100">
-            {hasPrice ? `R ${priceNumber.toFixed(2)}` : 'Price not set'}
+        <div className="mt-auto flex items-center justify-between gap-2 pt-1">
+          <span className="text-sm font-semibold text-slate-50">
+            {hasPrice ? `R ${priceNumber.toFixed(2)}` : 'Price on request'}
           </span>
           <AddToCartButton product={product} />
         </div>

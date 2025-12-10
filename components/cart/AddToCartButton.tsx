@@ -2,7 +2,6 @@
 
 import type { Product } from '@/lib/types'
 import { useCart } from './CartProvider'
-import { useState } from 'react'
 
 type Props = {
   product: Product
@@ -10,20 +9,22 @@ type Props = {
 
 export default function AddToCartButton({ product }: Props) {
   const { addToCart } = useCart()
-  const [added, setAdded] = useState(false)
 
-  function handleClick() {
-    addToCart(product)
-    setAdded(true)
-    setTimeout(() => setAdded(false), 1200)
+  const handleClick = () => {
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price ?? 0,
+    })
   }
 
   return (
     <button
+      type="button"
       onClick={handleClick}
-      className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-900 transition hover:bg-white active:scale-95"
+      className="rounded-full border border-slate-600 bg-slate-900/70 px-4 py-1.5 text-xs font-semibold text-slate-100 transition hover:border-purple-400 hover:bg-slate-800/90 active:scale-95"
     >
-      {added ? 'Added' : 'Add to cart'}
+      Add to cart
     </button>
   )
 }
