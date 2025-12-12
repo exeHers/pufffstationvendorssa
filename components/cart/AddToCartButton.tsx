@@ -1,7 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import type { Product } from '@/lib/types'
-import { useCart } from './CartProvider'
+import { useCart } from '@/components/cart/CartContext'
 
 type Props = {
   product: Product
@@ -9,22 +10,23 @@ type Props = {
 
 export default function AddToCartButton({ product }: Props) {
   const { addToCart } = useCart()
+  const [isAdding, setIsAdding] = useState(false)
 
-  const handleClick = () => {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price ?? 0,
-    })
+  const handleAdd = () => {
+    if (!product?.id) return
+    setIsAdding(true)
+    addToCart(product)
+    window.setTimeout(() => setIsAdding(false), 350)
   }
 
   return (
     <button
       type="button"
-      onClick={handleClick}
-      className="rounded-full border border-slate-600 bg-slate-900/70 px-4 py-1.5 text-xs font-semibold text-slate-100 transition hover:border-purple-400 hover:bg-slate-800/90 active:scale-95"
+      onClick={handleAdd}
+      disabled={isAdding}
+      className="rounded-full bg-[#D946EF] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_0_18px_rgba(217,70,239,0.55)] transition hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
     >
-      Add to cart
+      {isAdding ? 'Added, sharp…' : 'Add to cart'}
     </button>
   )
 }

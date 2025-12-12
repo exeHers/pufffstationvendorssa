@@ -2,9 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: dark;
+}
+
+html,
 body {
-  background-color: #020617; /* slate-950 */
-  color: #e5e7eb;           /* slate-200 */
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text',
-    sans-serif;
+  height: 100%;
+}
+
+body {
+  background: #020617;
+}
+
+/* Smooth “alive” motion */
+@keyframes puffFloat {
+  0% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-10px) scale(1.01); }
+  100% { transform: translateY(0px) scale(1); }
+}
+
+@keyframes glowPulse {
+  0% { opacity: 0.25; filter: blur(28px); transform: scale(1); }
+  50% { opacity: 0.45; filter: blur(34px); transform: scale(1.05); }
+  100% { opacity: 0.25; filter: blur(28px); transform: scale(1); }
+}
+
+@keyframes bgShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.puff-float {
+  animation: puffFloat 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+.puff-glow {
+  animation: glowPulse 5.5s ease-in-out infinite;
+  will-change: opacity, filter, transform;
+}
+
+.puff-bg {
+  background-size: 200% 200%;
+  animation: bgShift 10s ease-in-out infinite;
 }
