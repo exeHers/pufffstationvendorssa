@@ -1,23 +1,13 @@
 'use client'
 
+import Link from 'next/link'
+
 export default function SupportWidget() {
-  // TODO: Put your cousin’s WhatsApp number here (international format, no +)
-  // Example: 27821234567
-  const whatsappNumber = '27820000000'
-
-  const message = encodeURIComponent(
-    "Howzit! I wanna place an order / ask about stock 🤝"
-  )
-
-  const href = `https://wa.me/${whatsappNumber}?text=${message}`
-
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
+    <Link
+      href="/support"
       className="fixed bottom-5 right-5 z-[60] group"
-      aria-label="Customer support on WhatsApp"
+      aria-label="Customer support"
       title="Customer support"
     >
       <div className="rounded-full border border-emerald-300/30 bg-emerald-500/15 px-4 py-3 shadow-[0_14px_40px_rgba(0,0,0,0.55)] backdrop-blur-md transition hover:bg-emerald-500/20 hover:border-emerald-300/50">
@@ -41,6 +31,6 @@ export default function SupportWidget() {
           </span>
         </div>
       </div>
-    </a>
+    </Link>
   )
 }

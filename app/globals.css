@@ -11,6 +11,12 @@ body {
   height: 100%;
 }
 
+/* Mobile sanity: kill accidental sideways scroll from glows/absolute elements */
+body {
+  overflow-x: hidden;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 body {
   background: #070712;
 }

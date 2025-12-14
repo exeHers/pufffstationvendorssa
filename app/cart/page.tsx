@@ -222,12 +222,12 @@ export default function CartPage() {
               chelete stay safe. We provide safe and trustworthy services, not some dodgy street corner deal.
             </p>
 
-            <button
-              type="button"
-              className="mt-2 w-full rounded-full bg-[#D946EF] px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_24px_rgba(217,70,239,0.8)] hover:brightness-110 active:scale-95 transition"
+            <Link
+              href="/checkout"
+              className="mt-2 block w-full rounded-full bg-[#D946EF] px-4 py-2.5 text-center text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_24px_rgba(217,70,239,0.8)] hover:brightness-110 active:scale-95 transition"
             >
-              Confirm Order (Coming Soon)
-            </button>
+              Checkout &amp; Pay
+            </Link>
 
             <p className="pt-2 text-[10px] text-right text-slate-500">
               Site by <span className="font-semibold text-slate-200">DNVN Digital</span>
