@@ -1,16 +1,38 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useCart } from '@/components/cart/CartContext'
+import { supabase } from '@/lib/supabaseClient'
+
+function parseAdminEmails(value?: string) {
+  return (value ?? '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+}
 
 export default function Header() {
   const [open, setOpen] = useState(false)
   const { items } = useCart()
+  const [isAdmin, setIsAdmin] = useState(false)
 
   const cartCount = useMemo(() => {
     return items.reduce((acc: number, item: any) => acc + Number(item.quantity ?? 1), 0)
   }, [items])
+
+  useEffect(() => {
+    ;(async () => {
+      const adminEmails = parseAdminEmails(process.env.NEXT_PUBLIC_ADMIN_EMAILS)
+      if (adminEmails.length === 0) {
+        setIsAdmin(false)
+        return
+      }
+      const { data } = await supabase.auth.getSession()
+      const email = data.session?.user?.email?.toLowerCase() ?? ''
+      setIsAdmin(Boolean(email && adminEmails.includes(email)))
+    })()
+  }, [])
 
   return (
     <header className="sticky top-0 z-50">
@@ -70,6 +92,15 @@ export default function Header() {
             >
               My orders
             </Link>
+
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="rounded-full border border-fuchsia-500/40 bg-fuchsia-500/10 px-4 py-1.5 text-slate-100 transition hover:bg-fuchsia-500/20 hover:text-white"
+              >
+                Admin
+              </Link>
+            )}
 
             <Link
               href="/login"
@@ -137,6 +168,16 @@ export default function Header() {
               >
                 My orders
               </Link>
+
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="rounded-2xl border border-fuchsia-500/40 bg-fuchsia-500/10 px-4 py-3 text-sm font-semibold text-slate-100"
+                  onClick={() => setOpen(false)}
+                >
+                  Admin
+                </Link>
+              )}
               <Link
                 href="/login"
                 className="rounded-2xl bg-fuchsia-500 px-4 py-3 text-sm font-bold text-white shadow-[0_0_22px_rgba(217,70,239,0.85)]"
