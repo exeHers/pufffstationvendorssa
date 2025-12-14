@@ -2,21 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-
-type ProductRow = {
-  id: string
-  name: string
-  description?: string | null
-  image_url?: string | null
-  category?: string | null
-  price: number
-  bulk_price?: number | null
-  bulk_min_qty?: number | null
-  in_stock: boolean
-  created_at?: string | null
-}
 
 function parseAdminEmails(value?: string) {
   return (value ?? '')
@@ -25,315 +11,284 @@ function parseAdminEmails(value?: string) {
     .filter(Boolean)
 }
 
-function slugify(input: string) {
-  return input
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '')
+type Product = {
+  id: string
+  name: string
+  description: string | null
+  category: string
+  price: number
+  image_url: string | null
+  in_stock: boolean
+  created_at?: string
 }
 
 export default function AdminProductsPage() {
-  const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [adminEmail, setAdminEmail] = useState<string>('')
-  const [products, setProducts] = useState<ProductRow[]>([])
+  const [email, setEmail] = useState<string>('')
+  const [isAdmin, setIsAdmin] = useState(false)
 
-  const adminEmails = useMemo(() => parseAdminEmails(process.env.NEXT_PUBLIC_ADMIN_EMAILS), [])
-  const isAdmin = useMemo(() => {
-    if (!adminEmail) return false
-    if (adminEmails.length === 0) return false
-    return adminEmails.includes(adminEmail.toLowerCase())
-  }, [adminEmail, adminEmails])
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const [ok, setOk] = useState<string | null>(null)
 
-  // form
+  const [products, setProducts] = useState<Product[]>([])
+
   const [name, setName] = useState('')
   const [category, setCategory] = useState('')
-  const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
-  const [bulkPrice, setBulkPrice] = useState('')
-  const [bulkMinQty, setBulkMinQty] = useState('')
+  const [description, setDescription] = useState('')
   const [inStock, setInStock] = useState(true)
-  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [image, setImage] = useState<File | null>(null)
 
-  async function loadProducts() {
-    setLoading(true)
-    setError(null)
+  const adminEmails = useMemo(
+    () => parseAdminEmails(process.env.NEXT_PUBLIC_ADMIN_EMAILS),
+    []
+  )
 
-    const { data: sess } = await supabase.auth.getSession()
-    const user = sess.session?.user
-    if (!user) {
-      router.replace('/login?next=/admin/products')
-      return
-    }
+  useEffect(() => {
+    ;(async () => {
+      const { data } = await supabase.auth.getSession()
+      const em = (data.session?.user?.email ?? '').toLowerCase()
+      setEmail(em)
+      setIsAdmin(Boolean(em && adminEmails.includes(em)))
+    })()
+  }, [adminEmails])
 
-    setAdminEmail(user.email ?? '')
-    if (!adminEmails.includes((user.email ?? '').toLowerCase())) {
-      setError('Access denied. Add your admin email to NEXT_PUBLIC_ADMIN_EMAILS (Vercel + .env.local).')
-      setProducts([])
-      setLoading(false)
-      return
-    }
+  async function refreshProducts() {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false })
 
-    try {
-      const { data, error: err } = await supabase.from('products').select('*').order('created_at', { ascending: false }).limit(500)
-      if (err) throw err
-      setProducts((data ?? []) as ProductRow[])
-    } catch (e: any) {
-      setError(e?.message ?? 'Failed to load products.')
-      setProducts([])
-    } finally {
-      setLoading(false)
-    }
+    if (!error && data) setProducts(data as any)
   }
 
   useEffect(() => {
-    loadProducts()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    refreshProducts()
   }, [])
 
-  async function uploadImageIfAny(): Promise<string | null> {
-    if (!imageFile) return null
-    const safe = slugify(name || 'product') || 'product'
-    const ext = (imageFile.name.split('.').pop() || 'jpg').toLowerCase()
-    const path = `${safe}_${Date.now()}.${ext}`
+  async function onCreate() {
+    setErr(null)
+    setOk(null)
 
-    const { error: upErr } = await supabase.storage.from('product-images').upload(path, imageFile, {
-      cacheControl: '3600',
-      upsert: false,
-    })
-    if (upErr) throw upErr
-
-    const { data } = supabase.storage.from('product-images').getPublicUrl(path)
-    return data.publicUrl
-  }
-
-  async function createProduct() {
-    setError(null)
     if (!isAdmin) {
-      setError('Access denied.')
-      return
-    }
-    if (!name.trim()) {
-      setError('Name is required.')
-      return
-    }
-    const p = Number(price)
-    if (!Number.isFinite(p) || p <= 0) {
-      setError('Price must be a valid number > 0.')
+      setErr('Access denied. (You are not admin.)')
       return
     }
 
-    setSaving(true)
+    if (!name.trim() || !category.trim() || !price.trim()) {
+      setErr('Fill in: name, category, price.')
+      return
+    }
+
+    const priceNum = Number(price)
+    if (!Number.isFinite(priceNum)) {
+      setErr('Price must be a valid number.')
+      return
+    }
+
+    setLoading(true)
     try {
-      const imageUrl = await uploadImageIfAny()
-      const payload: any = {
-        name: name.trim(),
-        description: description.trim() ? description.trim() : null,
-        category: category.trim() ? category.trim() : null,
-        price: p,
-        bulk_price: bulkPrice.trim() ? Number(bulkPrice) : null,
-        bulk_min_qty: bulkMinQty.trim() ? Number(bulkMinQty) : null,
-        in_stock: inStock,
-        image_url: imageUrl,
-      }
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess.session?.access_token
+      if (!token) throw new Error('No session token. Please log in again.')
 
-      const { error: insErr } = await supabase.from('products').insert(payload)
-      if (insErr) throw insErr
+      const fd = new FormData()
+      fd.append('name', name.trim())
+      fd.append('category', category.trim())
+      fd.append('price', String(priceNum))
+      fd.append('description', description.trim())
+      fd.append('in_stock', inStock ? 'true' : 'false')
+      if (image) fd.append('image', image)
 
-      // reset
+      const res = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: fd,
+      })
+
+      const json = await res.json()
+      if (!res.ok) throw new Error(json?.error ?? 'Failed to create product.')
+
+      setOk('Product created and uploaded successfully ✅')
       setName('')
       setCategory('')
-      setDescription('')
       setPrice('')
-      setBulkPrice('')
-      setBulkMinQty('')
+      setDescription('')
       setInStock(true)
-      setImageFile(null)
+      setImage(null)
 
-      await loadProducts()
+      await refreshProducts()
     } catch (e: any) {
-      setError(e?.message ?? 'Failed to create product.')
+      setErr(e?.message ?? 'Something went wrong.')
     } finally {
-      setSaving(false)
+      setLoading(false)
     }
   }
 
-  async function toggleStock(id: string, value: boolean) {
-    setError(null)
-    try {
-      const { error: upErr } = await supabase.from('products').update({ in_stock: value }).eq('id', id)
-      if (upErr) throw upErr
-      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, in_stock: value } : p)))
-    } catch (e: any) {
-      setError(e?.message ?? 'Failed to update stock.')
-    }
+  if (!isAdmin) {
+    return (
+      <main className="mx-auto max-w-5xl px-4 py-10 text-white">
+        <div className="rounded-3xl border border-slate-800 bg-black/50 p-6">
+          <h1 className="text-2xl font-bold">Admin – Products</h1>
+          <p className="mt-2 text-sm text-slate-300">
+            Access denied. Add your admin email to NEXT_PUBLIC_ADMIN_EMAILS (Vercel + .env.local).
+          </p>
+          <p className="mt-2 text-xs text-slate-400">Signed in as: {email || '—'}</p>
+          <div className="mt-6">
+            <Link href="/admin" className="underline text-fuchsia-300">
+              Back to dashboard
+            </Link>
+          </div>
+        </div>
+      </main>
+    )
   }
 
   return (
-    <main className="mx-auto max-w-6xl space-y-8 px-4 pb-16 pt-8">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/70 pb-4">
+    <main className="mx-auto max-w-6xl px-4 py-10 text-white">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#D946EF]">ADMIN</p>
-          <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Products</h1>
-          <p className="mt-1 text-xs text-slate-300">Signed in as <span className="font-semibold text-slate-100">{adminEmail || '...'}</span></p>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Link href="/admin" className="rounded-full border border-slate-700 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-[#D946EF] hover:text-[#D946EF] transition">Dashboard</Link>
-          <Link href="/shop" className="rounded-full bg-[#D946EF] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-[0_0_20px_rgba(217,70,239,0.7)] hover:brightness-110 active:scale-95 transition">Shop</Link>
-          <button
-            type="button"
-            onClick={async () => {
-              await supabase.auth.signOut()
-              router.replace('/')
-            }}
-            className="rounded-full border border-slate-700 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-red-400 hover:text-red-200 transition"
-          >
-            Logout
-          </button>
-        </div>
-      </header>
-
-      {!isAdmin && (
-        <section className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-200">
-          {error || 'Access denied.'}
-          <p className="mt-2 text-[11px] text-red-200/80">
-            Fix: set <span className="font-mono">NEXT_PUBLIC_ADMIN_EMAILS</span> in Vercel + .env.local.
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-fuchsia-400">
+            Admin
           </p>
-        </section>
-      )}
+          <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Products</h1>
+          <p className="mt-1 text-sm text-slate-300">
+            Add products here (image upload + auto insert).
+          </p>
+        </div>
+        <Link href="/admin" className="rounded-full border border-slate-700 px-4 py-2 text-sm">
+          Back
+        </Link>
+      </div>
 
-      {isAdmin && (
-        <>
-          {error && (
-            <section className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-200">{error}</section>
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        <div className="rounded-3xl border border-slate-800 bg-black/40 p-6">
+          <h2 className="text-lg font-bold">Create product</h2>
+
+          {err && (
+            <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+              {err}
+            </div>
+          )}
+          {ok && (
+            <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+              {ok}
+            </div>
           )}
 
-          <section className="rounded-3xl border border-slate-800/80 bg-slate-950/60 p-5">
-            <h2 className="text-lg font-extrabold tracking-tight text-white">Add a product</h2>
-            <p className="mt-1 text-xs text-slate-300">Fill in the details, pick an image, and it uploads + saves automatically.</p>
+          <div className="mt-5 grid gap-4">
+            <label className="grid gap-2">
+              <span className="text-xs text-slate-300">Name</span>
+              <input
+                className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Product name"
+              />
+            </label>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <label className="text-sm">
-                <div className="mb-1 text-white/70">Name</div>
-                <input className="w-full rounded-2xl border border-slate-800 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-500" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Nasty Bar 8500" />
-              </label>
+            <label className="grid gap-2">
+              <span className="text-xs text-slate-300">Category</span>
+              <input
+                className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="e.g. Nasty Bar"
+              />
+            </label>
 
-              <label className="text-sm">
-                <div className="mb-1 text-white/70">Category (text)</div>
-                <input className="w-full rounded-2xl border border-slate-800 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-500" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Nasty Bar" />
-              </label>
+            <label className="grid gap-2">
+              <span className="text-xs text-slate-300">Price (ZAR)</span>
+              <input
+                className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="e.g. 280"
+              />
+            </label>
 
-              <label className="text-sm sm:col-span-2">
-                <div className="mb-1 text-white/70">Description</div>
-                <textarea className="w-full rounded-2xl border border-slate-800 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-500" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Short description" />
-              </label>
+            <label className="grid gap-2">
+              <span className="text-xs text-slate-300">Description</span>
+              <textarea
+                className="min-h-[110px] rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Optional description"
+              />
+            </label>
 
-              <label className="text-sm">
-                <div className="mb-1 text-white/70">Price (ZAR)</div>
-                <input className="w-full rounded-2xl border border-slate-800 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-500" value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" placeholder="e.g. 250" />
-              </label>
+            <label className="grid gap-2">
+              <span className="text-xs text-slate-300">Image</span>
+              <input
+                type="file"
+                accept="image/*"
+                className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+                onChange={(e) => setImage(e.target.files?.[0] ?? null)}
+              />
+              <p className="text-[11px] text-slate-400">
+                Uploads to Supabase Storage → saves public URL.
+              </p>
+            </label>
 
-              <label className="text-sm">
-                <div className="mb-1 text-white/70">In stock</div>
-                <select className="w-full rounded-2xl border border-slate-800 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-500" value={inStock ? 'yes' : 'no'} onChange={(e) => setInStock(e.target.value === 'yes')}>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                </select>
-              </label>
-
-              <label className="text-sm">
-                <div className="mb-1 text-white/70">Bulk price (optional)</div>
-                <input className="w-full rounded-2xl border border-slate-800 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-500" value={bulkPrice} onChange={(e) => setBulkPrice(e.target.value)} inputMode="decimal" placeholder="e.g. 220" />
-              </label>
-
-              <label className="text-sm">
-                <div className="mb-1 text-white/70">Bulk min qty (optional)</div>
-                <input className="w-full rounded-2xl border border-slate-800 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-500" value={bulkMinQty} onChange={(e) => setBulkMinQty(e.target.value)} inputMode="numeric" placeholder="e.g. 5" />
-              </label>
-
-              <label className="text-sm sm:col-span-2">
-                <div className="mb-1 text-white/70">Image</div>
-                <input className="w-full rounded-2xl border border-slate-800 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-500" type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] ?? null)} />
-                <div className="mt-1 text-[11px] text-slate-400">Uploads to Supabase Storage bucket: <span className="text-slate-200">product-images</span></div>
-              </label>
-            </div>
+            <label className="flex items-center gap-3 text-sm">
+              <input
+                type="checkbox"
+                checked={inStock}
+                onChange={(e) => setInStock(e.target.checked)}
+              />
+              In stock
+            </label>
 
             <button
-              type="button"
-              disabled={saving}
-              onClick={createProduct}
-              className="mt-4 w-full rounded-full bg-fuchsia-500 px-5 py-3 text-[12px] font-extrabold uppercase tracking-[0.18em] text-white shadow-[0_0_22px_rgba(217,70,239,0.85)] hover:brightness-110 active:scale-95 transition disabled:opacity-60"
+              onClick={onCreate}
+              disabled={loading}
+              className="rounded-full bg-fuchsia-500 px-5 py-3 text-sm font-bold shadow-[0_0_22px_rgba(217,70,239,0.85)] disabled:opacity-60"
             >
-              {saving ? 'Saving…' : 'Create product'}
+              {loading ? 'Creating…' : 'Create product'}
             </button>
-          </section>
+          </div>
+        </div>
 
-          <section className="rounded-3xl border border-slate-800/80 bg-slate-950/60 p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-extrabold tracking-tight text-white">Products list</h2>
-                <p className="mt-1 text-xs text-slate-300">Tap stock to toggle. Newest first.</p>
-              </div>
-              <button
-                type="button"
-                onClick={loadProducts}
-                className="rounded-full border border-slate-700 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-[#D946EF] hover:text-[#D946EF] transition"
-              >
-                Refresh
-              </button>
-            </div>
+        <div className="rounded-3xl border border-slate-800 bg-black/40 p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold">Latest products</h2>
+            <button
+              onClick={refreshProducts}
+              className="rounded-full border border-slate-700 px-4 py-2 text-sm"
+            >
+              Refresh
+            </button>
+          </div>
 
-            {loading ? (
-              <div className="mt-4 text-sm text-slate-200">Loading…</div>
-            ) : products.length === 0 ? (
-              <div className="mt-4 text-sm text-slate-300">No products yet.</div>
-            ) : (
-              <div className="mt-4 space-y-3">
-                {products.map((p) => (
-                  <div key={p.id} className="flex gap-3 rounded-2xl border border-slate-800 bg-black/30 p-4">
-                    <div className="h-16 w-16 flex-none overflow-hidden rounded-xl border border-slate-800 bg-slate-950/40">
-                      {p.image_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
-                      ) : null}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-extrabold text-white">{p.name}</p>
-                          <p className="mt-0.5 text-xs text-slate-300">
-                            {(p.category ?? 'No category')} • R{Number(p.price).toFixed(2)}
-                            {p.bulk_price != null && p.bulk_min_qty != null ? (
-                              <>
-                                {' '}• Bulk R{Number(p.bulk_price).toFixed(2)} @ {p.bulk_min_qty}+
-                              </>
-                            ) : null}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => toggleStock(p.id, !p.in_stock)}
-                          className={`rounded-full px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.18em] transition ${
-                            p.in_stock
-                              ? 'bg-emerald-500/15 text-emerald-200 border border-emerald-500/30 hover:brightness-110'
-                              : 'bg-red-500/15 text-red-200 border border-red-500/30 hover:brightness-110'
-                          }`}
-                        >
-                          {p.in_stock ? 'In stock' : 'Out of stock'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+          <div className="mt-5 space-y-3">
+            {products.length === 0 && (
+              <p className="text-sm text-slate-400">No products yet.</p>
             )}
-          </section>
-        </>
-      )}
+
+            {products.slice(0, 12).map((p) => (
+              <div
+                key={p.id}
+                className="flex items-center gap-4 rounded-2xl border border-slate-800 bg-slate-950/40 p-4"
+              >
+                <div className="h-12 w-12 overflow-hidden rounded-xl border border-slate-800 bg-black/40">
+                  {p.image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
+                  ) : null}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{p.name}</p>
+                  <p className="text-xs text-slate-400">
+                    {p.category} • R{Number(p.price).toFixed(2)} • {p.in_stock ? 'In stock' : 'Out'}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </main>
   )
 }
