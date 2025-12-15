@@ -2,26 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-
-type OrderRow = {
-  id: string
-  user_id?: string | null
-  customer_name?: string | null
-  customer_email?: string | null
-  customer_phone?: string | null
-  status?: string | null
-  total_amount?: number | null
-  currency?: string | null
-  delivery_type?: string | null
-  delivery_location?: string | null
-  delivery_address?: string | null
-  courier_name?: string | null
-  tracking_number?: string | null
-  tracking_url?: string | null
-  created_at?: string | null
-}
 
 function parseAdminEmails(value?: string) {
   return (value ?? '')
@@ -30,303 +11,251 @@ function parseAdminEmails(value?: string) {
     .filter(Boolean)
 }
 
+type OrderRow = Record<string, any>
+
+const STATUSES = ['pending_payment', 'paid', 'shipped', 'delivered'] as const
+
 export default function AdminOrdersPage() {
-  const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const adminEmails = useMemo(() => parseAdminEmails(process.env.NEXT_PUBLIC_ADMIN_EMAILS), [])
+  const [email, setEmail] = useState('')
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  const [statusFilter, setStatusFilter] = useState<string>('')
   const [orders, setOrders] = useState<OrderRow[]>([])
-  const [filter, setFilter] = useState<string>('paid_pending_processing')
-  const [adminEmail, setAdminEmail] = useState<string>('')
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const [ok, setOk] = useState<string | null>(null)
 
-  const adminEmails = useMemo(() => {
-    return parseAdminEmails(process.env.NEXT_PUBLIC_ADMIN_EMAILS)
-  }, [])
+  const [selected, setSelected] = useState<OrderRow | null>(null)
+  const [newStatus, setNewStatus] = useState<string>('paid')
+  const [tracking, setTracking] = useState<string>('')
+  const [courier, setCourier] = useState<string>('Courier Guy / PUDO')
 
-  const isAdmin = useMemo(() => {
-    if (!adminEmail) return false
-    if (adminEmails.length === 0) return false
-    return adminEmails.includes(adminEmail.toLowerCase())
-  }, [adminEmail, adminEmails])
+  useEffect(() => {
+    ;(async () => {
+      const { data } = await supabase.auth.getSession()
+      const em = (data.session?.user?.email ?? '').toLowerCase()
+      setEmail(em)
+      setIsAdmin(Boolean(em && adminEmails.includes(em)))
+    })()
+  }, [adminEmails])
 
-  async function loadOrders() {
+  async function fetchOrders() {
+    setErr(null)
+    setOk(null)
     setLoading(true)
-    setError(null)
     try {
       const { data: sess } = await supabase.auth.getSession()
-      const user = sess.session?.user
-      if (!user) {
-        router.replace('/login?next=/admin/orders')
-        return
-      }
-      setAdminEmail(user.email ?? '')
-      if (!parseAdminEmails(process.env.NEXT_PUBLIC_ADMIN_EMAILS).includes((user.email ?? '').toLowerCase())) {
-        setError('Access denied. Add your admin email to NEXT_PUBLIC_ADMIN_EMAILS in .env.local')
-        setOrders([])
-        setLoading(false)
-        return
-      }
+      const token = sess.session?.access_token
+      if (!token) throw new Error('No session token. Please log in again.')
 
-      let q = supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(200)
-      if (filter && filter !== 'all') q = q.eq('status', filter)
-      const { data, error: err } = await q
-      if (err) throw err
-      setOrders((data ?? []) as OrderRow[])
+      const qs = statusFilter ? `?status=${encodeURIComponent(statusFilter)}` : ''
+      const res = await fetch(`/api/admin/orders${qs}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json?.error ?? 'Failed to load orders')
+      setOrders(json.orders ?? [])
     } catch (e: any) {
-      setError(e?.message ?? 'Failed to load orders.')
-      setOrders([])
+      setErr(e?.message ?? 'Failed to load')
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    loadOrders()
+    if (isAdmin) fetchOrders()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter])
+  }, [isAdmin, statusFilter])
 
-  async function markShipped(orderId: string, courierName: string, trackingNumber: string, trackingUrl?: string) {
-    setError(null)
+  function openOrder(o: OrderRow) {
+    setSelected(o)
+    setNewStatus(o.status ?? 'paid')
+    setTracking(o.tracking_number ?? '')
+    setCourier(o.courier_name ?? 'Courier Guy / PUDO')
+    setErr(null)
+    setOk(null)
+  }
+
+  async function updateOrder() {
+    if (!selected?.id) return
+    setErr(null)
+    setOk(null)
+    setLoading(true)
     try {
-      const payload: any = {
-        status: 'shipped',
-        courier_name: courierName || 'Courier Guy / PUDO',
-        tracking_number: trackingNumber,
-        tracking_url: trackingUrl || null,
-      }
-      const { error: err } = await supabase.from('orders').update(payload).eq('id', orderId)
-      if (err) throw err
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess.session?.access_token
+      if (!token) throw new Error('No session token. Please log in again.')
 
-      // trigger email (shipped)
-      await fetch('/api/email/order-update', {
+      const res = await fetch('/api/admin/orders', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ orderId, event: 'shipped' }),
-      }).catch(() => null)
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          id: selected.id,
+          status: newStatus,
+          tracking_number: tracking,
+          courier_name: courier,
+        }),
+      })
 
-      await loadOrders()
+      const json = await res.json()
+      if (!res.ok) throw new Error(json?.error ?? 'Update failed')
+
+      setOk('Order updated ✅')
+      setSelected(json.order)
+      await fetchOrders()
     } catch (e: any) {
-      setError(e?.message ?? 'Failed to mark shipped.')
+      setErr(e?.message ?? 'Update failed')
+    } finally {
+      setLoading(false)
     }
   }
 
-  async function markDelivered(orderId: string) {
-    setError(null)
-    try {
-      const { error: err } = await supabase.from('orders').update({ status: 'delivered' }).eq('id', orderId)
-      if (err) throw err
-
-      await fetch('/api/email/order-update', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ orderId, event: 'delivered' }),
-      }).catch(() => null)
-
-      await loadOrders()
-    } catch (e: any) {
-      setError(e?.message ?? 'Failed to mark delivered.')
-    }
+  if (!isAdmin) {
+    return (
+      <main className="mx-auto max-w-5xl px-4 py-10 text-white">
+        <div className="rounded-3xl border border-slate-800 bg-black/50 p-6">
+          <h1 className="text-2xl font-bold">Admin – Orders</h1>
+          <p className="mt-2 text-sm text-slate-300">Access denied.</p>
+          <p className="mt-2 text-xs text-slate-400">Signed in as: {email || '—'}</p>
+          <div className="mt-6">
+            <Link href="/admin" className="underline text-fuchsia-300">Back to dashboard</Link>
+          </div>
+        </div>
+      </main>
+    )
   }
 
   return (
-    <main className="mx-auto max-w-6xl space-y-8 px-4 pb-16 pt-8">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/70 pb-4">
+    <main className="mx-auto max-w-6xl px-4 py-10 text-white">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#D946EF]">ADMIN</p>
-          <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Orders dashboard</h1>
-          <p className="mt-1 text-xs text-slate-300">Signed in as <span className="font-semibold text-slate-100">{adminEmail || '...'}</span></p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-fuchsia-400">Admin</p>
+          <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Orders</h1>
+          <p className="mt-1 text-sm text-slate-300">Update status + tracking (emails later via Resend).</p>
         </div>
+        <Link href="/admin" className="rounded-full border border-slate-700 px-4 py-2 text-sm">Back</Link>
+      </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Link href="/shop" className="rounded-full bg-[#D946EF] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-[0_0_20px_rgba(217,70,239,0.7)] hover:brightness-110 active:scale-95 transition">Shop</Link>
-          <Link href="/orders" className="rounded-full border border-slate-700 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-[#D946EF] hover:text-[#D946EF] transition">Customer view</Link>
-          <button
-            type="button"
-            onClick={async () => {
-              await supabase.auth.signOut()
-              router.replace('/')
-            }}
-            className="rounded-full border border-slate-700 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-red-400 hover:text-red-200 transition"
-          >
-            Logout
-          </button>
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="rounded-full border border-slate-800 bg-slate-950/60 px-4 py-2 text-sm"
+        >
+          <option value="">All statuses</option>
+          {STATUSES.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+
+        <button
+          onClick={fetchOrders}
+          className="rounded-full border border-slate-700 px-4 py-2 text-sm"
+          disabled={loading}
+        >
+          {loading ? 'Loading…' : 'Refresh'}
+        </button>
+      </div>
+
+      {err && (
+        <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          {err}
         </div>
-      </header>
-
-      {!isAdmin && (
-        <section className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-200">
-          {error || 'Access denied.'}
-          <p className="mt-2 text-[11px] text-red-200/80">
-            Fix: set <span className="font-mono">NEXT_PUBLIC_ADMIN_EMAILS</span> (comma separated) in <span className="font-mono">.env.local</span>.
-          </p>
-        </section>
+      )}
+      {ok && (
+        <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+          {ok}
+        </div>
       )}
 
-      {isAdmin && (
-        <>
-          <section className="rounded-3xl border border-slate-800/80 bg-slate-950/60 p-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">Filter</span>
-              {[
-                { key: 'paid_pending_processing', label: 'Paid (processing)' },
-                { key: 'pending_payment', label: 'Pending payment' },
-                { key: 'shipped', label: 'Shipped' },
-                { key: 'delivered', label: 'Delivered' },
-                { key: 'all', label: 'All' },
-              ].map((f) => (
-                <button
-                  key={f.key}
-                  type="button"
-                  onClick={() => setFilter(f.key)}
-                  className={`rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-[0.2em] transition ${
-                    filter === f.key
-                      ? 'bg-fuchsia-500 text-white shadow-[0_0_22px_rgba(217,70,239,0.85)]'
-                      : 'border border-slate-800 bg-slate-950/40 text-slate-200 hover:border-fuchsia-500'
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <div className="rounded-3xl border border-slate-800 bg-black/40 p-6">
+          <h2 className="text-lg font-bold">All orders ({orders.length})</h2>
+
+          <div className="mt-4 space-y-3">
+            {orders.length === 0 && <p className="text-sm text-slate-400">No orders yet.</p>}
+            {orders.slice(0, 60).map((o) => (
               <button
-                type="button"
-                onClick={loadOrders}
-                className="ml-auto rounded-full border border-slate-700 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-[#D946EF] hover:text-[#D946EF] transition"
+                key={o.id}
+                onClick={() => openOrder(o)}
+                className="w-full text-left rounded-2xl border border-slate-800 bg-slate-950/40 p-4 hover:border-fuchsia-500/40"
               >
-                Refresh
+                <div className="flex items-center justify-between gap-3">
+                  <p className="truncate font-semibold">{o.full_name ?? o.email ?? o.id}</p>
+                  <span className="text-xs text-slate-400">{o.status}</span>
+                </div>
+                <p className="mt-1 text-xs text-slate-400">
+                  Total: {o.currency ?? 'ZAR'} {Number(o.total_amount ?? 0).toFixed(2)} • {o.city ?? ''} {o.province ?? ''}
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-slate-800 bg-black/40 p-6">
+          <h2 className="text-lg font-bold">Update selected order</h2>
+
+          {!selected ? (
+            <p className="mt-4 text-sm text-slate-400">Select an order on the left.</p>
+          ) : (
+            <div className="mt-4 space-y-4">
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                <p className="text-sm font-semibold">{selected.full_name ?? selected.email}</p>
+                <p className="mt-1 text-xs text-slate-400">
+                  {selected.address_line_1 ?? ''} {selected.suburb ?? ''} {selected.city ?? ''} {selected.province ?? ''} {selected.postal_code ?? ''}
+                </p>
+                <p className="mt-1 text-xs text-slate-400">
+                  Delivery: {selected.delivery_type ?? ''} • PUDO: {selected.pudo_location ?? '—'}
+                </p>
+              </div>
+
+              <label className="grid gap-2">
+                <span className="text-xs text-slate-300">Status</span>
+                <select
+                  value={newStatus}
+                  onChange={(e) => setNewStatus(e.target.value)}
+                  className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+                >
+                  {STATUSES.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-xs text-slate-300">Courier name</span>
+                <input
+                  value={courier}
+                  onChange={(e) => setCourier(e.target.value)}
+                  className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+                />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-xs text-slate-300">Tracking number (required for shipped/delivered)</span>
+                <input
+                  value={tracking}
+                  onChange={(e) => setTracking(e.target.value)}
+                  className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+                  placeholder="e.g. PUDO123456"
+                />
+              </label>
+
+              <button
+                onClick={updateOrder}
+                disabled={loading}
+                className="rounded-full bg-fuchsia-500 px-5 py-3 text-sm font-bold shadow-[0_0_22px_rgba(217,70,239,0.85)] disabled:opacity-60"
+              >
+                {loading ? 'Updating…' : 'Update order'}
               </button>
             </div>
-          </section>
-
-          {error && (
-            <section className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-200">{error}</section>
           )}
-
-          {loading && (
-            <section className="rounded-3xl border border-slate-800/80 bg-slate-950/60 p-6 text-sm text-slate-200">Loading…</section>
-          )}
-
-          {!loading && orders.length === 0 && (
-            <section className="rounded-3xl border border-slate-800/80 bg-slate-950/60 p-6">
-              <p className="text-sm font-semibold text-slate-100">No orders found.</p>
-            </section>
-          )}
-
-          {!loading && orders.length > 0 && (
-            <section className="space-y-3">
-              {orders.map((o) => (
-                <AdminOrderCard key={o.id} order={o} onShip={markShipped} onDeliver={markDelivered} />
-              ))}
-            </section>
-          )}
-        </>
-      )}
+        </div>
+      </div>
     </main>
-  )
-}
-
-function AdminOrderCard({
-  order,
-  onShip,
-  onDeliver,
-}: {
-  order: OrderRow
-  onShip: (orderId: string, courierName: string, trackingNumber: string, trackingUrl?: string) => Promise<void>
-  onDeliver: (orderId: string) => Promise<void>
-}) {
-  const [courierName, setCourierName] = useState(order.courier_name || 'Courier Guy / PUDO')
-  const [trackingNumber, setTrackingNumber] = useState(order.tracking_number || '')
-  const [trackingUrl, setTrackingUrl] = useState(order.tracking_url || '')
-  const [busy, setBusy] = useState(false)
-
-  const canShip = (order.status ?? '') === 'paid_pending_processing'
-  const canDeliver = (order.status ?? '') === 'shipped'
-
-  return (
-    <article className="rounded-3xl border border-slate-800/80 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900/95 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.8)]">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Order</p>
-          <p className="mt-1 font-mono text-xs text-slate-200 break-all">{order.id}</p>
-          <p className="mt-2 text-sm font-semibold text-white">Status: {(order.status || '—').toUpperCase()}</p>
-          <p className="mt-1 text-xs text-slate-400">Placed: {order.created_at ? new Date(order.created_at).toLocaleString() : '—'}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Total</p>
-          <p className="mt-1 text-lg font-extrabold text-white">R {(order.total_amount ?? 0).toFixed(2)}</p>
-          <p className="mt-1 text-xs text-slate-400">Customer: {order.customer_name || '—'}</p>
-          <p className="mt-1 text-xs text-slate-400 break-all">{order.customer_email || '—'}</p>
-        </div>
-      </div>
-
-      <div className="mt-4 grid gap-3 lg:grid-cols-2">
-        <div className="rounded-2xl border border-slate-800/80 bg-slate-950/70 p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Delivery</p>
-          <p className="mt-1 text-xs text-slate-200 whitespace-pre-line">{order.delivery_address || order.delivery_location || '—'}</p>
-          <p className="mt-2 text-xs text-slate-400">Type: {(order.delivery_type || '—').toUpperCase()}</p>
-          <p className="mt-1 text-xs text-slate-400">Phone: {order.customer_phone || '—'}</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-800/80 bg-slate-950/70 p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Shipping + tracking</p>
-
-          <div className="mt-3 grid gap-3">
-            <label className="block">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">Courier</span>
-              <input
-                value={courierName}
-                onChange={(e) => setCourierName(e.target.value)}
-                className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-2.5 text-sm text-slate-100 outline-none focus:border-fuchsia-500"
-              />
-            </label>
-            <label className="block">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">Tracking number</span>
-              <input
-                value={trackingNumber}
-                onChange={(e) => setTrackingNumber(e.target.value)}
-                className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-2.5 text-sm text-slate-100 outline-none focus:border-fuchsia-500"
-              />
-            </label>
-            <label className="block">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">Tracking URL (optional)</span>
-              <input
-                value={trackingUrl}
-                onChange={(e) => setTrackingUrl(e.target.value)}
-                className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-2.5 text-sm text-slate-100 outline-none focus:border-fuchsia-500"
-              />
-            </label>
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              type="button"
-              disabled={busy || !canShip || !trackingNumber.trim()}
-              onClick={async () => {
-                setBusy(true)
-                await onShip(order.id, courierName, trackingNumber.trim(), trackingUrl.trim() || undefined)
-                setBusy(false)
-              }}
-              className="rounded-full bg-fuchsia-500 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_0_22px_rgba(217,70,239,0.85)] disabled:opacity-50"
-            >
-              Mark shipped
-            </button>
-            <button
-              type="button"
-              disabled={busy || !canDeliver}
-              onClick={async () => {
-                setBusy(true)
-                await onDeliver(order.id)
-                setBusy(false)
-              }}
-              className="rounded-full border border-slate-700 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-emerald-400 hover:text-emerald-200 disabled:opacity-50"
-            >
-              Mark delivered
-            </button>
-          </div>
-
-          <p className="mt-2 text-[11px] text-slate-400">
-            Note: Emails send automatically when you mark shipped/delivered.
-          </p>
-        </div>
-      </div>
-    </article>
   )
 }
