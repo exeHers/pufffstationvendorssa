@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
@@ -15,15 +15,33 @@ type TicketRow = {
 
 export default function SupportPage() {
   const router = useRouter()
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [ok, setOk] = useState<string | null>(null)
   const [tickets, setTickets] = useState<TicketRow[]>([])
 
   const [subject, setSubject] = useState('')
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
 
-  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@yourdomain.co.za'
+  // will come from env (public), fallback to something sane
+  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@pufffstationsa.co.za'
+
+  async function refreshTickets() {
+    const { data, error: err } = await supabase
+      .from('support_messages')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (err) {
+      setError(err.message)
+      setTickets([])
+      return
+    }
+    setTickets((data ?? []) as TicketRow[])
+  }
 
   useEffect(() => {
     let mounted = true
@@ -38,20 +56,9 @@ export default function SupportPage() {
         return
       }
 
-      const { data, error: err } = await supabase
-        .from('support_messages')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50)
+      await refreshTickets()
 
       if (!mounted) return
-
-      if (err) {
-        setError(err.message)
-        setTickets([])
-      } else {
-        setTickets((data ?? []) as TicketRow[])
-      }
       setLoading(false)
     }
 
@@ -64,6 +71,7 @@ export default function SupportPage() {
   async function submitTicket(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    setOk(null)
 
     if (!subject.trim()) return setError('Please add a subject.')
     if (!message.trim()) return setError('Please describe the problem.')
@@ -77,6 +85,7 @@ export default function SupportPage() {
         return
       }
 
+      // 1) Insert ticket into Supabase (your current flow)
       const payload: any = {
         user_id: user.id,
         subject: subject.trim(),
@@ -84,21 +93,48 @@ export default function SupportPage() {
         status: 'open',
       }
 
-      const { error: err } = await supabase.from('support_messages').insert(payload)
-      if (err) throw err
+      const { error: insertErr } = await supabase.from('support_messages').insert(payload)
+      if (insertErr) throw insertErr
 
+      // 2) Email support inbox + optional auto-reply customer
+      //    We use the logged in user's email + metadata name where possible
+      const customerEmail = (user.email ?? '').trim()
+      const customerName =
+        String((user.user_metadata as any)?.full_name ?? (user.user_metadata as any)?.name ?? 'Customer').trim()
+
+      // If you want: allow orderId from message text later; for now keep optional blank
+      const orderId = ''
+
+      // Call your Resend-backed API route
+      const emailRes = await fetch('/api/support', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: customerName,
+          email: customerEmail,
+          subject: subject.trim(),
+          message: message.trim(),
+          orderId,
+        }),
+      })
+
+      const emailJson = await emailRes.json().catch(() => ({}))
+
+      // We DO NOT fail the whole ticket if email fails (because Supabase insert already succeeded).
+      // But we show a warning so you know.
+      if (!emailRes.ok) {
+        setOk('Ticket submitted ✅ (Email failed — please check Resend env + logs)')
+        console.warn('Support email failed:', emailJson)
+      } else {
+        setOk('Ticket submitted ✅ We’ll reply ASAP.')
+      }
+
+      // Reset form
       setSubject('')
       setMessage('')
 
       // Refresh list
-      const { data, error: fetchErr } = await supabase
-        .from('support_messages')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50)
-
-      if (fetchErr) throw fetchErr
-      setTickets((data ?? []) as TicketRow[])
+      await refreshTickets()
     } catch (e: any) {
       setError(e?.message ?? 'Failed to submit ticket. Try again.')
     } finally {
@@ -154,6 +190,12 @@ export default function SupportPage() {
         {error && (
           <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-200">
             {error}
+          </div>
+        )}
+
+        {ok && (
+          <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-200">
+            {ok}
           </div>
         )}
 
