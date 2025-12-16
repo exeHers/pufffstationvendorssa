@@ -12,47 +12,201 @@ function parseAdminEmails(value?: string) {
     .filter(Boolean)
 }
 
+type Ticket = {
+  id: string
+  user_id: string
+  subject?: string | null
+  message?: string | null
+  status?: string | null
+  created_at?: string | null
+  customer_email?: string | null
+}
+
 export default function AdminSupportPage() {
   const router = useRouter()
+
   const [adminEmail, setAdminEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [ok, setOk] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   const adminEmails = useMemo(() => parseAdminEmails(process.env.NEXT_PUBLIC_ADMIN_EMAILS), [])
+  const isAdmin = adminEmails.length > 0 && adminEmails.includes(adminEmail.toLowerCase())
+
+  const [tickets, setTickets] = useState<Ticket[]>([])
+  const [activeId, setActiveId] = useState<string | null>(null)
+
+  const active = useMemo(() => tickets.find((t) => t.id === activeId) ?? null, [tickets, activeId])
+
+  const [reply, setReply] = useState('')
+  const [closeAfter, setCloseAfter] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [loadingTickets, setLoadingTickets] = useState(false)
 
   useEffect(() => {
     ;(async () => {
       setLoading(true)
       setError(null)
+      setOk(null)
+
       const { data: sess } = await supabase.auth.getSession()
       const user = sess.session?.user
       if (!user) {
         router.replace('/login?next=/admin/support')
         return
       }
-      setAdminEmail(user.email ?? '')
-      if (!adminEmails.includes((user.email ?? '').toLowerCase())) {
+
+      const email = (user.email ?? '').toLowerCase()
+      setAdminEmail(email)
+
+      if (!adminEmails.includes(email)) {
         setError('Access denied. Add your admin email to NEXT_PUBLIC_ADMIN_EMAILS (Vercel + .env.local).')
+        setLoading(false)
+        return
       }
+
       setLoading(false)
+
+      // Load tickets once admin confirmed
+      await fetchTickets(true)
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const isAdmin = adminEmails.length > 0 && adminEmails.includes(adminEmail.toLowerCase())
+  async function fetchTickets(firstLoad = false) {
+    setError(null)
+    setOk(null)
+    setLoadingTickets(true)
+    try {
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess.session?.access_token
+      if (!token) throw new Error('No session token. Please log in again.')
+
+      const res = await fetch('/api/admin/support/tickets', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json?.error ?? `Failed to load tickets (HTTP ${res.status})`)
+
+      const list = (json.tickets ?? []) as Ticket[]
+      setTickets(list)
+
+      if (firstLoad) {
+        if (list.length > 0) setActiveId(list[0].id)
+        else setActiveId(null)
+      } else {
+        // if current ticket disappeared, reset
+        if (activeId && !list.some((t) => t.id === activeId)) {
+          setActiveId(list[0]?.id ?? null)
+        }
+      }
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to load tickets.')
+    } finally {
+      setLoadingTickets(false)
+    }
+  }
+
+  async function setStatus(ticketId: string, status: 'open' | 'replied' | 'closed') {
+    setError(null)
+    setOk(null)
+    try {
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess.session?.access_token
+      if (!token) throw new Error('No session token. Please log in again.')
+
+      const res = await fetch('/api/admin/support/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ticketId, status }),
+      })
+
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json?.error ?? `Failed to update status (HTTP ${res.status})`)
+
+      setTickets((prev) => prev.map((t) => (t.id === ticketId ? { ...t, status } : t)))
+      setOk(`Status updated → ${status.toUpperCase()}`)
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to update status.')
+    }
+  }
+
+  async function sendReply() {
+    if (!active) return
+    if (!reply.trim()) {
+      setError('Reply cannot be empty.')
+      return
+    }
+
+    setSending(true)
+    setError(null)
+    setOk(null)
+    try {
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess.session?.access_token
+      if (!token) throw new Error('No session token. Please log in again.')
+
+      const res = await fetch('/api/admin/support/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          ticketId: active.id,
+          reply: reply.trim(),
+          closeAfter,
+        }),
+      })
+
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json?.error ?? `Failed to send reply (HTTP ${res.status})`)
+
+      const newStatus = closeAfter ? 'closed' : 'replied'
+      setTickets((prev) => prev.map((t) => (t.id === active.id ? { ...t, status: newStatus } : t)))
+
+      setOk('Reply sent ✅')
+      setReply('')
+      setCloseAfter(false)
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to send reply.')
+    } finally {
+      setSending(false)
+    }
+  }
 
   return (
     <main className="mx-auto max-w-6xl space-y-8 px-4 pb-16 pt-8">
+      {/* HEADER (kept your vibe) */}
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/70 pb-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#D946EF]">ADMIN</p>
           <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Support</h1>
-          <p className="mt-1 text-xs text-slate-300">Signed in as <span className="font-semibold text-slate-100">{adminEmail || '...'}</span></p>
+          <p className="mt-1 text-xs text-slate-300">
+            Signed in as <span className="font-semibold text-slate-100">{adminEmail || '...'}</span>
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Link href="/admin" className="rounded-full border border-slate-700 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-[#D946EF] hover:text-[#D946EF] transition">Dashboard</Link>
-          <Link href="/support" className="rounded-full bg-[#D946EF] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-[0_0_20px_rgba(217,70,239,0.7)] hover:brightness-110 active:scale-95 transition">Customer view</Link>
+          <button
+            type="button"
+            onClick={() => fetchTickets(false)}
+            className="rounded-full border border-slate-700 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-[#D946EF] hover:text-[#D946EF] transition"
+          >
+            Refresh
+          </button>
+
+          <Link
+            href="/admin"
+            className="rounded-full border border-slate-700 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-[#D946EF] hover:text-[#D946EF] transition"
+          >
+            Dashboard
+          </Link>
+
+          <Link
+            href="/support"
+            className="rounded-full bg-[#D946EF] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-[0_0_20px_rgba(217,70,239,0.7)] hover:brightness-110 active:scale-95 transition"
+          >
+            Customer view
+          </Link>
+
           <button
             type="button"
             onClick={async () => {
@@ -66,8 +220,11 @@ export default function AdminSupportPage() {
         </div>
       </header>
 
+      {/* Status banners */}
       {loading && (
-        <section className="rounded-3xl border border-slate-800/80 bg-slate-950/60 p-6 text-sm text-slate-200">Loading…</section>
+        <section className="rounded-3xl border border-slate-800/80 bg-slate-950/60 p-6 text-sm text-slate-200">
+          Loading…
+        </section>
       )}
 
       {!loading && !isAdmin && (
@@ -77,12 +234,126 @@ export default function AdminSupportPage() {
       )}
 
       {!loading && isAdmin && (
-        <section className="rounded-3xl border border-slate-800/80 bg-slate-950/60 p-6">
-          <p className="text-sm font-semibold text-slate-100">Support dashboard is ready as a route.</p>
-          <p className="mt-2 text-sm text-slate-300">
-            Next we’ll wire this to <span className="font-mono">support_messages</span> so your cousin can view tickets and mark them open/in_progress/closed.
-          </p>
-        </section>
+        <>
+          {error && (
+            <section className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-200">
+              {error}
+            </section>
+          )}
+          {ok && (
+            <section className="rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-6 text-sm text-emerald-200">
+              {ok}
+            </section>
+          )}
+
+          <section className="grid gap-6 lg:grid-cols-[380px_1fr]">
+            {/* LEFT: tickets list */}
+            <div className="rounded-3xl border border-slate-800/80 bg-slate-950/60 p-4">
+              <div className="flex items-center justify-between gap-3 px-2 pb-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-300">Tickets</p>
+                <p className="text-[11px] text-slate-400">
+                  {loadingTickets ? 'Loading…' : `${tickets.length} total`}
+                </p>
+              </div>
+
+              {tickets.length === 0 && !loadingTickets && (
+                <div className="px-2 py-4 text-sm text-slate-300">No tickets yet.</div>
+              )}
+
+              <div className="space-y-2">
+                {tickets.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setActiveId(t.id)}
+                    className={`w-full rounded-2xl border px-3 py-3 text-left transition ${
+                      activeId === t.id
+                        ? 'border-fuchsia-500/50 bg-fuchsia-500/10'
+                        : 'border-slate-800 bg-black/30 hover:bg-black/50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-white">
+                          {t.subject ?? 'Support request'}
+                        </p>
+                        <p className="mt-1 truncate text-[11px] text-slate-400">
+                          {t.customer_email ?? 'email unknown'} •{' '}
+                          {t.created_at ? new Date(t.created_at).toLocaleString() : '—'}
+                        </p>
+                      </div>
+                      <span className="rounded-full border border-slate-700 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-200">
+                        {(t.status ?? 'open').toUpperCase()}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* RIGHT: ticket detail */}
+            <div className="rounded-3xl border border-slate-800/80 bg-slate-950/60 p-6">
+              {!active ? (
+                <p className="text-sm text-slate-300">Select a ticket on the left.</p>
+              ) : (
+                <>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-xl font-extrabold text-white">{active.subject ?? 'Support request'}</h2>
+                      <p className="mt-1 text-xs text-slate-400">
+                        From: <span className="text-slate-200">{active.customer_email ?? '—'}</span> •{' '}
+                        {active.created_at ? new Date(active.created_at).toLocaleString() : '—'}
+                      </p>
+                    </div>
+
+                    <select
+                      value={(active.status ?? 'open').toLowerCase()}
+                      onChange={(e) => setStatus(active.id, e.target.value as any)}
+                      className="rounded-full border border-slate-700 bg-black/40 px-3 py-2 text-sm text-slate-100"
+                    >
+                      <option value="open">Open</option>
+                      <option value="replied">Replied</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </div>
+
+                  <div className="mt-5 rounded-2xl border border-slate-800 bg-black/30 p-4">
+                    <p className="whitespace-pre-line text-sm text-slate-100">{active.message ?? '—'}</p>
+                  </div>
+
+                  <div className="mt-6">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-300">Reply</p>
+
+                    <textarea
+                      value={reply}
+                      onChange={(e) => setReply(e.target.value)}
+                      rows={6}
+                      className="mt-2 w-full rounded-2xl border border-slate-800 bg-black/30 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-500"
+                      placeholder="Type your reply to the customer..."
+                    />
+
+                    <label className="mt-3 flex items-center gap-2 text-sm text-slate-200">
+                      <input
+                        type="checkbox"
+                        checked={closeAfter}
+                        onChange={(e) => setCloseAfter(e.target.checked)}
+                      />
+                      Close ticket after sending reply
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={sendReply}
+                      disabled={sending}
+                      className="mt-4 w-full rounded-full bg-[#D946EF] px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_24px_rgba(217,70,239,0.8)] hover:brightness-110 active:scale-95 disabled:opacity-60 transition"
+                    >
+                      {sending ? 'Sending…' : 'Send reply'}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </section>
+        </>
       )}
     </main>
   )
