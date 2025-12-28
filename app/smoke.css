@@ -1,0 +1,83 @@
+/* app/smoke.css */
+/* Lightweight “smoke / glow” using gradients + blur + animation.
+   Uses CSS variables:
+   --smoke-hue : number (0-360)
+   --smoke-a   : opacity strength (0-1-ish)
+*/
+
+:root {
+  --smoke-hue: 270;
+  --smoke-a: 0.55;
+}
+
+@keyframes pufff-float {
+  0% {
+    transform: translate3d(-4%, 0, 0) scale(1);
+    opacity: calc(var(--smoke-a) * 0.65);
+    filter: blur(22px);
+  }
+  50% {
+    transform: translate3d(4%, -6%, 0) scale(1.06);
+    opacity: calc(var(--smoke-a) * 0.9);
+    filter: blur(26px);
+  }
+  100% {
+    transform: translate3d(-4%, 0, 0) scale(1);
+    opacity: calc(var(--smoke-a) * 0.65);
+    filter: blur(22px);
+  }
+}
+
+@keyframes pufff-breathe {
+  0% { opacity: 0.25; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(1.02); }
+  100% { opacity: 0.25; transform: scale(1); }
+}
+
+/* A reusable “premium glow haze” background */
+.pufff-haze {
+  position: absolute;
+  inset: -30%;
+  background:
+    radial-gradient(circle at 25% 30%, hsla(var(--smoke-hue), 90%, 60%, 0.22), transparent 55%),
+    radial-gradient(circle at 65% 35%, hsla(calc(var(--smoke-hue) + 40), 90%, 60%, 0.14), transparent 55%),
+    radial-gradient(circle at 55% 70%, rgba(217, 70, 239, 0.12), transparent 60%);
+  animation: pufff-float 6.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Under-image smoke “pad” */
+.pufff-smoke-pad {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 8px;
+  height: 34%;
+  border-radius: 999px;
+  background:
+    radial-gradient(ellipse at 50% 70%, hsla(var(--smoke-hue), 95%, 62%, 0.35), transparent 70%),
+    radial-gradient(ellipse at 40% 40%, hsla(calc(var(--smoke-hue) + 30), 95%, 62%, 0.22), transparent 70%);
+  animation: pufff-float 4.8s ease-in-out infinite;
+  opacity: 0;
+  transform: translateY(10px) scale(0.98);
+  transition: opacity 250ms ease, transform 250ms ease;
+  pointer-events: none;
+}
+
+/* Hover/Focus makes it appear */
+.pufff-card:hover .pufff-smoke-pad,
+.pufff-card:focus-within .pufff-smoke-pad {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* A subtle “premium breathe” overlay for tiles */
+.pufff-tile-breathe {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(217, 70, 239, 0.18), transparent 55%),
+    radial-gradient(circle at 70% 60%, rgba(34, 211, 238, 0.12), transparent 60%);
+  animation: pufff-breathe 5.8s ease-in-out infinite;
+  pointer-events: none;
+}

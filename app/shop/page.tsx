@@ -4,45 +4,292 @@ import ProductCard from '@/components/products/ProductCard'
 
 export const dynamic = 'force-dynamic'
 
+function hexToHue(hex?: string | null) {
+  if (!hex) return null
+  const h = hex.replace('#', '').trim()
+  if (h.length !== 6) return null
+  const r = parseInt(h.slice(0, 2), 16) / 255
+  const g = parseInt(h.slice(2, 4), 16) / 255
+  const b = parseInt(h.slice(4, 6), 16) / 255
+
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  const d = max - min
+  if (d === 0) return 0
+
+  let hue = 0
+  if (max === r) hue = ((g - b) / d) % 6
+  else if (max === g) hue = (b - r) / d + 2
+  else hue = (r - g) / d + 4
+
+  hue = Math.round(hue * 60)
+  if (hue < 0) hue += 360
+  return hue
+}
+
+// fallback if accent_hex is missing
+function pickHue(name: string) {
+  const n = name.toLowerCase()
+  if (n.includes('grape') || n.includes('berry') || n.includes('purple')) return 285
+  if (n.includes('mint') || n.includes('ice') || n.includes('cool')) return 190
+  if (n.includes('lemon') || n.includes('banana') || n.includes('mango')) return 40
+  if (n.includes('watermelon') || n.includes('straw') || n.includes('cherry')) return 350
+  if (n.includes('apple') || n.includes('lime') || n.includes('melon')) return 120
+  return 210
+}
+
+function clampCategoryLabel(input: string) {
+  const s = (input || '').trim()
+  if (!s) return 'Other'
+  return s.length > 28 ? `${s.slice(0, 28)}…` : s
+}
+
+function getAccent(product: Product) {
+  const p: any = product
+  const accent = (p.accent_hex || '').trim()
+  const hueFromHex = hexToHue(accent)
+  const hue = hueFromHex ?? pickHue(product.name)
+  return { hue, accentHex: accent || null }
+}
+
+function formatMoney(n: number) {
+  // keep it simple (you can change currency later)
+  return `R${Number(n).toFixed(2)}`
+}
+
+function FeaturedHero({ product }: { product: Product }) {
+  const { hue, accentHex } = getAccent(product)
+  const p: any = product
+  const bulkMin = p.bulk_min
+  const bulkPrice = p.bulk_price
+
+  return (
+    <a
+      href={`/shop/${product.id}`}
+      className="group relative block overflow-hidden rounded-[2.25rem] border border-slate-800/60 bg-slate-950/40 p-6 shadow-[0_0_60px_rgba(217,70,239,0.05)] transition hover:-translate-y-0.5 hover:border-slate-700/70 md:p-10"
+      style={{ ['--smoke-hue' as any]: hue } as React.CSSProperties}
+    >
+      {/* Ambient layers */}
+      <div className="absolute inset-0">
+        <div className="pufff-haze opacity-60" />
+        <div className="pufff-tile-breathe opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/75 via-slate-950/55 to-slate-900/60" />
+        <div
+          className="absolute inset-0 opacity-25"
+          style={{
+            background:
+              `radial-gradient(900px 380px at 20% 20%, rgba(217,70,239,0.22), transparent 60%),` +
+              `radial-gradient(900px 380px at 80% 80%, rgba(34,211,238,0.18), transparent 60%)`,
+          }}
+        />
+      </div>
+
+      <div className="relative grid gap-8 md:grid-cols-[1.05fr_0.95fr] md:items-center">
+        {/* Text */}
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">
+            Featured Drop
+          </p>
+
+          <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-white md:text-5xl">
+            {product.name}
+          </h1>
+
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-300 md:text-base">
+            {product.description || 'Premium disposables. Maximum impact.'}
+          </p>
+
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center rounded-2xl border border-slate-800/70 bg-slate-950/60 px-4 py-2 text-sm font-semibold text-white">
+              {formatMoney(Number(product.price))}
+            </span>
+
+            {bulkMin && bulkPrice ? (
+              <span className="inline-flex items-center rounded-2xl border border-slate-800/70 bg-slate-950/60 px-4 py-2 text-sm font-semibold text-slate-200">
+                Bulk: {formatMoney(Number(bulkPrice))} <span className="ml-2 text-xs text-slate-400">min {bulkMin}</span>
+              </span>
+            ) : null}
+
+            <span className="inline-flex items-center rounded-2xl border border-slate-800/70 bg-slate-950/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
+              {clampCategoryLabel((p.category as string) || '')}
+            </span>
+          </div>
+
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <span
+              className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_0_35px_rgba(34,211,238,0.25)] transition group-hover:brightness-110"
+              style={{
+                background: accentHex || `hsl(${hue} 95% 60%)`,
+              }}
+            >
+              View flavour
+            </span>
+
+            <span className="text-xs text-slate-400">
+              Smooth smoke. Live motion. Premium drops.
+            </span>
+          </div>
+        </div>
+
+        {/* Image */}
+        <div className="relative mx-auto w-full max-w-md">
+          <div
+            className="absolute -inset-8 rounded-[2.25rem] blur-3xl opacity-35"
+            style={{
+              background: accentHex || `hsl(${hue} 95% 60%)`,
+            }}
+          />
+          <div className="relative overflow-hidden rounded-[2.25rem] border border-slate-800/60 bg-slate-950/40 p-6">
+            <div className="absolute inset-0 opacity-30">
+              <div className="pufff-smoke-pad opacity-70" />
+            </div>
+
+            <div className="relative flex items-center justify-center">
+              <img
+                src={(product as any).image_url || '/placeholder.png'}
+                alt={product.name}
+                className="h-[340px] w-auto select-none object-contain drop-shadow-[0_20px_45px_rgba(0,0,0,0.45)] transition duration-500 group-hover:-translate-y-1 group-hover:rotate-[0.5deg]"
+              />
+            </div>
+
+            <div className="mt-5 flex items-center justify-between">
+              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                In stock
+              </div>
+              <div className="text-sm font-semibold text-white">
+                {formatMoney(Number(product.price))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </a>
+  )
+}
+
+function RowHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="flex items-end justify-between gap-4">
+      <div>
+        <h2 className="text-xl font-extrabold tracking-tight text-white">
+          {title}
+        </h2>
+        {subtitle ? (
+          <p className="mt-1 text-sm text-slate-400">{subtitle}</p>
+        ) : null}
+      </div>
+      <div className="hidden text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 sm:block">
+        Scroll
+      </div>
+    </div>
+  )
+}
+
+function ProductRow({ title, subtitle, products }: { title: string; subtitle?: string; products: Product[] }) {
+  return (
+    <section className="mt-10">
+      <RowHeader title={title} subtitle={subtitle} />
+      <div className="mt-4 -mx-4 flex gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {products.map((p) => (
+          <div key={p.id} className="min-w-[270px] max-w-[270px] sm:min-w-[320px] sm:max-w-[320px]">
+            <ProductCard product={p} />
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export default async function ShopPage() {
+  // Fetch products (exclude deleted)
   const { data, error } = await supabase
     .from('products')
     .select('*')
+    .eq('is_deleted', false)
     .order('created_at', { ascending: false })
 
-  const products = (data ?? []) as Product[]
+  const products = (data as any as Product[]) || []
+
+  const anyProducts = products.length > 0
+
+  // Featured: pick first in-stock product; fallback to first item
+  const featured =
+    products.find((p: any) => p.in_stock === true) || products[0] || null
+
+  // Group by category (text field)
+  const byCategory = new Map<string, Product[]>()
+  for (const p of products) {
+    const cat = clampCategoryLabel(((p as any).category as string) || '')
+    if (!byCategory.has(cat)) byCategory.set(cat, [])
+    byCategory.get(cat)!.push(p)
+  }
+
+  // Sort categories by size (most products first)
+  const categoryEntries = Array.from(byCategory.entries()).sort(
+    (a, b) => b[1].length - a[1].length
+  )
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10">
-      <header className="mb-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-          Disposables · Flavours · Stock
+    <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-10">
+      {/* Header */}
+      <div className="flex flex-col gap-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">
+          Shop
         </p>
-        <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-          Shop the stash
+        <h1 className="text-4xl font-extrabold tracking-tight text-white">
+          Premium Disposables
         </h1>
-        <p className="mt-2 text-sm text-slate-300 max-w-2xl">
-          Browse what’s available, add to cart, and carry on. No kak surprises.
+        <p className="max-w-2xl text-sm leading-relaxed text-slate-300">
+          Curated drops. Live motion. Smooth smoke. Pick a flavour and let it speak.
         </p>
-      </header>
+      </div>
 
+      {/* Error */}
       {error && (
-        <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200">
+        <div className="mt-8 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200">
           Eish… shop didn’t load. Check Supabase + your env keys.
         </div>
       )}
 
-      {!error && products.length === 0 && (
-        <div className="rounded-2xl border border-slate-800/80 bg-slate-950/60 p-6 text-sm text-slate-300">
+      {/* Empty */}
+      {!error && !anyProducts && (
+        <div className="mt-8 rounded-2xl border border-slate-800/80 bg-slate-950/60 p-4 text-sm text-slate-300">
           Nothing in stock yet. Admin must load products first.
         </div>
       )}
 
-      {products.length > 0 && (
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
+      {/* Featured */}
+      {featured && (
+        <div className="mt-10">
+          <FeaturedHero product={featured} />
+        </div>
+      )}
+
+      {/* Category Rows */}
+      {categoryEntries.length > 0 &&
+        categoryEntries.map(([cat, items]) => (
+          <ProductRow
+            key={cat}
+            title={cat}
+            subtitle="Smooth showroom scroll. Each flavour has its own vibe."
+            products={items.filter((p: any) => p.in_stock === true)}
+          />
+        ))}
+
+      {/* Curated feed (only if there are a lot of items) */}
+      {products.length > 10 && (
+        <section className="mt-14">
+          <RowHeader
+            title="All drops"
+            subtitle="Not a warehouse grid. A curated feed."
+          />
+          <div className="mt-6 flex flex-col gap-5">
+            {products.map((p) => (
+              <div key={p.id} className="max-w-4xl">
+                <ProductCard product={p} />
+              </div>
+            ))}
+          </div>
         </section>
       )}
     </main>
