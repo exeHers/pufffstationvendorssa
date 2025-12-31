@@ -74,30 +74,26 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <Link
       href={`/shop/${product.id}`}
-      className="group relative block overflow-hidden rounded-[2.1rem] border border-slate-800/70 bg-slate-950/50 shadow-[0_0_45px_rgba(0,0,0,0.5)] transition hover:-translate-y-0.5 hover:border-slate-700/70"
+      className="group relative block overflow-hidden rounded-[2.1rem] border border-slate-800/70 bg-black/60 shadow-[0_0_45px_rgba(0,0,0,0.55)] transition hover:-translate-y-0.5 hover:border-slate-700/70"
       style={cssVars}
     >
-      {/* Ambient + smoke */}
+      {/* Background stays clean + mostly black */}
       <div className="absolute inset-0">
-        {/* subtle colour wash */}
-        <div
-          className="absolute inset-0 opacity-[0.18]"
-          style={{
-            background:
-              `radial-gradient(700px 260px at 20% 15%, var(--accent), transparent 60%),` +
-              `radial-gradient(700px 260px at 85% 90%, var(--accent), transparent 65%)`,
-          }}
-        />
-
-        {/* smoke layers */}
-        <div className="absolute inset-0 opacity-60">
-          <div className="pufff-smoke-pad opacity-70" />
-          <div className="pufff-haze opacity-55" />
-          <div className="pufff-tile-breathe opacity-55" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/55 to-black/85" />
+        <div className="absolute inset-0 opacity-50">
+          <div className="pufff-tile-breathe opacity-45" />
+          <div className="pufff-haze opacity-35" />
         </div>
 
-        {/* vignette */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/10 via-slate-950/40 to-slate-950/70" />
+        {/* subtle corner glow only (not full wash) */}
+        <div
+          className="absolute inset-0 opacity-[0.12]"
+          style={{
+            background:
+              `radial-gradient(500px 220px at 18% 18%, var(--accent), transparent 65%),` +
+              `radial-gradient(500px 220px at 85% 92%, var(--accent), transparent 70%)`,
+          }}
+        />
       </div>
 
       {/* Content */}
@@ -120,9 +116,43 @@ export default function ProductCard({ product }: { product: Product }) {
           </span>
         </div>
 
-        {/* Image stage */}
-        <div className="relative mt-4 overflow-hidden rounded-[1.9rem] border border-slate-800/60 bg-slate-950/35 p-4">
-          {/* Stand / pedestal */}
+        {/* STAGE (smoke lives ONLY here now) */}
+        <div className="relative mt-4 overflow-hidden rounded-[1.9rem] border border-slate-800/60 bg-slate-950/30 p-4">
+          {/* Smoke behind product (compact + cropped) */}
+          <div className="pointer-events-none absolute inset-0">
+            <div
+              className="absolute inset-0 opacity-[0.45]"
+              style={{
+                filter: `hue-rotate(${hue}deg) saturate(1.35) contrast(1.15) brightness(1.05)`,
+              }}
+            >
+              <video
+                className="h-full w-full object-cover scale-[1.35]"
+                style={{ objectPosition: '50% 22%' }}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+              >
+                <source src="/scroll.mp4" type="video/mp4" />
+              </video>
+            </div>
+
+            {/* tint overlay */}
+            <div
+              className="absolute inset-0 mix-blend-screen opacity-[0.16]"
+              style={{ background: 'var(--accent)' }}
+            />
+
+            {/* Hide the “water base” completely */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/90" />
+
+            {/* Tight mask so smoke stays around center */}
+            <div className="absolute inset-0 [mask-image:radial-gradient(62%_55%_at_50%_38%,black,transparent_75%)] bg-black/55" />
+          </div>
+
+          {/* Pedestal */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20">
             <div
               className="absolute left-1/2 top-7 h-10 w-[75%] -translate-x-1/2 rounded-full blur-2xl opacity-45"
@@ -132,19 +162,19 @@ export default function ProductCard({ product }: { product: Product }) {
             <div className="absolute left-1/2 top-14 h-5 w-[66%] -translate-x-1/2 rounded-full bg-black/55 blur-lg" />
           </div>
 
-          {/* Extra glow behind device */}
+          {/* Slight halo behind device */}
           <div
-            className="pointer-events-none absolute -inset-10 opacity-30 blur-3xl"
+            className="pointer-events-none absolute -inset-10 opacity-20 blur-3xl"
             style={{ background: 'var(--accent)' }}
           />
 
+          {/* Product image */}
           <motion.div
             className="relative flex items-center justify-center"
             initial={{ y: 6, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.45, ease: 'easeOut' }}
           >
-            {/* Next/Image optimized device image */}
             <motion.div
               animate={{
                 y: [0, -5, 0],
@@ -169,7 +199,6 @@ export default function ProductCard({ product }: { product: Product }) {
             </motion.div>
           </motion.div>
 
-          {/* If image is white background, soften edges */}
           <div className="pointer-events-none absolute inset-0 rounded-[1.9rem] ring-1 ring-white/5" />
         </div>
 
@@ -180,7 +209,7 @@ export default function ProductCard({ product }: { product: Product }) {
           {shortDesc || 'Smooth pull. Strong flavour. Premium disposable.'}
         </p>
 
-        {/* Bottom row */}
+        {/* Bottom */}
         <div className="mt-5 flex items-center justify-between gap-3">
           <div className="text-sm font-extrabold text-white">{formatMoney(Number(product.price))}</div>
 

@@ -1,3 +1,4 @@
+import React from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import type { Product } from '@/lib/types'
 import ProductCard from '@/components/products/ProductCard'
@@ -53,7 +54,6 @@ function getAccent(product: Product) {
 }
 
 function formatMoney(n: number) {
-  // keep it simple (you can change currency later)
   return `R${Number(n).toFixed(2)}`
 }
 
@@ -63,6 +63,8 @@ function FeaturedHero({ product }: { product: Product }) {
   const bulkMin = p.bulk_min
   const bulkPrice = p.bulk_price
 
+  const smokeTint = accentHex || `hsl(${hue} 95% 60%)`
+
   return (
     <a
       href={`/shop/${product.id}`}
@@ -71,9 +73,44 @@ function FeaturedHero({ product }: { product: Product }) {
     >
       {/* Ambient layers */}
       <div className="absolute inset-0">
+        {/* Base haze / tiles */}
         <div className="pufff-haze opacity-60" />
         <div className="pufff-tile-breathe opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-br from-slate-950/75 via-slate-950/55 to-slate-900/60" />
+
+        {/* Smoke video (subtle premium) */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div
+            className="absolute inset-0 opacity-35"
+            style={{
+              filter: `hue-rotate(${hue}deg) saturate(1.25) contrast(1.15) brightness(1.05)`,
+            }}
+          >
+            <video
+              className="h-full w-full object-cover scale-[1.08]"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              poster="/smoke-poster.jpg"
+            >
+              <source src="/smoke.mp4" type="video/mp4" />
+            </video>
+          </div>
+
+          {/* Tint overlay */}
+          <div
+            className="absolute inset-0 mix-blend-screen opacity-25"
+            style={{ background: smokeTint }}
+          />
+
+          {/* Soft vignette + mask */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/70" />
+          <div className="absolute inset-0 [mask-image:radial-gradient(70%_55%_at_50%_40%,black,transparent_70%)] bg-black/45" />
+        </div>
+
+        {/* Accent glows */}
         <div
           className="absolute inset-0 opacity-25"
           style={{
@@ -106,7 +143,8 @@ function FeaturedHero({ product }: { product: Product }) {
 
             {bulkMin && bulkPrice ? (
               <span className="inline-flex items-center rounded-2xl border border-slate-800/70 bg-slate-950/60 px-4 py-2 text-sm font-semibold text-slate-200">
-                Bulk: {formatMoney(Number(bulkPrice))} <span className="ml-2 text-xs text-slate-400">min {bulkMin}</span>
+                Bulk: {formatMoney(Number(bulkPrice))}{' '}
+                <span className="ml-2 text-xs text-slate-400">min {bulkMin}</span>
               </span>
             ) : null}
 
@@ -185,13 +223,24 @@ function RowHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   )
 }
 
-function ProductRow({ title, subtitle, products }: { title: string; subtitle?: string; products: Product[] }) {
+function ProductRow({
+  title,
+  subtitle,
+  products,
+}: {
+  title: string
+  subtitle?: string
+  products: Product[]
+}) {
   return (
     <section className="mt-10">
       <RowHeader title={title} subtitle={subtitle} />
       <div className="mt-4 -mx-4 flex gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {products.map((p) => (
-          <div key={p.id} className="min-w-[270px] max-w-[270px] sm:min-w-[320px] sm:max-w-[320px]">
+          <div
+            key={p.id}
+            className="min-w-[270px] max-w-[270px] sm:min-w-[320px] sm:max-w-[320px]"
+          >
             <ProductCard product={p} />
           </div>
         ))}
@@ -201,7 +250,6 @@ function ProductRow({ title, subtitle, products }: { title: string; subtitle?: s
 }
 
 export default async function ShopPage() {
-  // Fetch products (exclude deleted)
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -209,14 +257,11 @@ export default async function ShopPage() {
     .order('created_at', { ascending: false })
 
   const products = (data as any as Product[]) || []
-
   const anyProducts = products.length > 0
 
-  // Featured: pick first in-stock product; fallback to first item
   const featured =
     products.find((p: any) => p.in_stock === true) || products[0] || null
 
-  // Group by category (text field)
   const byCategory = new Map<string, Product[]>()
   for (const p of products) {
     const cat = clampCategoryLabel(((p as any).category as string) || '')
@@ -224,14 +269,12 @@ export default async function ShopPage() {
     byCategory.get(cat)!.push(p)
   }
 
-  // Sort categories by size (most products first)
   const categoryEntries = Array.from(byCategory.entries()).sort(
     (a, b) => b[1].length - a[1].length
   )
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-10">
-      {/* Header */}
       <div className="flex flex-col gap-3">
         <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">
           Shop
@@ -244,28 +287,24 @@ export default async function ShopPage() {
         </p>
       </div>
 
-      {/* Error */}
       {error && (
         <div className="mt-8 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200">
           Eish… shop didn’t load. Check Supabase + your env keys.
         </div>
       )}
 
-      {/* Empty */}
       {!error && !anyProducts && (
         <div className="mt-8 rounded-2xl border border-slate-800/80 bg-slate-950/60 p-4 text-sm text-slate-300">
           Nothing in stock yet. Admin must load products first.
         </div>
       )}
 
-      {/* Featured */}
       {featured && (
         <div className="mt-10">
           <FeaturedHero product={featured} />
         </div>
       )}
 
-      {/* Category Rows */}
       {categoryEntries.length > 0 &&
         categoryEntries.map(([cat, items]) => (
           <ProductRow
@@ -276,7 +315,6 @@ export default async function ShopPage() {
           />
         ))}
 
-      {/* Curated feed (only if there are a lot of items) */}
       {products.length > 10 && (
         <section className="mt-14">
           <RowHeader
