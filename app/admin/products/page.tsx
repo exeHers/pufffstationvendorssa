@@ -22,6 +22,9 @@ function isValidHex(hex: string) {
   return /^#[0-9a-fA-F]{6}$/.test(h)
 }
 
+const BG_REMOVE_PRIMARY = 'https://express.adobe.com/tools/remove-background'
+const BG_REMOVE_BACKUP = 'https://pixlr.com/remove-background/'
+
 export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -50,6 +53,7 @@ export default function AdminProductsPage() {
   const [inStock, setInStock] = useState(true)
   const [accentHex, setAccentHex] = useState('#D946EF')
   const [image, setImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string>('')
 
   // drawer state
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -65,6 +69,10 @@ export default function AdminProductsPage() {
   const [eInStock, setEInStock] = useState(true)
   const [eAccentHex, setEAccentHex] = useState('#D946EF')
   const [eImageUrl, setEImageUrl] = useState<string>('')
+
+  // drawer image replace
+  const [eImageFile, setEImageFile] = useState<File | null>(null)
+  const [eImagePreview, setEImagePreview] = useState<string>('')
 
   // ---- Auth + role check ----
   useEffect(() => {
@@ -111,6 +119,15 @@ export default function AdminProductsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // cleanup object urls
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview)
+      if (eImagePreview) URL.revokeObjectURL(eImagePreview)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   async function refreshProducts() {
     const { data, error } = await supabase
       .from('products')
@@ -131,7 +148,6 @@ export default function AdminProductsPage() {
       .order('name', { ascending: true })
 
     if (error) {
-      // categories are optional, so don’t hard fail admin
       return
     }
     setCategories((data ?? []) as any)
@@ -140,6 +156,9 @@ export default function AdminProductsPage() {
   function openDrawer(p: Product) {
     setSelected(p)
     setDrawerOpen(true)
+
+    setOk(null)
+    setErr(null)
 
     setEName(p.name ?? '')
     setECategory(p.category ?? '')
@@ -150,6 +169,10 @@ export default function AdminProductsPage() {
     setEInStock(p.in_stock !== false)
     setEAccentHex(p.accent_hex && isValidHex(p.accent_hex) ? p.accent_hex : '#D946EF')
     setEImageUrl(p.image_url ?? '')
+
+    setEImageFile(null)
+    if (eImagePreview) URL.revokeObjectURL(eImagePreview)
+    setEImagePreview('')
   }
 
   function closeDrawer() {
@@ -157,6 +180,10 @@ export default function AdminProductsPage() {
     setSelected(null)
     setOk(null)
     setErr(null)
+
+    setEImageFile(null)
+    if (eImagePreview) URL.revokeObjectURL(eImagePreview)
+    setEImagePreview('')
   }
 
   const filtered = useMemo(() => {
@@ -187,6 +214,68 @@ export default function AdminProductsPage() {
 
     return list
   }, [products, showRemoved, filterCategory, filterStock, q])
+
+  // ---- Image helpers ----
+  function setCreateImage(file: File | null) {
+    setImage(file)
+    if (imagePreview) URL.revokeObjectURL(imagePreview)
+    setImagePreview(file ? URL.createObjectURL(file) : '')
+  }
+
+  function setEditImage(file: File | null) {
+    setEImageFile(file)
+    if (eImagePreview) URL.revokeObjectURL(eImagePreview)
+    setEImagePreview(file ? URL.createObjectURL(file) : '')
+  }
+
+  async function uploadEditImage() {
+    setErr(null)
+    setOk(null)
+
+    if (!selected) return
+    if (!eImageFile) {
+      setErr('Choose an image first.')
+      return
+    }
+
+    setBusy(true)
+
+    try {
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess.session?.access_token
+      if (!token) throw new Error('No session token. Please log in again.')
+
+      const fd = new FormData()
+      fd.append('id', selected.id)
+      fd.append('name', eName.trim() || selected.name || 'product')
+      fd.append('image', eImageFile)
+
+      const res = await fetch('/api/admin/products/image', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      })
+
+      const json = await res.json()
+      if (!res.ok) throw new Error(json?.error ?? 'Failed to replace image.')
+
+      setOk('Image updated ✅')
+
+      setEImageFile(null)
+      if (eImagePreview) URL.revokeObjectURL(eImagePreview)
+      setEImagePreview('')
+
+      await refreshProducts()
+
+      // re-open drawer with updated product
+      const updated = (products ?? []).find((p) => p.id === selected.id)
+      if (updated) openDrawer(updated)
+    } catch (e: any) {
+      setErr(e?.message ?? 'Failed to replace image.')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   // ---- Create ----
   async function onCreate() {
@@ -262,7 +351,7 @@ export default function AdminProductsPage() {
       setDescription('')
       setInStock(true)
       setAccentHex('#D946EF')
-      setImage(null)
+      setCreateImage(null)
 
       await refreshProducts()
     } catch (e: any) {
@@ -331,7 +420,6 @@ export default function AdminProductsPage() {
       setOk('Saved ✅')
       await refreshProducts()
 
-      // refresh selected
       const updated = products.find((p) => p.id === selected.id)
       if (updated) openDrawer(updated)
     } catch (e: any) {
@@ -385,6 +473,8 @@ export default function AdminProductsPage() {
       if (error) throw new Error(error.message)
 
       await refreshProducts()
+      setOk('Removed ✅')
+      closeDrawer()
     } catch (e: any) {
       setErr(e?.message ?? 'Failed.')
     } finally {
@@ -410,6 +500,8 @@ export default function AdminProductsPage() {
       if (error) throw new Error(error.message)
 
       await refreshProducts()
+      setOk('Restored ✅')
+      closeDrawer()
     } catch (e: any) {
       setErr(e?.message ?? 'Failed.')
     } finally {
@@ -502,9 +594,6 @@ export default function AdminProductsPage() {
                   </option>
                 ))}
               </select>
-              <p className="text-[11px] text-slate-400">
-                Manage categories in <span className="text-fuchsia-300">Admin → Categories</span>
-              </p>
             </label>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -574,9 +663,6 @@ export default function AdminProductsPage() {
                   style={{ background: isValidHex(accentHex) ? accentHex : '#D946EF' }}
                 />
               </div>
-              <p className="text-[11px] text-slate-400">
-                This controls the smoke/glow vibe per flavour.
-              </p>
             </label>
 
             <label className="grid gap-2">
@@ -589,16 +675,59 @@ export default function AdminProductsPage() {
               />
             </label>
 
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+              <p className="text-xs font-semibold text-slate-200">Make the image clean (free)</p>
+              <p className="mt-1 text-[11px] text-slate-400">
+                Remove the background first → download PNG → upload here.
+              </p>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                <a
+                  href={BG_REMOVE_PRIMARY}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-full bg-fuchsia-500 px-4 py-2 text-xs font-bold shadow-[0_0_22px_rgba(217,70,239,0.85)]"
+                >
+                  Remove background (Adobe – Free)
+                </a>
+                <a
+                  href={BG_REMOVE_BACKUP}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-100 hover:border-slate-500"
+                >
+                  Backup remover (Pixlr)
+                </a>
+              </div>
+
+              <div className="mt-3 text-[11px] text-slate-400">
+                <span className="text-slate-200 font-semibold">Steps:</span> Upload → Remove BG → Download PNG → Upload here.
+              </div>
+            </div>
+
             <label className="grid gap-2">
               <span className="text-xs text-slate-300">Image</span>
               <input
                 type="file"
                 accept="image/*"
                 className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
-                onChange={(e) => setImage(e.target.files?.[0] ?? null)}
+                onChange={(e) => setCreateImage(e.target.files?.[0] ?? null)}
               />
+
+              {imagePreview ? (
+                <div className="mt-3 rounded-2xl border border-slate-800 bg-black/40 p-3">
+                  <p className="text-[11px] text-slate-400 mb-2">Preview</p>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full max-h-[260px] object-contain rounded-xl bg-black/40"
+                  />
+                </div>
+              ) : null}
+
               <p className="text-[11px] text-slate-400">
-                Uploads to Supabase Storage → saves public URL.
+                Uploads to Supabase Storage → auto converts & optimizes to WebP behind the scenes.
               </p>
             </label>
 
@@ -631,7 +760,6 @@ export default function AdminProductsPage() {
             </div>
           </div>
 
-          {/* Filters */}
           <div className="mt-4 grid gap-3">
             <input
               value={q}
@@ -707,18 +835,18 @@ export default function AdminProductsPage() {
                       {removed ? <span className="text-xs text-red-300">(removed)</span> : null}
                     </p>
                     <p className="text-xs text-slate-400">
-                      {(p.category ?? '—')} • {money(p.price)} • {p.in_stock === false ? 'Out' : 'In stock'}
+                      {(p.category ?? '—')} • {money(p.price)} •{' '}
+                      {p.in_stock === false ? 'Out' : 'In stock'}
                       {p.bulk_price && p.bulk_min ? (
-                        <span className="text-slate-500"> • Bulk {money(p.bulk_price)} (min {p.bulk_min})</span>
+                        <span className="text-slate-500">
+                          {' '}
+                          • Bulk {money(p.bulk_price)} (min {p.bulk_min})
+                        </span>
                       ) : null}
                     </p>
                   </div>
 
-                  <div
-                    className="h-10 w-10 rounded-xl border border-slate-800"
-                    style={{ background: accent }}
-                    title={accent}
-                  />
+                  <div className="text-xs font-bold text-fuchsia-300">EDIT</div>
                 </button>
               )
             })}
@@ -729,10 +857,7 @@ export default function AdminProductsPage() {
       {/* Drawer */}
       {drawerOpen && selected ? (
         <div className="fixed inset-0 z-[80]">
-          <div
-            className="absolute inset-0 bg-black/70"
-            onClick={closeDrawer}
-          />
+          <div className="absolute inset-0 bg-black/70" onClick={closeDrawer} />
 
           <div className="absolute right-0 top-0 h-full w-full max-w-xl overflow-y-auto border-l border-slate-800 bg-slate-950/85 backdrop-blur-xl">
             <div className="p-6">
@@ -747,6 +872,12 @@ export default function AdminProductsPage() {
                   <p className="mt-1 text-xs text-slate-400">
                     ID: <span className="font-mono">{selected.id}</span>
                   </p>
+
+                  {selected.is_deleted ? (
+                    <p className="mt-2 text-xs text-red-300 font-semibold">
+                      This product is currently removed from the shop.
+                    </p>
+                  ) : null}
                 </div>
 
                 <button
@@ -796,7 +927,7 @@ export default function AdminProductsPage() {
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="grid gap-2">
-                    <span className="text-xs text-slate-300">Price (ZAR)</span>
+                    <span className="text-xs text-slate-300">Price</span>
                     <input
                       className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
                       value={ePrice}
@@ -863,6 +994,16 @@ export default function AdminProductsPage() {
                 </label>
 
                 <label className="grid gap-2">
+                  <span className="text-xs text-slate-300">Description</span>
+                  <textarea
+                    className="min-h-[110px] rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+                    value={eDescription}
+                    onChange={(e) => setEDescription(e.target.value)}
+                    placeholder="Optional description"
+                  />
+                </label>
+
+                <label className="grid gap-2">
                   <span className="text-xs text-slate-300">Image URL</span>
                   <input
                     className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
@@ -870,95 +1011,98 @@ export default function AdminProductsPage() {
                     onChange={(e) => setEImageUrl(e.target.value)}
                     placeholder="https://..."
                   />
-                  {eImageUrl ? (
-                    <div className="mt-2 overflow-hidden rounded-2xl border border-slate-800 bg-black/40 p-3">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={eImageUrl}
-                        alt="Preview"
-                        className="h-44 w-full object-cover rounded-xl"
-                      />
-                    </div>
-                  ) : null}
-                  <p className="text-[11px] text-slate-400">
-                    You can paste a URL, or we can later add "Replace image" upload inside this drawer.
+                </label>
+
+                <div className="mt-2 rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                  <p className="text-sm font-bold text-white">Replace product image (auto)</p>
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    Remove background first (free), then upload — system optimizes + uploads + replaces automatically.
                   </p>
-                </label>
 
-                <label className="grid gap-2">
-                  <span className="text-xs text-slate-300">Description</span>
-                  <textarea
-                    className="min-h-[120px] rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
-                    value={eDescription}
-                    onChange={(e) => setEDescription(e.target.value)}
-                  />
-                </label>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <a
+                      href={BG_REMOVE_PRIMARY}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-full bg-fuchsia-500 px-4 py-2 text-xs font-bold shadow-[0_0_22px_rgba(217,70,239,0.85)]"
+                    >
+                      Remove background (Adobe – Free)
+                    </a>
+                    <a
+                      href={BG_REMOVE_BACKUP}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-100 hover:border-slate-500"
+                    >
+                      Backup remover (Pixlr)
+                    </a>
+                  </div>
 
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <button
-                    onClick={onSaveEdit}
-                    disabled={busy}
-                    className="rounded-full bg-fuchsia-500 px-5 py-3 text-sm font-bold shadow-[0_0_22px_rgba(217,70,239,0.85)] disabled:opacity-60"
-                  >
-                    {busy ? 'Saving…' : 'Save changes'}
-                  </button>
+                  <div className="mt-4 grid gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+                      onChange={(e) => setEditImage(e.target.files?.[0] ?? null)}
+                    />
+
+                    {eImagePreview ? (
+                      <div className="rounded-2xl border border-slate-800 bg-black/40 p-3">
+                        <p className="text-[11px] text-slate-400 mb-2">New image preview</p>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={eImagePreview}
+                          alt="New image preview"
+                          className="w-full max-h-[260px] object-contain rounded-xl bg-black/40"
+                        />
+                      </div>
+                    ) : null}
+
+                    <button
+                      onClick={uploadEditImage}
+                      disabled={busy || !eImageFile}
+                      className="rounded-full bg-fuchsia-500 px-5 py-3 text-sm font-bold shadow-[0_0_22px_rgba(217,70,239,0.85)] disabled:opacity-60"
+                    >
+                      {busy ? 'Uploading…' : 'Upload & replace image'}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  onClick={onSaveEdit}
+                  disabled={busy}
+                  className="rounded-full bg-fuchsia-500 px-5 py-3 text-sm font-bold shadow-[0_0_22px_rgba(217,70,239,0.85)] disabled:opacity-60"
+                >
+                  {busy ? 'Saving…' : 'Save changes'}
+                </button>
+
+                <div className="mt-2 grid gap-3">
+                  {selected.is_deleted ? (
+                    <button
+                      onClick={() => onRestore(selected)}
+                      disabled={busy}
+                      className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm font-bold text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-60"
+                    >
+                      {busy ? 'Working…' : 'Restore product'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => onRemove(selected)}
+                      disabled={busy}
+                      className="rounded-full border border-red-500/40 bg-red-500/10 px-5 py-3 text-sm font-bold text-red-200 hover:bg-red-500/20 disabled:opacity-60"
+                    >
+                      {busy ? 'Working…' : 'Remove product'}
+                    </button>
+                  )}
 
                   <button
                     onClick={() => onToggleStock(selected)}
                     disabled={busy}
-                    className="rounded-full border border-slate-700 px-5 py-3 text-sm hover:border-fuchsia-500/40 disabled:opacity-60"
+                    className="rounded-full border border-slate-700 px-5 py-3 text-sm font-semibold text-slate-200 hover:border-slate-500 disabled:opacity-60"
                   >
-                    {selected.in_stock === false ? 'Set in stock' : 'Set out of stock'}
+                    Toggle stock (quick)
                   </button>
-
-                  {!selected.is_deleted ? (
-                    <button
-                      onClick={() => onRemove(selected)}
-                      disabled={busy}
-                      className="rounded-full border border-red-500/40 bg-red-500/10 px-5 py-3 text-sm text-red-200 hover:bg-red-500/20 disabled:opacity-60"
-                    >
-                      Remove
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => onRestore(selected)}
-                      disabled={busy}
-                      className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-60"
-                    >
-                      Restore
-                    </button>
-                  )}
                 </div>
-
-                <div className="mt-6 rounded-3xl border border-slate-800 bg-black/30 p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                    Visual preview
-                  </p>
-                  <div
-                    className="mt-3 rounded-3xl border border-slate-800 bg-slate-950/50 p-5"
-                    style={{
-                      boxShadow: `0 0 50px ${isValidHex(eAccentHex) ? eAccentHex : '#D946EF'}22`,
-                    }}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div
-                        className="h-14 w-14 rounded-2xl border border-slate-800"
-                        style={{ background: isValidHex(eAccentHex) ? eAccentHex : '#D946EF' }}
-                      />
-                      <div className="min-w-0">
-                        <p className="truncate font-bold text-white">{eName || 'Product name'}</p>
-                        <p className="text-xs text-slate-400">
-                          {eCategory || 'Category'} • {money(ePrice)}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="mt-3 text-sm text-slate-300">
-                      This colour will drive the smoke/glow on the shop cards and product intro.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="h-8" />
               </div>
             </div>
           </div>

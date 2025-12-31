@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import type { Product } from '@/lib/types'
@@ -143,10 +144,8 @@ export default function ProductCard({ product }: { product: Product }) {
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.45, ease: 'easeOut' }}
           >
-            <motion.img
-              src={imageUrl}
-              alt={product.name}
-              className="h-[240px] w-auto select-none object-contain drop-shadow-[0_18px_40px_rgba(0,0,0,0.55)]"
+            {/* Next/Image optimized device image */}
+            <motion.div
               animate={{
                 y: [0, -5, 0],
                 rotate: [0, 0.45, 0],
@@ -157,7 +156,17 @@ export default function ProductCard({ product }: { product: Product }) {
                 repeatType: 'mirror',
                 ease: 'easeInOut',
               }}
-            />
+              className="relative h-[240px] w-full"
+            >
+              <Image
+                src={imageUrl}
+                alt={product.name}
+                fill
+                sizes="(max-width: 768px) 90vw, 360px"
+                className="select-none object-contain drop-shadow-[0_18px_40px_rgba(0,0,0,0.55)]"
+                loading="lazy"
+              />
+            </motion.div>
           </motion.div>
 
           {/* If image is white background, soften edges */}
@@ -165,9 +174,7 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/* Text */}
-        <h3 className="mt-5 text-sm font-bold leading-snug text-white">
-          {product.name}
-        </h3>
+        <h3 className="mt-5 text-sm font-bold leading-snug text-white">{product.name}</h3>
 
         <p className="mt-2 text-xs leading-relaxed text-slate-300">
           {shortDesc || 'Smooth pull. Strong flavour. Premium disposable.'}
@@ -175,9 +182,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
         {/* Bottom row */}
         <div className="mt-5 flex items-center justify-between gap-3">
-          <div className="text-sm font-extrabold text-white">
-            {formatMoney(Number(product.price))}
-          </div>
+          <div className="text-sm font-extrabold text-white">{formatMoney(Number(product.price))}</div>
 
           <button
             onClick={handleAdd}
@@ -196,9 +201,7 @@ export default function ProductCard({ product }: { product: Product }) {
         {p.bulk_min && p.bulk_price ? (
           <div className="mt-3 text-[11px] text-slate-400">
             Bulk available:{' '}
-            <span className="font-semibold text-white">
-              {formatMoney(Number(p.bulk_price))}
-            </span>{' '}
+            <span className="font-semibold text-white">{formatMoney(Number(p.bulk_price))}</span>{' '}
             <span className="text-slate-500">min {p.bulk_min}</span>
           </div>
         ) : null}
