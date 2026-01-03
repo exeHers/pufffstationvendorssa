@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
-import type { Product, Category } from '@/lib/types'
+import type { Product } from '@/lib/types'
+
+type Category = {
+  id: string
+  name: string
+}
 
 type Profile = { id: string; role: string | null }
 
