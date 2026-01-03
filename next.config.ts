@@ -1,23 +1,17 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
+
+const SUPABASE_HOST = 'jtpifraxtevpxqyryacg.supabase.co'
 
 const nextConfig: NextConfig = {
   images: {
-    qualities: [70, 85, 100],
     remotePatterns: [
       {
-        protocol: "https",
-        hostname: "**.supabase.co",
-      },
-      {
-        protocol: "https",
-        hostname: "supabase.co",
-      },
-      {
-        protocol: "https",
-        hostname: "i.provape.com",
+        protocol: 'https',
+        hostname: SUPABASE_HOST,
+        pathname: '/storage/v1/object/public/**',
       },
     ],
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig

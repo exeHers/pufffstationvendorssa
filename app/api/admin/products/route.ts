@@ -63,59 +63,76 @@ function sanitizeFilename(name: string) {
     .slice(0, 80)
 }
 
-/**
- * IMAGE OPTIMIZATION (PREMIUM)
- * - Forces WEBP
- * - Forces consistent card aspect (square)
- * - Uses "cover" crop so it fills the product card perfectly
- * - "entropy" strategy tends to focus on the subject / interesting region
- * - Adds subtle sharpen to make the product crisp
- * - Keeps size small but quality still high
- */
-async function optimizeToWebp(imageFile: File) {
-  const input = Buffer.from(await imageFile.arrayBuffer())
-
-  // Max output size (card-ready)
-  const OUT_W = 1200
-  const OUT_H = 1200
-
-  const pipeline = sharp(input, { failOnError: false })
-    .rotate() // respects EXIF orientation
-    .resize({
-      width: OUT_W,
-      height: OUT_H,
-      fit: 'cover', // ✅ your choice: cover
-      position: 'entropy', // smart crop focus
-      withoutEnlargement: true,
-    })
-    .sharpen({
-      sigma: 0.6,
-      m1: 0.4,
-      m2: 0.3,
-      x1: 1.0,
-      y2: 2.0,
-      y3: 20,
-    })
-    .webp({
-      quality: 82,
-      effort: 6,
-      smartSubsample: true,
-    })
-
-  const output = await pipeline.toBuffer()
-
-  // Extra safety: don’t let weird files explode
-  if (!output || output.length < 2000) {
-    throw new Error('Image optimization failed (output too small).')
-  }
-
-  return output
+function isValidHex(hex: string) {
+  const h = (hex || '').trim()
+  return /^#[0-9a-fA-F]{6}$/.test(h)
 }
 
 /**
- * POST = create product (+ optional image upload)
- * PATCH = admin actions: set_stock | remove | restore
+ * ✅ This is the FULL "auto-fix any vape image" pipeline:
+ * - Loads PNG/JPG/WebP
+ * - Attempts to remove near-white backgrounds (for JPGs that aren't transparent)
+ * - Trims excess transparent edges
+ * - Adds padding
+ * - Resizes to a consistent 900x1200 canvas
+ * - Outputs WEBP
  */
+async function optimizeToWebpPerfect(imageFile: File) {
+  const input = Buffer.from(await imageFile.arrayBuffer())
+
+  // decode into RGBA so we can clean it reliably
+  let img = sharp(input, { failOnError: false }).rotate().ensureAlpha()
+
+  // ✅ If it's a JPG with white bg, we "fake remove" near-white background
+  // This won’t be as perfect as remove.bg but it kills the worst cases.
+  // Keeps it FREE, and makes the site look consistent.
+  const { data, info } = await img.raw().toBuffer({ resolveWithObject: true })
+
+  const out = Buffer.from(data) // mutable
+  const width = info.width
+  const height = info.height
+
+  // remove near-white pixels by turning them transparent
+  // threshold = how strict
+  // lower = removes more, higher = removes less
+  const threshold = 245
+
+  for (let i = 0; i < out.length; i += 4) {
+    const r = out[i]
+    const g = out[i + 1]
+    const b = out[i + 2]
+
+    // if the pixel is near-white, nuke alpha
+    if (r >= threshold && g >= threshold && b >= threshold) {
+      out[i + 3] = 0
+    }
+  }
+
+  img = sharp(out, { raw: { width, height, channels: 4 } })
+
+  // ✅ trim removes transparent padding
+  // BUT trim can sometimes cut too much, so we add safe padding back
+  img = img
+    .trim() // removes transparent edges
+    .extend({
+      top: 80,
+      bottom: 140,
+      left: 80,
+      right: 80,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
+
+  // ✅ Force consistent canvas size so every product looks the same scale
+  // contain = keeps aspect ratio, never stretches
+  img = img.resize(900, 1200, {
+    fit: 'contain',
+    background: { r: 0, g: 0, b: 0, alpha: 0 },
+  })
+
+  // ✅ Export as webp
+  return await img.webp({ quality: 85, effort: 6 }).toBuffer()
+}
+
 export async function POST(req: NextRequest) {
   try {
     const gate = await requireAdmin(req)
@@ -123,6 +140,7 @@ export async function POST(req: NextRequest) {
 
     const supabase = makeAdminClient()
     const bucket = getBucket()
+
     const fd = await req.formData()
 
     const name = String(fd.get('name') ?? '').trim()
@@ -130,7 +148,16 @@ export async function POST(req: NextRequest) {
     const price = Number(fd.get('price') ?? '0')
     const description = String(fd.get('description') ?? '').trim()
     const in_stock = String(fd.get('in_stock') ?? 'true') === 'true'
-    const accent_hex = String(fd.get('accent_hex') ?? '').trim() || null
+
+    const accent_hex_raw = String(fd.get('accent_hex') ?? '').trim()
+    const smoke_hex_scroll_raw = String(fd.get('smoke_hex_scroll') ?? '').trim()
+    const smoke_hex_preview_raw = String(fd.get('smoke_hex_preview') ?? '').trim()
+
+    const accent_hex = accent_hex_raw && isValidHex(accent_hex_raw) ? accent_hex_raw : null
+    const smoke_hex_scroll =
+      smoke_hex_scroll_raw && isValidHex(smoke_hex_scroll_raw) ? smoke_hex_scroll_raw : null
+    const smoke_hex_preview =
+      smoke_hex_preview_raw && isValidHex(smoke_hex_preview_raw) ? smoke_hex_preview_raw : null
 
     const bulk_price_raw = fd.get('bulk_price')
     const bulk_min_raw = fd.get('bulk_min')
@@ -142,7 +169,10 @@ export async function POST(req: NextRequest) {
     const image = fd.get('image') as File | null
 
     if (!name || !category || !Number.isFinite(price)) {
-      return NextResponse.json({ error: 'Missing or invalid fields (name, category, price).' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Missing or invalid fields (name, category, price).' },
+        { status: 400 }
+      )
     }
 
     if (bulk_price != null && !Number.isFinite(bulk_price)) {
@@ -155,9 +185,9 @@ export async function POST(req: NextRequest) {
 
     let image_url: string | null = null
 
-    // ✅ If an image is uploaded, optimize it to WEBP then upload
+    // ✅ Auto-fix image
     if (image && typeof image.arrayBuffer === 'function') {
-      const optimized = await optimizeToWebp(image)
+      const optimized = await optimizeToWebpPerfect(image)
 
       const safeName = sanitizeFilename(name || 'product')
       const path = `products/${safeName}-${Date.now()}-${Math.random().toString(16).slice(2)}.webp`
@@ -165,7 +195,7 @@ export async function POST(req: NextRequest) {
       const up = await supabase.storage.from(bucket).upload(path, optimized, {
         contentType: 'image/webp',
         upsert: false,
-        cacheControl: '31536000', // 1 year
+        cacheControl: '31536000',
       })
 
       if (up.error) {
@@ -188,6 +218,8 @@ export async function POST(req: NextRequest) {
         image_url,
         in_stock,
         accent_hex,
+        smoke_hex_scroll,
+        smoke_hex_preview,
         is_deleted: false,
         deleted_at: null,
       })
@@ -230,7 +262,6 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ product: up.data })
     }
 
-    // ✅ Soft delete (use is_deleted + deleted_at)
     if (action === 'remove') {
       const up = await supabase
         .from('products')

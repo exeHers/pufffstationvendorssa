@@ -18,12 +18,15 @@ function money(v: any) {
 }
 
 function isValidHex(hex: string) {
-  const h = hex.trim()
+  const h = (hex || '').trim()
   return /^#[0-9a-fA-F]{6}$/.test(h)
 }
 
-const BG_REMOVE_PRIMARY = 'https://express.adobe.com/tools/remove-background'
-const BG_REMOVE_BACKUP = 'https://pixlr.com/remove-background/'
+function clampCategoryLabel(input: string) {
+  const s = (input || '').trim()
+  if (!s) return 'Other'
+  return s.length > 28 ? `${s.slice(0, 28)}…` : s
+}
 
 export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true)
@@ -51,9 +54,15 @@ export default function AdminProductsPage() {
   const [bulkMin, setBulkMin] = useState('')
   const [description, setDescription] = useState('')
   const [inStock, setInStock] = useState(true)
+
+  // brand accent (UI glow)
   const [accentHex, setAccentHex] = useState('#D946EF')
+
+  // ✅ NEW: smoke colours
+  const [smokeHexScroll, setSmokeHexScroll] = useState('#00FFFF')
+  const [smokeHexPreview, setSmokeHexPreview] = useState('#D946EF')
+
   const [image, setImage] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string>('')
 
   // drawer state
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -67,12 +76,14 @@ export default function AdminProductsPage() {
   const [eBulkMin, setEBulkMin] = useState('')
   const [eDescription, setEDescription] = useState('')
   const [eInStock, setEInStock] = useState(true)
-  const [eAccentHex, setEAccentHex] = useState('#D946EF')
-  const [eImageUrl, setEImageUrl] = useState<string>('')
 
-  // drawer image replace
-  const [eImageFile, setEImageFile] = useState<File | null>(null)
-  const [eImagePreview, setEImagePreview] = useState<string>('')
+  const [eAccentHex, setEAccentHex] = useState('#D946EF')
+
+  // ✅ NEW: edit smoke
+  const [eSmokeHexScroll, setESmokeHexScroll] = useState('#00FFFF')
+  const [eSmokeHexPreview, setESmokeHexPreview] = useState('#D946EF')
+
+  const [eImageUrl, setEImageUrl] = useState<string>('')
 
   // ---- Auth + role check ----
   useEffect(() => {
@@ -119,15 +130,6 @@ export default function AdminProductsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // cleanup object urls
-  useEffect(() => {
-    return () => {
-      if (imagePreview) URL.revokeObjectURL(imagePreview)
-      if (eImagePreview) URL.revokeObjectURL(eImagePreview)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   async function refreshProducts() {
     const { data, error } = await supabase
       .from('products')
@@ -147,32 +149,37 @@ export default function AdminProductsPage() {
       .select('*')
       .order('name', { ascending: true })
 
-    if (error) {
-      return
-    }
+    if (error) return
     setCategories((data ?? []) as any)
   }
 
   function openDrawer(p: Product) {
     setSelected(p)
     setDrawerOpen(true)
-
     setOk(null)
     setErr(null)
 
-    setEName(p.name ?? '')
-    setECategory(p.category ?? '')
-    setEPrice(p.price != null ? String(p.price) : '')
-    setEBulkPrice(p.bulk_price != null ? String(p.bulk_price) : '')
-    setEBulkMin(p.bulk_min != null ? String(p.bulk_min) : '')
-    setEDescription(p.description ?? '')
-    setEInStock(p.in_stock !== false)
-    setEAccentHex(p.accent_hex && isValidHex(p.accent_hex) ? p.accent_hex : '#D946EF')
-    setEImageUrl(p.image_url ?? '')
+    const pp: any = p
 
-    setEImageFile(null)
-    if (eImagePreview) URL.revokeObjectURL(eImagePreview)
-    setEImagePreview('')
+    setEName(p.name ?? '')
+    setECategory(pp.category ?? '')
+    setEPrice(p.price != null ? String(p.price) : '')
+    setEBulkPrice(pp.bulk_price != null ? String(pp.bulk_price) : '')
+    setEBulkMin(pp.bulk_min != null ? String(pp.bulk_min) : '')
+    setEDescription(pp.description ?? '')
+    setEInStock(pp.in_stock !== false)
+
+    setEAccentHex(pp.accent_hex && isValidHex(pp.accent_hex) ? pp.accent_hex : '#D946EF')
+
+    // ✅ smoke defaults
+    setESmokeHexScroll(
+      pp.smoke_hex_scroll && isValidHex(pp.smoke_hex_scroll) ? pp.smoke_hex_scroll : '#00FFFF'
+    )
+    setESmokeHexPreview(
+      pp.smoke_hex_preview && isValidHex(pp.smoke_hex_preview) ? pp.smoke_hex_preview : '#D946EF'
+    )
+
+    setEImageUrl(pp.image_url ?? '')
   }
 
   function closeDrawer() {
@@ -180,14 +187,10 @@ export default function AdminProductsPage() {
     setSelected(null)
     setOk(null)
     setErr(null)
-
-    setEImageFile(null)
-    if (eImagePreview) URL.revokeObjectURL(eImagePreview)
-    setEImagePreview('')
   }
 
   const filtered = useMemo(() => {
-    let list = [...products]
+    let list = [...products] as any[]
 
     if (!showRemoved) list = list.filter((p) => !p.is_deleted)
 
@@ -212,70 +215,8 @@ export default function AdminProductsPage() {
       })
     }
 
-    return list
+    return list as Product[]
   }, [products, showRemoved, filterCategory, filterStock, q])
-
-  // ---- Image helpers ----
-  function setCreateImage(file: File | null) {
-    setImage(file)
-    if (imagePreview) URL.revokeObjectURL(imagePreview)
-    setImagePreview(file ? URL.createObjectURL(file) : '')
-  }
-
-  function setEditImage(file: File | null) {
-    setEImageFile(file)
-    if (eImagePreview) URL.revokeObjectURL(eImagePreview)
-    setEImagePreview(file ? URL.createObjectURL(file) : '')
-  }
-
-  async function uploadEditImage() {
-    setErr(null)
-    setOk(null)
-
-    if (!selected) return
-    if (!eImageFile) {
-      setErr('Choose an image first.')
-      return
-    }
-
-    setBusy(true)
-
-    try {
-      const { data: sess } = await supabase.auth.getSession()
-      const token = sess.session?.access_token
-      if (!token) throw new Error('No session token. Please log in again.')
-
-      const fd = new FormData()
-      fd.append('id', selected.id)
-      fd.append('name', eName.trim() || selected.name || 'product')
-      fd.append('image', eImageFile)
-
-      const res = await fetch('/api/admin/products/image', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: fd,
-      })
-
-      const json = await res.json()
-      if (!res.ok) throw new Error(json?.error ?? 'Failed to replace image.')
-
-      setOk('Image updated ✅')
-
-      setEImageFile(null)
-      if (eImagePreview) URL.revokeObjectURL(eImagePreview)
-      setEImagePreview('')
-
-      await refreshProducts()
-
-      // re-open drawer with updated product
-      const updated = (products ?? []).find((p) => p.id === selected.id)
-      if (updated) openDrawer(updated)
-    } catch (e: any) {
-      setErr(e?.message ?? 'Failed to replace image.')
-    } finally {
-      setBusy(false)
-    }
-  }
 
   // ---- Create ----
   async function onCreate() {
@@ -315,6 +256,16 @@ export default function AdminProductsPage() {
       return
     }
 
+    if (smokeHexScroll.trim() && !isValidHex(smokeHexScroll)) {
+      setErr('Scroll smoke hex must be like #00FFFF')
+      return
+    }
+
+    if (smokeHexPreview.trim() && !isValidHex(smokeHexPreview)) {
+      setErr('Preview smoke hex must be like #D946EF')
+      return
+    }
+
     setBusy(true)
 
     try {
@@ -329,6 +280,8 @@ export default function AdminProductsPage() {
       fd.append('description', description.trim())
       fd.append('in_stock', inStock ? 'true' : 'false')
       fd.append('accent_hex', accentHex.trim())
+      fd.append('smoke_hex_scroll', smokeHexScroll.trim())
+      fd.append('smoke_hex_preview', smokeHexPreview.trim())
       if (bp != null) fd.append('bulk_price', String(bp))
       if (bm != null) fd.append('bulk_min', String(bm))
       if (image) fd.append('image', image)
@@ -343,6 +296,7 @@ export default function AdminProductsPage() {
       if (!res.ok) throw new Error(json?.error ?? 'Failed to create product.')
 
       setOk('Product created ✅')
+
       setName('')
       setCategory('')
       setPrice('')
@@ -350,8 +304,12 @@ export default function AdminProductsPage() {
       setBulkMin('')
       setDescription('')
       setInStock(true)
+
       setAccentHex('#D946EF')
-      setCreateImage(null)
+      setSmokeHexScroll('#00FFFF')
+      setSmokeHexPreview('#D946EF')
+
+      setImage(null)
 
       await refreshProducts()
     } catch (e: any) {
@@ -396,6 +354,16 @@ export default function AdminProductsPage() {
       return
     }
 
+    if (eSmokeHexScroll.trim() && !isValidHex(eSmokeHexScroll)) {
+      setErr('Scroll smoke hex must be like #00FFFF')
+      return
+    }
+
+    if (eSmokeHexPreview.trim() && !isValidHex(eSmokeHexPreview)) {
+      setErr('Preview smoke hex must be like #D946EF')
+      return
+    }
+
     setBusy(true)
 
     try {
@@ -410,6 +378,8 @@ export default function AdminProductsPage() {
           description: eDescription.trim(),
           in_stock: eInStock,
           accent_hex: eAccentHex.trim(),
+          smoke_hex_scroll: eSmokeHexScroll.trim(),
+          smoke_hex_preview: eSmokeHexPreview.trim(),
           image_url: eImageUrl.trim() || null,
           updated_at: new Date().toISOString(),
         })
@@ -441,7 +411,6 @@ export default function AdminProductsPage() {
         .eq('id', p.id)
 
       if (error) throw new Error(error.message)
-
       await refreshProducts()
     } catch (e: any) {
       setErr(e?.message ?? 'Failed.')
@@ -452,7 +421,7 @@ export default function AdminProductsPage() {
 
   async function onRemove(p: Product) {
     const confirmed = window.confirm(
-      `Remove "${p.name}" from the shop?\n\nThis is a soft delete — you can restore it later.`
+      `Remove "${p.name}" from the shop?\n\nSoft delete — you can restore later.`
     )
     if (!confirmed) return
 
@@ -512,7 +481,7 @@ export default function AdminProductsPage() {
   if (loading) {
     return (
       <main className="mx-auto max-w-6xl px-4 py-10 text-white">
-        <div className="rounded-3xl border border-slate-800 bg-black/40 p-6 text-sm text-slate-200">
+        <div className="rounded-3xl border border-slate-800 bg-black/60 p-6 text-sm text-slate-200">
           Loading…
         </div>
       </main>
@@ -522,7 +491,7 @@ export default function AdminProductsPage() {
   if (!isAdmin) {
     return (
       <main className="mx-auto max-w-5xl px-4 py-10 text-white">
-        <div className="rounded-3xl border border-slate-800 bg-black/50 p-6">
+        <div className="rounded-3xl border border-slate-800 bg-black/60 p-6">
           <h1 className="text-2xl font-bold">Admin – Products</h1>
           <p className="mt-2 text-sm text-slate-300">{err || 'Access denied.'}</p>
           <p className="mt-2 text-xs text-slate-400">Signed in as: {email || '—'}</p>
@@ -537,43 +506,98 @@ export default function AdminProductsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 text-white">
-      <div className="flex items-center justify-between gap-3">
+    <main className="mx-auto max-w-6xl px-3 sm:px-4 pb-28 pt-7 sm:pt-10 text-white">
+      {/* Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-fuchsia-400">
             Admin
           </p>
           <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Products</h1>
           <p className="mt-1 text-sm text-slate-300">
-            Create, edit, colour-code flavours, and manage stock — no code edits needed.
+            Create, edit, smoke-colour, and manage stock — zero code.
           </p>
         </div>
-        <Link href="/admin" className="rounded-full border border-slate-700 px-4 py-2 text-sm">
-          Back
-        </Link>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              setErr(null)
+              setOk(null)
+              refreshProducts()
+              refreshCategories()
+            }}
+            className="rounded-full border border-slate-700 bg-black/40 px-4 py-2 text-sm hover:border-slate-500"
+          >
+            Refresh
+          </button>
+
+          <Link href="/admin" className="rounded-full border border-slate-700 bg-black/40 px-4 py-2 text-sm hover:border-slate-500">
+            Back
+          </Link>
+        </div>
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        {/* CREATE */}
-        <div className="rounded-3xl border border-slate-800 bg-black/40 p-6">
-          <h2 className="text-lg font-bold">Create product</h2>
+      {/* Helpers */}
+      <div className="mt-5 grid gap-3">
+        <div className="rounded-3xl border border-slate-800 bg-black/55 p-4 sm:p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+            Quick tools (free)
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a
+              href="https://www.remove.bg/"
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border border-slate-700 bg-black/30 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-slate-500"
+            >
+              Remove.bg (auto cutout)
+            </a>
+            <a
+              href="https://www.photopea.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border border-slate-700 bg-black/30 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-slate-500"
+            >
+              Photopea (manual cutout)
+            </a>
+            <a
+              href="https://www.canva.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border border-slate-700 bg-black/30 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-slate-500"
+            >
+              Canva (export transparent PNG)
+            </a>
+          </div>
+          <p className="mt-3 text-[11px] text-slate-400">
+            Tip: Use transparent PNGs so the vape pops on black + smoke. White backgrounds will always look kak.
+          </p>
+        </div>
 
-          {err && (
-            <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-              {err}
-            </div>
-          )}
-          {ok && (
-            <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
-              {ok}
-            </div>
-          )}
+        {err && (
+          <div className="rounded-3xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            {err}
+          </div>
+        )}
+        {ok && (
+          <div className="rounded-3xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+            {ok}
+          </div>
+        )}
+      </div>
+
+      {/* Layout */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        {/* CREATE */}
+        <div className="rounded-3xl border border-slate-800 bg-black/55 p-5 sm:p-6">
+          <h2 className="text-lg font-bold">Create product</h2>
 
           <div className="mt-5 grid gap-4">
             <label className="grid gap-2">
               <span className="text-xs text-slate-300">Name</span>
               <input
-                className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+                className="rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Product name"
@@ -583,7 +607,7 @@ export default function AdminProductsPage() {
             <label className="grid gap-2">
               <span className="text-xs text-slate-300">Category</span>
               <select
-                className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+                className="rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
               >
@@ -600,7 +624,7 @@ export default function AdminProductsPage() {
               <label className="grid gap-2">
                 <span className="text-xs text-slate-300">Price (ZAR)</span>
                 <input
-                  className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+                  className="rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="e.g. 280"
@@ -609,7 +633,7 @@ export default function AdminProductsPage() {
 
               <label className="grid gap-2">
                 <span className="text-xs text-slate-300">In stock</span>
-                <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm">
+                <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm">
                   <input
                     type="checkbox"
                     checked={inStock}
@@ -625,7 +649,7 @@ export default function AdminProductsPage() {
               <label className="grid gap-2">
                 <span className="text-xs text-slate-300">Bulk price (optional)</span>
                 <input
-                  className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+                  className="rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm"
                   value={bulkPrice}
                   onChange={(e) => setBulkPrice(e.target.value)}
                   placeholder="e.g. 250"
@@ -635,7 +659,7 @@ export default function AdminProductsPage() {
               <label className="grid gap-2">
                 <span className="text-xs text-slate-300">Bulk minimum (optional)</span>
                 <input
-                  className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+                  className="rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm"
                   value={bulkMin}
                   onChange={(e) => setBulkMin(e.target.value)}
                   placeholder="e.g. 10"
@@ -643,9 +667,10 @@ export default function AdminProductsPage() {
               </label>
             </div>
 
+            {/* Accent */}
             <label className="grid gap-2">
-              <span className="text-xs text-slate-300">Accent colour</span>
-              <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3">
+              <span className="text-xs text-slate-300">UI Accent colour</span>
+              <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3">
                 <input
                   type="color"
                   value={isValidHex(accentHex) ? accentHex : '#D946EF'}
@@ -665,69 +690,72 @@ export default function AdminProductsPage() {
               </div>
             </label>
 
+            {/* ✅ Smoke scroll */}
+            <label className="grid gap-2">
+              <span className="text-xs text-slate-300">Smoke colour (scroll)</span>
+              <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3">
+                <input
+                  type="color"
+                  value={isValidHex(smokeHexScroll) ? smokeHexScroll : '#00FFFF'}
+                  onChange={(e) => setSmokeHexScroll(e.target.value)}
+                  className="h-10 w-14 cursor-pointer rounded-xl border border-slate-700 bg-transparent"
+                />
+                <input
+                  value={smokeHexScroll}
+                  onChange={(e) => setSmokeHexScroll(e.target.value)}
+                  className="w-full bg-transparent text-sm text-white outline-none"
+                  placeholder="#00FFFF"
+                />
+                <div
+                  className="h-10 w-10 rounded-xl border border-slate-700"
+                  style={{ background: isValidHex(smokeHexScroll) ? smokeHexScroll : '#00FFFF' }}
+                />
+              </div>
+            </label>
+
+            {/* ✅ Smoke preview */}
+            <label className="grid gap-2">
+              <span className="text-xs text-slate-300">Smoke colour (preview)</span>
+              <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3">
+                <input
+                  type="color"
+                  value={isValidHex(smokeHexPreview) ? smokeHexPreview : '#D946EF'}
+                  onChange={(e) => setSmokeHexPreview(e.target.value)}
+                  className="h-10 w-14 cursor-pointer rounded-xl border border-slate-700 bg-transparent"
+                />
+                <input
+                  value={smokeHexPreview}
+                  onChange={(e) => setSmokeHexPreview(e.target.value)}
+                  className="w-full bg-transparent text-sm text-white outline-none"
+                  placeholder="#D946EF"
+                />
+                <div
+                  className="h-10 w-10 rounded-xl border border-slate-700"
+                  style={{ background: isValidHex(smokeHexPreview) ? smokeHexPreview : '#D946EF' }}
+                />
+              </div>
+            </label>
+
             <label className="grid gap-2">
               <span className="text-xs text-slate-300">Description</span>
               <textarea
-                className="min-h-[110px] rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+                className="min-h-[110px] rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Optional description"
               />
             </label>
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
-              <p className="text-xs font-semibold text-slate-200">Make the image clean (free)</p>
-              <p className="mt-1 text-[11px] text-slate-400">
-                Remove the background first → download PNG → upload here.
-              </p>
-
-              <div className="mt-3 flex flex-wrap gap-2">
-                <a
-                  href={BG_REMOVE_PRIMARY}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-full bg-fuchsia-500 px-4 py-2 text-xs font-bold shadow-[0_0_22px_rgba(217,70,239,0.85)]"
-                >
-                  Remove background (Adobe – Free)
-                </a>
-                <a
-                  href={BG_REMOVE_BACKUP}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-100 hover:border-slate-500"
-                >
-                  Backup remover (Pixlr)
-                </a>
-              </div>
-
-              <div className="mt-3 text-[11px] text-slate-400">
-                <span className="text-slate-200 font-semibold">Steps:</span> Upload → Remove BG → Download PNG → Upload here.
-              </div>
-            </div>
-
             <label className="grid gap-2">
               <span className="text-xs text-slate-300">Image</span>
               <input
                 type="file"
                 accept="image/*"
-                className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
-                onChange={(e) => setCreateImage(e.target.files?.[0] ?? null)}
+                className="rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm"
+                onChange={(e) => setImage(e.target.files?.[0] ?? null)}
               />
-
-              {imagePreview ? (
-                <div className="mt-3 rounded-2xl border border-slate-800 bg-black/40 p-3">
-                  <p className="text-[11px] text-slate-400 mb-2">Preview</p>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-full max-h-[260px] object-contain rounded-xl bg-black/40"
-                  />
-                </div>
-              ) : null}
-
               <p className="text-[11px] text-slate-400">
-                Uploads to Supabase Storage → auto converts & optimizes to WebP behind the scenes.
+                Uploads to Supabase Storage → saves public URL. Use transparent PNG cutouts for best results.
               </p>
             </label>
 
@@ -741,38 +769,24 @@ export default function AdminProductsPage() {
           </div>
         </div>
 
-        {/* LIST + MANAGE */}
-        <div className="rounded-3xl border border-slate-800 bg-black/40 p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-bold">Products</h2>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => {
-                  setErr(null)
-                  setOk(null)
-                  refreshProducts()
-                  refreshCategories()
-                }}
-                className="rounded-full border border-slate-700 px-4 py-2 text-sm"
-              >
-                Refresh
-              </button>
-            </div>
-          </div>
+        {/* LIST */}
+        <div className="rounded-3xl border border-slate-800 bg-black/55 p-5 sm:p-6">
+          <h2 className="text-lg font-bold">Products</h2>
 
+          {/* Filters */}
           <div className="mt-4 grid gap-3">
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search name, category, description…"
-              className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+              className="rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm"
             />
 
             <div className="grid gap-3 sm:grid-cols-3">
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+                className="rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm"
               >
                 <option value="all">All categories</option>
                 {categories.map((c) => (
@@ -785,14 +799,14 @@ export default function AdminProductsPage() {
               <select
                 value={filterStock}
                 onChange={(e) => setFilterStock(e.target.value as any)}
-                className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
+                className="rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm"
               >
                 <option value="all">All stock</option>
                 <option value="in">In stock</option>
                 <option value="out">Out of stock</option>
               </select>
 
-              <label className="flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm">
+              <label className="flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm">
                 <input
                   type="checkbox"
                   checked={showRemoved}
@@ -806,14 +820,16 @@ export default function AdminProductsPage() {
           <div className="mt-5 space-y-3">
             {filtered.length === 0 && <p className="text-sm text-slate-400">No products found.</p>}
 
-            {filtered.slice(0, 30).map((p) => {
-              const removed = Boolean(p.is_deleted)
-              const accent = p.accent_hex && isValidHex(p.accent_hex) ? p.accent_hex : '#334155'
+            {filtered.slice(0, 40).map((p) => {
+              const pp: any = p
+              const removed = Boolean(pp.is_deleted)
+              const accent = pp.accent_hex && isValidHex(pp.accent_hex) ? pp.accent_hex : '#334155'
+              const cat = clampCategoryLabel(pp.category || '')
               return (
                 <button
                   key={p.id}
                   onClick={() => openDrawer(p)}
-                  className={`w-full text-left flex items-center gap-4 rounded-2xl border bg-slate-950/40 p-4 transition hover:border-fuchsia-500/40 ${
+                  className={`w-full text-left flex items-center gap-4 rounded-2xl border bg-slate-950/30 p-4 transition hover:border-fuchsia-500/40 ${
                     removed ? 'border-red-500/30 opacity-80' : 'border-slate-800'
                   }`}
                 >
@@ -821,9 +837,9 @@ export default function AdminProductsPage() {
                     className="h-12 w-12 rounded-xl border border-slate-800 bg-black/40 relative overflow-hidden"
                     style={{ boxShadow: `0 0 22px ${accent}33` }}
                   >
-                    {p.image_url ? (
+                    {pp.image_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
+                      <img src={pp.image_url} alt={p.name} className="h-full w-full object-cover" />
                     ) : (
                       <div className="h-full w-full bg-slate-900/40" />
                     )}
@@ -831,19 +847,21 @@ export default function AdminProductsPage() {
 
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold">
-                      {p.name}{' '}
-                      {removed ? <span className="text-xs text-red-300">(removed)</span> : null}
+                      {p.name} {removed ? <span className="text-xs text-red-300">(removed)</span> : null}
                     </p>
                     <p className="text-xs text-slate-400">
-                      {(p.category ?? '—')} • {money(p.price)} •{' '}
-                      {p.in_stock === false ? 'Out' : 'In stock'}
-                      {p.bulk_price && p.bulk_min ? (
-                        <span className="text-slate-500">
-                          {' '}
-                          • Bulk {money(p.bulk_price)} (min {p.bulk_min})
-                        </span>
-                      ) : null}
+                      {cat} • {money(p.price)} • {pp.in_stock === false ? 'Out' : 'In stock'}
                     </p>
+
+                    {pp.smoke_hex_scroll || pp.smoke_hex_preview ? (
+                      <p className="mt-1 text-[10px] uppercase tracking-[0.22em] text-slate-500">
+                        Smoke set ✅
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-[10px] uppercase tracking-[0.22em] text-amber-300/80">
+                        Smoke missing ⚠
+                      </p>
+                    )}
                   </div>
 
                   <div className="text-xs font-bold text-fuchsia-300">EDIT</div>
@@ -857,10 +875,10 @@ export default function AdminProductsPage() {
       {/* Drawer */}
       {drawerOpen && selected ? (
         <div className="fixed inset-0 z-[80]">
-          <div className="absolute inset-0 bg-black/70" onClick={closeDrawer} />
+          <div className="absolute inset-0 bg-black/75" onClick={closeDrawer} />
 
-          <div className="absolute right-0 top-0 h-full w-full max-w-xl overflow-y-auto border-l border-slate-800 bg-slate-950/85 backdrop-blur-xl">
-            <div className="p-6">
+          <div className="absolute inset-x-0 bottom-0 top-12 sm:top-0 sm:right-0 sm:inset-x-auto h-[calc(100%-3rem)] sm:h-full w-full sm:max-w-xl overflow-y-auto border-t sm:border-t-0 sm:border-l border-slate-800 bg-slate-950/90 backdrop-blur-xl">
+            <div className="p-5 sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-fuchsia-400">
@@ -873,7 +891,7 @@ export default function AdminProductsPage() {
                     ID: <span className="font-mono">{selected.id}</span>
                   </p>
 
-                  {selected.is_deleted ? (
+                  {(selected as any).is_deleted ? (
                     <p className="mt-2 text-xs text-red-300 font-semibold">
                       This product is currently removed from the shop.
                     </p>
@@ -949,30 +967,8 @@ export default function AdminProductsPage() {
                   </label>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="grid gap-2">
-                    <span className="text-xs text-slate-300">Bulk price</span>
-                    <input
-                      className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
-                      value={eBulkPrice}
-                      onChange={(e) => setEBulkPrice(e.target.value)}
-                      placeholder="optional"
-                    />
-                  </label>
-
-                  <label className="grid gap-2">
-                    <span className="text-xs text-slate-300">Bulk minimum</span>
-                    <input
-                      className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
-                      value={eBulkMin}
-                      onChange={(e) => setEBulkMin(e.target.value)}
-                      placeholder="optional"
-                    />
-                  </label>
-                </div>
-
                 <label className="grid gap-2">
-                  <span className="text-xs text-slate-300">Accent colour</span>
+                  <span className="text-xs text-slate-300">UI Accent colour</span>
                   <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3">
                     <input
                       type="color"
@@ -984,11 +980,54 @@ export default function AdminProductsPage() {
                       value={eAccentHex}
                       onChange={(e) => setEAccentHex(e.target.value)}
                       className="w-full bg-transparent text-sm text-white outline-none"
-                      placeholder="#D946EF"
                     />
                     <div
                       className="h-10 w-10 rounded-xl border border-slate-700"
                       style={{ background: isValidHex(eAccentHex) ? eAccentHex : '#D946EF' }}
+                    />
+                  </div>
+                </label>
+
+                {/* ✅ Scroll smoke */}
+                <label className="grid gap-2">
+                  <span className="text-xs text-slate-300">Smoke colour (scroll)</span>
+                  <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3">
+                    <input
+                      type="color"
+                      value={isValidHex(eSmokeHexScroll) ? eSmokeHexScroll : '#00FFFF'}
+                      onChange={(e) => setESmokeHexScroll(e.target.value)}
+                      className="h-10 w-14 cursor-pointer rounded-xl border border-slate-700 bg-transparent"
+                    />
+                    <input
+                      value={eSmokeHexScroll}
+                      onChange={(e) => setESmokeHexScroll(e.target.value)}
+                      className="w-full bg-transparent text-sm text-white outline-none"
+                    />
+                    <div
+                      className="h-10 w-10 rounded-xl border border-slate-700"
+                      style={{ background: isValidHex(eSmokeHexScroll) ? eSmokeHexScroll : '#00FFFF' }}
+                    />
+                  </div>
+                </label>
+
+                {/* ✅ Preview smoke */}
+                <label className="grid gap-2">
+                  <span className="text-xs text-slate-300">Smoke colour (preview)</span>
+                  <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3">
+                    <input
+                      type="color"
+                      value={isValidHex(eSmokeHexPreview) ? eSmokeHexPreview : '#D946EF'}
+                      onChange={(e) => setESmokeHexPreview(e.target.value)}
+                      className="h-10 w-14 cursor-pointer rounded-xl border border-slate-700 bg-transparent"
+                    />
+                    <input
+                      value={eSmokeHexPreview}
+                      onChange={(e) => setESmokeHexPreview(e.target.value)}
+                      className="w-full bg-transparent text-sm text-white outline-none"
+                    />
+                    <div
+                      className="h-10 w-10 rounded-xl border border-slate-700"
+                      style={{ background: isValidHex(eSmokeHexPreview) ? eSmokeHexPreview : '#D946EF' }}
                     />
                   </div>
                 </label>
@@ -999,7 +1038,6 @@ export default function AdminProductsPage() {
                     className="min-h-[110px] rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
                     value={eDescription}
                     onChange={(e) => setEDescription(e.target.value)}
-                    placeholder="Optional description"
                   />
                 </label>
 
@@ -1013,95 +1051,43 @@ export default function AdminProductsPage() {
                   />
                 </label>
 
-                <div className="mt-2 rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
-                  <p className="text-sm font-bold text-white">Replace product image (auto)</p>
-                  <p className="mt-1 text-[11px] text-slate-400">
-                    Remove background first (free), then upload — system optimizes + uploads + replaces automatically.
-                  </p>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <a
-                      href={BG_REMOVE_PRIMARY}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-full bg-fuchsia-500 px-4 py-2 text-xs font-bold shadow-[0_0_22px_rgba(217,70,239,0.85)]"
+                {/* Sticky bottom actions */}
+                <div className="sticky bottom-0 -mx-5 sm:-mx-6 mt-4 border-t border-slate-800 bg-slate-950/95 px-5 sm:px-6 py-4 backdrop-blur-xl">
+                  <div className="grid gap-3">
+                    <button
+                      onClick={onSaveEdit}
+                      disabled={busy}
+                      className="w-full rounded-full bg-fuchsia-500 px-5 py-3 text-sm font-bold shadow-[0_0_22px_rgba(217,70,239,0.85)] disabled:opacity-60"
                     >
-                      Remove background (Adobe – Free)
-                    </a>
-                    <a
-                      href={BG_REMOVE_BACKUP}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-100 hover:border-slate-500"
-                    >
-                      Backup remover (Pixlr)
-                    </a>
-                  </div>
+                      {busy ? 'Saving…' : 'Save changes'}
+                    </button>
 
-                  <div className="mt-4 grid gap-2">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
-                      onChange={(e) => setEditImage(e.target.files?.[0] ?? null)}
-                    />
-
-                    {eImagePreview ? (
-                      <div className="rounded-2xl border border-slate-800 bg-black/40 p-3">
-                        <p className="text-[11px] text-slate-400 mb-2">New image preview</p>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={eImagePreview}
-                          alt="New image preview"
-                          className="w-full max-h-[260px] object-contain rounded-xl bg-black/40"
-                        />
-                      </div>
-                    ) : null}
+                    {(selected as any).is_deleted ? (
+                      <button
+                        onClick={() => onRestore(selected)}
+                        disabled={busy}
+                        className="w-full rounded-full border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm font-bold text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-60"
+                      >
+                        {busy ? 'Working…' : 'Restore product'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onRemove(selected)}
+                        disabled={busy}
+                        className="w-full rounded-full border border-red-500/40 bg-red-500/10 px-5 py-3 text-sm font-bold text-red-200 hover:bg-red-500/20 disabled:opacity-60"
+                      >
+                        {busy ? 'Working…' : 'Remove product'}
+                      </button>
+                    )}
 
                     <button
-                      onClick={uploadEditImage}
-                      disabled={busy || !eImageFile}
-                      className="rounded-full bg-fuchsia-500 px-5 py-3 text-sm font-bold shadow-[0_0_22px_rgba(217,70,239,0.85)] disabled:opacity-60"
+                      onClick={() => onToggleStock(selected)}
+                      disabled={busy}
+                      className="w-full rounded-full border border-slate-700 bg-black/40 px-5 py-3 text-sm font-semibold text-slate-200 hover:border-slate-500 disabled:opacity-60"
                     >
-                      {busy ? 'Uploading…' : 'Upload & replace image'}
+                      Toggle stock (quick)
                     </button>
                   </div>
-                </div>
-
-                <button
-                  onClick={onSaveEdit}
-                  disabled={busy}
-                  className="rounded-full bg-fuchsia-500 px-5 py-3 text-sm font-bold shadow-[0_0_22px_rgba(217,70,239,0.85)] disabled:opacity-60"
-                >
-                  {busy ? 'Saving…' : 'Save changes'}
-                </button>
-
-                <div className="mt-2 grid gap-3">
-                  {selected.is_deleted ? (
-                    <button
-                      onClick={() => onRestore(selected)}
-                      disabled={busy}
-                      className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm font-bold text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-60"
-                    >
-                      {busy ? 'Working…' : 'Restore product'}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => onRemove(selected)}
-                      disabled={busy}
-                      className="rounded-full border border-red-500/40 bg-red-500/10 px-5 py-3 text-sm font-bold text-red-200 hover:bg-red-500/20 disabled:opacity-60"
-                    >
-                      {busy ? 'Working…' : 'Remove product'}
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => onToggleStock(selected)}
-                    disabled={busy}
-                    className="rounded-full border border-slate-700 px-5 py-3 text-sm font-semibold text-slate-200 hover:border-slate-500 disabled:opacity-60"
-                  >
-                    Toggle stock (quick)
-                  </button>
                 </div>
               </div>
             </div>
