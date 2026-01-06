@@ -136,24 +136,25 @@ export default function ProductCard({ product }: { product: Product }) {
         <div className="relative mt-4 overflow-hidden rounded-[1.9rem] border border-slate-800/60 bg-black/60 p-4">
           {/* ✅ Smoke layer (isolated + masked + neon) */}
           <div
-            className="pointer-events-none absolute inset-0"
+            className="pointer-events-none absolute inset-0 z-0"
             style={{
               transform: 'translateZ(0)',
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden',
               contain: 'paint',
               willChange: 'transform',
+              isolation: 'isolate',
             }}
           >
             {showSmoke ? (
               <>
                 {/* Video base */}
                 <video
-                  className="absolute inset-0 h-full w-full object-cover opacity-[0.55]"
+                  className="pufff-smoke-video absolute inset-0 h-full w-full object-cover opacity-[0.68]"
                   style={{
                     transform: 'scale(1.35)',
                     objectPosition: '50% 22%',
-                    filter: 'grayscale(1) contrast(1.35) brightness(1.1)',
+                    filter: 'grayscale(1) contrast(1.5) brightness(1.15)',
                   }}
                   autoPlay
                   muted
@@ -171,7 +172,19 @@ export default function ProductCard({ product }: { product: Product }) {
                   style={{
                     background: 'var(--smoke)',
                     mixBlendMode: 'screen',
-                    opacity: 0.55,
+                    opacity: 0.68,
+                  }}
+                />
+
+                {/* ?. Neon core glow */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      'radial-gradient(65% 55% at 50% 42%, var(--smoke), transparent 70%)',
+                    mixBlendMode: 'screen',
+                    opacity: 0.45,
+                    filter: 'blur(6px) saturate(1.2)',
                   }}
                 />
 
@@ -179,8 +192,8 @@ export default function ProductCard({ product }: { product: Product }) {
                 <div
                   className="absolute inset-0 opacity-60"
                   style={{
-                    boxShadow: `inset 0 0 80px var(--smoke)`,
-                    filter: 'blur(10px)',
+                    boxShadow: `inset 0 0 110px var(--smoke)`,
+                    filter: 'blur(12px) saturate(1.15)',
                   }}
                 />
               </>
@@ -200,7 +213,7 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
 
           {/* Pedestal */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20">
             <div
               className="absolute left-1/2 top-7 h-10 w-[75%] -translate-x-1/2 rounded-full blur-2xl opacity-45"
               style={{ background: 'var(--accent)' }}
@@ -211,13 +224,13 @@ export default function ProductCard({ product }: { product: Product }) {
 
           {/* Product */}
           <motion.div
-            className="relative flex items-center justify-center"
+            className="relative z-10 flex items-center justify-center"
             initial={{ y: 6, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.45, ease: 'easeOut' }}
           >
             <motion.div
-              className="relative h-[240px] w-full"
+              className="relative mx-auto h-[260px] w-full max-w-[220px]"
               animate={allowFloat ? { y: [0, -5, 0], rotate: [0, 0.45, 0] } : undefined}
               transition={
                 allowFloat

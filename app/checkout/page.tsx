@@ -146,7 +146,7 @@ export default function CheckoutPage() {
 
   return (
     <main className="mx-auto max-w-5xl space-y-8 px-4 pb-16 pt-8">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/70 pb-4">
+      <header className="flex flex-col gap-3 border-b border-slate-800/70 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#D946EF]">
             CHECKOUT
@@ -159,16 +159,16 @@ export default function CheckoutPage() {
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 sm:justify-end">
           <Link
             href="/cart"
-            className="rounded-full border border-slate-700 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-[#D946EF] hover:text-[#D946EF] transition"
+            className="w-full rounded-full border border-slate-700 px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 transition hover:border-[#D946EF] hover:text-[#D946EF] sm:w-auto"
           >
             Back to cart
           </Link>
           <Link
             href="/shop"
-            className="rounded-full bg-[#D946EF] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-[0_0_20px_rgba(217,70,239,0.7)] hover:brightness-110 active:scale-95 transition"
+            className="w-full rounded-full bg-[#D946EF] px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-[0_0_20px_rgba(217,70,239,0.7)] transition hover:brightness-110 active:scale-95 sm:w-auto"
           >
             Shop
           </Link>
@@ -209,6 +209,9 @@ export default function CheckoutPage() {
                 <input
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
                   className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-500"
                   placeholder="e.g. 072 123 4567"
                 />
@@ -296,6 +299,10 @@ export default function CheckoutPage() {
             </h2>
 
             <div className="space-y-2 text-sm text-slate-200">
+              <div className="flex items-center justify-between text-[11px] text-slate-400">
+                <span>Items</span>
+                <span>{items.length}</span>
+              </div>
               <div className="flex items-center justify-between text-xs text-slate-300">
                 <span>Subtotal</span>
                 <span>R {subtotal.toFixed(2)}</span>
@@ -303,6 +310,20 @@ export default function CheckoutPage() {
               <div className="flex items-center justify-between text-[11px] text-slate-400">
                 <span>Delivery</span>
                 <span>Calculated by the shop</span>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800/80 bg-slate-950/60 p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">
+                Cart items
+              </p>
+              <div className="mt-2 space-y-1 text-xs text-slate-300">
+                {items.map((it: any) => (
+                  <div key={it.id} className="flex items-center justify-between">
+                    <span className="truncate">{it.name}</span>
+                    <span className="text-slate-400">x{Number(it.quantity ?? 1)}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -319,7 +340,7 @@ export default function CheckoutPage() {
 
             <button
               type="button"
-              disabled={loading}
+              disabled={loading || !canCheckout}
               onClick={createOrderAndPay}
               className="mt-2 w-full rounded-full bg-[#D946EF] px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_24px_rgba(217,70,239,0.8)] hover:brightness-110 active:scale-95 disabled:opacity-60 transition"
             >

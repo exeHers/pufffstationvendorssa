@@ -38,6 +38,28 @@ type Action =
   | { action: 'set_stock'; id: string; in_stock: boolean }
   | { action: 'soft_delete'; id: string }
   | { action: 'restore'; id: string }
+  | { action: 'hard_delete'; id: string }
+
+function getBucket() {
+  return process.env.SUPABASE_PRODUCT_IMAGES_BUCKET || 'product-images'
+}
+
+function parseStoragePath(imageUrl: string) {
+  try {
+    const marker = '/storage/v1/object/public/'
+    const url = new URL(imageUrl)
+    const idx = url.pathname.indexOf(marker)
+    if (idx === -1) return null
+    const rest = url.pathname.slice(idx + marker.length)
+    const parts = rest.split('/').filter(Boolean)
+    const bucket = parts.shift()
+    const path = parts.join('/')
+    if (!bucket || !path) return null
+    return { bucket, path }
+  } catch {
+    return null
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -79,6 +101,36 @@ export async function POST(req: Request) {
         .single()
       if (error) return NextResponse.json({ error: error.message }, { status: 400 })
       return NextResponse.json({ ok: true, product: data })
+    }
+
+    if (body.action === 'hard_delete') {
+      const { data: existing, error: fetchErr } = await supabase
+        .from('products')
+        .select('image_url')
+        .eq('id', id)
+        .single()
+
+      if (fetchErr) return NextResponse.json({ error: fetchErr.message }, { status: 400 })
+
+      const imageUrl = (existing as any)?.image_url as string | null
+      if (imageUrl) {
+        const parsed = parseStoragePath(imageUrl)
+        if (parsed) {
+          const { error: removeErr } = await supabase.storage
+            .from(parsed.bucket || getBucket())
+            .remove([parsed.path])
+          if (removeErr) {
+            return NextResponse.json(
+              { error: `Storage delete failed: ${removeErr.message}` },
+              { status: 400 }
+            )
+          }
+        }
+      }
+
+      const { error: delErr } = await supabase.from('products').delete().eq('id', id)
+      if (delErr) return NextResponse.json({ error: delErr.message }, { status: 400 })
+      return NextResponse.json({ ok: true })
     }
 
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })

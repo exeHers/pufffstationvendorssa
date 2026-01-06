@@ -175,7 +175,7 @@ export default function AdminSupportPage() {
   return (
     <main className="mx-auto max-w-6xl space-y-8 px-4 pb-16 pt-8">
       {/* HEADER (kept your vibe) */}
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/70 pb-4">
+      <header className="flex flex-col gap-3 border-b border-slate-800/70 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#D946EF]">ADMIN</p>
           <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Support</h1>
@@ -184,25 +184,25 @@ export default function AdminSupportPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 sm:justify-end">
           <button
             type="button"
             onClick={() => fetchTickets(false)}
-            className="rounded-full border border-slate-700 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-[#D946EF] hover:text-[#D946EF] transition"
+            className="w-full rounded-full border border-slate-700 px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 transition hover:border-[#D946EF] hover:text-[#D946EF] sm:w-auto"
           >
             Refresh
           </button>
 
           <Link
             href="/admin"
-            className="rounded-full border border-slate-700 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-[#D946EF] hover:text-[#D946EF] transition"
+            className="w-full rounded-full border border-slate-700 px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 transition hover:border-[#D946EF] hover:text-[#D946EF] sm:w-auto"
           >
             Dashboard
           </Link>
 
           <Link
             href="/support"
-            className="rounded-full bg-[#D946EF] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-[0_0_20px_rgba(217,70,239,0.7)] hover:brightness-110 active:scale-95 transition"
+            className="w-full rounded-full bg-[#D946EF] px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-[0_0_20px_rgba(217,70,239,0.7)] transition hover:brightness-110 active:scale-95 sm:w-auto"
           >
             Customer view
           </Link>
@@ -213,7 +213,7 @@ export default function AdminSupportPage() {
               await supabase.auth.signOut()
               router.replace('/')
             }}
-            className="rounded-full border border-slate-700 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-red-400 hover:text-red-200 transition"
+            className="w-full rounded-full border border-slate-700 px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 transition hover:border-red-400 hover:text-red-200 sm:w-auto"
           >
             Logout
           </button>
@@ -271,7 +271,7 @@ export default function AdminSupportPage() {
                         : 'border-slate-800 bg-black/30 hover:bg-black/50'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-white">
                           {t.subject ?? 'Support request'}
@@ -281,7 +281,7 @@ export default function AdminSupportPage() {
                           {t.created_at ? new Date(t.created_at).toLocaleString() : '—'}
                         </p>
                       </div>
-                      <span className="rounded-full border border-slate-700 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-200">
+                      <span className="self-start rounded-full border border-slate-700 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-200">
                         {(t.status ?? 'open').toUpperCase()}
                       </span>
                     </div>
@@ -296,7 +296,7 @@ export default function AdminSupportPage() {
                 <p className="text-sm text-slate-300">Select a ticket on the left.</p>
               ) : (
                 <>
-                  <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <h2 className="text-xl font-extrabold text-white">{active.subject ?? 'Support request'}</h2>
                       <p className="mt-1 text-xs text-slate-400">
@@ -308,7 +308,7 @@ export default function AdminSupportPage() {
                     <select
                       value={(active.status ?? 'open').toLowerCase()}
                       onChange={(e) => setStatus(active.id, e.target.value as any)}
-                      className="rounded-full border border-slate-700 bg-black/40 px-3 py-2 text-sm text-slate-100"
+                      className="w-full rounded-full border border-slate-700 bg-black/40 px-3 py-2 text-sm text-slate-100 sm:w-auto"
                     >
                       <option value="open">Open</option>
                       <option value="replied">Replied</option>

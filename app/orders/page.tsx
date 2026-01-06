@@ -116,8 +116,29 @@ export default function OrdersPage() {
       </header>
 
       {loading && (
-        <section className="rounded-3xl border border-slate-800/80 bg-slate-950/60 p-6 text-sm text-slate-200">
-          Loading your orders...
+        <section className="space-y-3">
+          {[0, 1, 2].map((idx) => (
+            <div
+              key={idx}
+              className="animate-pulse rounded-3xl border border-slate-800/80 bg-slate-950/60 p-5"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-2">
+                  <div className="h-3 w-20 rounded-full bg-slate-800/80" />
+                  <div className="h-3 w-40 rounded-full bg-slate-800/80" />
+                  <div className="h-4 w-28 rounded-full bg-slate-800/80" />
+                </div>
+                <div className="space-y-2 text-right">
+                  <div className="h-3 w-12 rounded-full bg-slate-800/80" />
+                  <div className="h-5 w-24 rounded-full bg-slate-800/80" />
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="h-20 rounded-2xl bg-slate-800/60" />
+                <div className="h-20 rounded-2xl bg-slate-800/60" />
+              </div>
+            </div>
+          ))}
         </section>
       )}
 

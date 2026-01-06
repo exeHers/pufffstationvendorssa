@@ -1,8 +1,9 @@
 import { cookies } from 'next/headers'
-import { supabase } from '@/lib/supabaseClient'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 
 export async function setAdminCookie(userId: string) {
-  const { data, error } = await supabase
+  const admin = supabaseAdmin()
+  const { data, error } = await admin
     .from('profiles')
     .select('role')
     .eq('id', userId)

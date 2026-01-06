@@ -2,10 +2,20 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
 import AddToCartButton from '@/components/cart/AddToCartButton'
 import type { Product } from '@/lib/types'
+import PreviewSmokeVideo from '@/components/shop/PreviewSmokeVideo'
 
 function isValidHex(hex?: string | null) {
   if (!hex) return false
   return /^#[0-9a-fA-F]{6}$/.test(hex.trim())
+}
+
+function hexToRgb(hex?: string | null) {
+  if (!isValidHex(hex)) return null
+  const h = hex!.replace('#', '').trim()
+  const r = parseInt(h.slice(0, 2), 16)
+  const g = parseInt(h.slice(2, 4), 16)
+  const b = parseInt(h.slice(4, 6), 16)
+  return `${r} ${g} ${b}`
 }
 
 type Props = {
@@ -42,6 +52,7 @@ export default async function ProductDetailPage({ params }: Props) {
   const previewSmoke = isValidHex(product.smoke_hex_preview)
     ? product.smoke_hex_preview!.trim()
     : accentHex
+  const smokeRgb = hexToRgb(previewSmoke) || '217 70 239'
 
   const priceNumber = product.price != null ? Number(product.price) : 0
   const hasPrice = product.price != null && !Number.isNaN(priceNumber)
@@ -66,35 +77,33 @@ export default async function ProductDetailPage({ params }: Props) {
 
       <section className="grid gap-6 lg:grid-cols-[1.2fr,1fr]">
         {/* IMAGE + PREVIEW SMOKE */}
-        <div className="relative overflow-hidden rounded-3xl border border-slate-800/80 bg-black/70">
+        <div
+          className="relative overflow-hidden rounded-3xl border border-slate-800/80 bg-black/70"
+          style={{ ['--smoke-rgb' as any]: smokeRgb } as React.CSSProperties}
+        >
           <div className="absolute inset-0">
-            <video
-              className="absolute inset-0 h-full w-full object-cover"
+            {/* Ambient haze using the same smoke system */}
+            <div className="pufff-haze opacity-60" />
+            <PreviewSmokeVideo
+              className="pufff-smoke-video absolute inset-0 h-full w-full object-cover"
               style={{
                 transform: 'translateZ(0) scale(1.25)',
                 objectPosition: '50% 22%',
                 opacity: 0.95,
-                filter: 'contrast(1.1) brightness(0.85)',
+                filter: 'grayscale(1) contrast(1.25) brightness(0.95)',
               }}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              disablePictureInPicture
+              src="/preview.mp4"
               poster="/preview.jpg"
-            >
-              <source src="/preview.mp4" type="video/mp4" />
-            </video>
+            />
 
             {/* exact colour overlay */}
             <div
               className="absolute inset-0"
               style={{
                 background: previewSmoke,
-                opacity: 0.52,
+                opacity: 0.62,
                 mixBlendMode: 'screen',
-                filter: 'saturate(2.0) contrast(1.2)',
+                filter: 'saturate(2.2) contrast(1.25)',
               }}
             />
 
@@ -103,8 +112,8 @@ export default async function ProductDetailPage({ params }: Props) {
               className="absolute inset-0"
               style={{
                 background: previewSmoke,
-                opacity: 0.18,
-                filter: 'blur(18px) saturate(2.4)',
+                opacity: 0.28,
+                filter: 'blur(22px) saturate(2.6)',
               }}
             />
 
@@ -121,13 +130,20 @@ export default async function ProductDetailPage({ params }: Props) {
           </div>
 
           <div className="relative aspect-[16/10] w-full flex items-center justify-center p-6">
+            <div className="absolute inset-0 opacity-70">
+              <div className="pufff-smoke-pad opacity-80" />
+            </div>
             {product.image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={product.image_url}
-                alt={product.name}
-                className="max-h-full w-auto object-contain drop-shadow-[0_22px_65px_rgba(0,0,0,0.7)]"
-              />
+              <div className="relative h-[360px] w-full max-w-[320px]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={product.image_url}
+                  alt={product.name}
+                  decoding="async"
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_22px_65px_rgba(0,0,0,0.7)]"
+                />
+              </div>
             ) : (
               <div className="flex h-full w-full items-center justify-center text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                 No image

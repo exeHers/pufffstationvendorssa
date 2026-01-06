@@ -16,7 +16,7 @@ export default function ScrollShowcase() {
       {/* hovering smoke underneath */}
       <motion.video
         style={{ y, opacity: glow }}
-        className="pointer-events-none absolute bottom-[-40px] left-0 h-56 w-full object-cover mix-blend-screen"
+        className="pufff-smoke-video pointer-events-none absolute bottom-[-40px] left-0 h-56 w-full object-cover mix-blend-screen"
         autoPlay
         loop
         muted

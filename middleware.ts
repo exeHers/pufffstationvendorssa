@@ -12,7 +12,8 @@ export function middleware(req: NextRequest) {
     if (!isAdmin) {
       const url = req.nextUrl.clone()
       url.pathname = '/login'
-      url.searchParams.set('next', pathname)
+      const nextTarget = `${req.nextUrl.pathname}${req.nextUrl.search}`
+      url.searchParams.set('next', nextTarget)
       return NextResponse.redirect(url)
     }
   }

@@ -483,6 +483,43 @@ export default function AdminProductsPage() {
     }
   }
 
+  async function onHardDelete(p: Product) {
+    const confirmed = window.confirm(
+      `Permanently delete "${p.name}"?\n\nThis will remove the product and its image from storage. This cannot be undone.`
+    )
+    if (!confirmed) return
+
+    setBusy(true)
+    setErr(null)
+    setOk(null)
+
+    try {
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess.session?.access_token
+      if (!token) throw new Error('No session token. Please log in again.')
+
+      const res = await fetch('/api/admin/products/manage', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action: 'hard_delete', id: p.id }),
+      })
+
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json?.error ?? 'Failed to delete product.')
+
+      setOk('Permanently deleted.')
+      closeDrawer()
+      await refreshProducts()
+    } catch (e: any) {
+      setErr(e?.message ?? 'Failed.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (loading) {
     return (
       <main className="mx-auto max-w-6xl px-4 py-10 text-white">
@@ -524,7 +561,7 @@ export default function AdminProductsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap gap-3 sm:justify-end">
           <button
             onClick={() => {
               setErr(null)
@@ -532,12 +569,12 @@ export default function AdminProductsPage() {
               refreshProducts()
               refreshCategories()
             }}
-            className="rounded-full border border-slate-700 bg-black/40 px-4 py-2 text-sm hover:border-slate-500"
+            className="w-full rounded-full border border-slate-700 bg-black/40 px-4 py-2 text-center text-sm hover:border-slate-500 sm:w-auto"
           >
             Refresh
           </button>
 
-          <Link href="/admin" className="rounded-full border border-slate-700 bg-black/40 px-4 py-2 text-sm hover:border-slate-500">
+          <Link href="/admin" className="w-full rounded-full border border-slate-700 bg-black/40 px-4 py-2 text-center text-sm hover:border-slate-500 sm:w-auto">
             Back
           </Link>
         </div>
@@ -554,7 +591,7 @@ export default function AdminProductsPage() {
               href="https://www.remove.bg/"
               target="_blank"
               rel="noreferrer"
-              className="rounded-full border border-slate-700 bg-black/30 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-slate-500"
+              className="w-full rounded-full border border-slate-700 bg-black/30 px-4 py-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-slate-500 sm:w-auto"
             >
               Remove.bg (auto cutout)
             </a>
@@ -562,7 +599,7 @@ export default function AdminProductsPage() {
               href="https://www.photopea.com/"
               target="_blank"
               rel="noreferrer"
-              className="rounded-full border border-slate-700 bg-black/30 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-slate-500"
+              className="w-full rounded-full border border-slate-700 bg-black/30 px-4 py-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-slate-500 sm:w-auto"
             >
               Photopea (manual cutout)
             </a>
@@ -570,7 +607,7 @@ export default function AdminProductsPage() {
               href="https://www.canva.com/"
               target="_blank"
               rel="noreferrer"
-              className="rounded-full border border-slate-700 bg-black/30 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-slate-500"
+              className="w-full rounded-full border border-slate-700 bg-black/30 px-4 py-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-slate-500 sm:w-auto"
             >
               Canva (export transparent PNG)
             </a>
@@ -834,7 +871,7 @@ export default function AdminProductsPage() {
                 <button
                   key={p.id}
                   onClick={() => openDrawer(p)}
-                  className={`w-full text-left flex items-center gap-4 rounded-2xl border bg-slate-950/30 p-4 transition hover:border-fuchsia-500/40 ${
+                  className={`w-full text-left flex flex-col gap-4 rounded-2xl border bg-slate-950/30 p-4 transition hover:border-fuchsia-500/40 sm:flex-row sm:items-center ${
                     removed ? 'border-red-500/30 opacity-80' : 'border-slate-800'
                   }`}
                 >
@@ -869,7 +906,7 @@ export default function AdminProductsPage() {
                     )}
                   </div>
 
-                  <div className="text-xs font-bold text-fuchsia-300">EDIT</div>
+                  <div className="text-xs font-bold text-fuchsia-300 sm:ml-auto">EDIT</div>
                 </button>
               )
             })}
@@ -1068,13 +1105,22 @@ export default function AdminProductsPage() {
                     </button>
 
                     {(selected as any).is_deleted ? (
-                      <button
-                        onClick={() => onRestore(selected)}
-                        disabled={busy}
-                        className="w-full rounded-full border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm font-bold text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-60"
-                      >
-                        {busy ? 'Working…' : 'Restore product'}
-                      </button>
+                      <>
+                        <button
+                          onClick={() => onRestore(selected)}
+                          disabled={busy}
+                          className="w-full rounded-full border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm font-bold text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-60"
+                        >
+                          {busy ? 'Working…' : 'Restore product'}
+                        </button>
+                        <button
+                          onClick={() => onHardDelete(selected)}
+                          disabled={busy}
+                          className="w-full rounded-full border border-red-500/50 bg-red-500/10 px-5 py-3 text-sm font-bold text-red-200 hover:bg-red-500/20 disabled:opacity-60"
+                        >
+                          {busy ? 'Working…' : 'Hard delete (permanent)'}
+                        </button>
+                      </>
                     ) : (
                       <button
                         onClick={() => onRemove(selected)}

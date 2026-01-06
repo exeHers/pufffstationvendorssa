@@ -131,20 +131,20 @@ export default function AdminOrdersPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 text-white">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-fuchsia-400">Admin</p>
           <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Orders</h1>
           <p className="mt-1 text-sm text-slate-300">Update status + tracking (emails later via Resend).</p>
         </div>
-        <Link href="/admin" className="rounded-full border border-slate-700 px-4 py-2 text-sm">Back</Link>
+        <Link href="/admin" className="w-full rounded-full border border-slate-700 px-4 py-2 text-center text-sm sm:w-auto">Back</Link>
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-full border border-slate-800 bg-slate-950/60 px-4 py-2 text-sm"
+          className="w-full rounded-full border border-slate-800 bg-slate-950/60 px-4 py-2 text-sm sm:w-auto"
         >
           <option value="">All statuses</option>
           {STATUSES.map((s) => (
@@ -154,7 +154,7 @@ export default function AdminOrdersPage() {
 
         <button
           onClick={fetchOrders}
-          className="rounded-full border border-slate-700 px-4 py-2 text-sm"
+          className="w-full rounded-full border border-slate-700 px-4 py-2 text-sm sm:w-auto"
           disabled={loading}
         >
           {loading ? 'Loading…' : 'Refresh'}
@@ -205,7 +205,7 @@ export default function AdminOrdersPage() {
             <div className="mt-4 space-y-4">
               <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
                 <p className="text-sm font-semibold">{selected.full_name ?? selected.email}</p>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 break-words text-xs text-slate-400">
                   {selected.address_line_1 ?? ''} {selected.suburb ?? ''} {selected.city ?? ''} {selected.province ?? ''} {selected.postal_code ?? ''}
                 </p>
                 <p className="mt-1 text-xs text-slate-400">

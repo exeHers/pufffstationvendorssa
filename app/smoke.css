@@ -1,12 +1,12 @@
 /* app/smoke.css */
 /* Lightweight “smoke / glow” using gradients + blur + animation.
    Uses CSS variables:
-   --smoke-hue : number (0-360)
+   --smoke-rgb : space-separated RGB (e.g. "217 70 239")
    --smoke-a   : opacity strength (0-1-ish)
 */
 
 :root {
-  --smoke-hue: 270;
+  --smoke-rgb: 217 70 239;
   --smoke-a: 0.55;
 }
 
@@ -39,9 +39,9 @@
   position: absolute;
   inset: -30%;
   background:
-    radial-gradient(circle at 25% 30%, hsla(var(--smoke-hue), 90%, 60%, 0.22), transparent 55%),
-    radial-gradient(circle at 65% 35%, hsla(calc(var(--smoke-hue) + 40), 90%, 60%, 0.14), transparent 55%),
-    radial-gradient(circle at 55% 70%, rgba(217, 70, 239, 0.12), transparent 60%);
+    radial-gradient(circle at 25% 30%, rgb(var(--smoke-rgb) / 0.22), transparent 55%),
+    radial-gradient(circle at 65% 35%, rgb(var(--smoke-rgb) / 0.16), transparent 55%),
+    radial-gradient(circle at 55% 70%, rgb(var(--smoke-rgb) / 0.12), transparent 60%);
   animation: pufff-float 6.5s ease-in-out infinite;
   pointer-events: none;
 }
@@ -55,8 +55,8 @@
   height: 34%;
   border-radius: 999px;
   background:
-    radial-gradient(ellipse at 50% 70%, hsla(var(--smoke-hue), 95%, 62%, 0.35), transparent 70%),
-    radial-gradient(ellipse at 40% 40%, hsla(calc(var(--smoke-hue) + 30), 95%, 62%, 0.22), transparent 70%);
+    radial-gradient(ellipse at 50% 70%, rgb(var(--smoke-rgb) / 0.35), transparent 70%),
+    radial-gradient(ellipse at 40% 40%, rgb(var(--smoke-rgb) / 0.22), transparent 70%);
   animation: pufff-float 4.8s ease-in-out infinite;
   opacity: 0;
   transform: translateY(10px) scale(0.98);
@@ -80,4 +80,19 @@
     radial-gradient(circle at 70% 60%, rgba(34, 211, 238, 0.12), transparent 60%);
   animation: pufff-breathe 5.8s ease-in-out infinite;
   pointer-events: none;
+}
+
+/* Reduce heavy effects on Android to avoid flicker/repaint loops */
+[data-android="true"] .pufff-haze,
+[data-android="true"] .pufff-smoke-pad,
+[data-android="true"] .pufff-tile-breathe {
+  animation: none;
+  filter: none;
+  transform: none;
+}
+
+[data-android="true"] .pufff-smoke-video {
+  filter: none !important;
+  transform: translateZ(0) scale(1.02) !important;
+  opacity: 0.5;
 }

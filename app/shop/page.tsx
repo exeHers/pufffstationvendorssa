@@ -5,11 +5,6 @@ import ProductCard from '@/components/products/ProductCard'
 
 export const dynamic = 'force-dynamic'
 
-function isValidHex(hex?: string | null) {
-  if (!hex) return false
-  return /^#[0-9a-fA-F]{6}$/.test(hex.trim())
-}
-
 function hexToHue(hex?: string | null) {
   if (!hex) return null
   const h = hex.replace('#', '').trim()
@@ -31,6 +26,19 @@ function hexToHue(hex?: string | null) {
   hue = Math.round(hue * 60)
   if (hue < 0) hue += 360
   return hue
+}
+
+function isValidHex(hex?: string | null) {
+  return !!hex && /^#[0-9a-fA-F]{6}$/.test(hex.trim())
+}
+
+function hexToRgb(hex?: string | null) {
+  if (!isValidHex(hex)) return null
+  const h = hex!.replace('#', '').trim()
+  const r = parseInt(h.slice(0, 2), 16)
+  const g = parseInt(h.slice(2, 4), 16)
+  const b = parseInt(h.slice(4, 6), 16)
+  return `${r} ${g} ${b}`
 }
 
 // fallback if accent_hex is missing
@@ -67,15 +75,14 @@ function FeaturedHero({ product }: { product: Product }) {
   const p: any = product
   const bulkMin = p.bulk_min
   const bulkPrice = p.bulk_price
-
-  const smokeHex = isValidHex(p.smoke_hex_scroll) ? p.smoke_hex_scroll.trim() : null
-  const smokeTint = smokeHex || accentHex || '#D946EF'
+  const smokeHex = isValidHex(p.smoke_hex_scroll) ? p.smoke_hex_scroll.trim() : accentHex || '#D946EF'
+  const smokeRgb = hexToRgb(smokeHex) || '217 70 239'
 
   return (
     <a
       href={`/shop/${product.id}`}
       className="group relative block overflow-hidden rounded-[2.25rem] border border-slate-800/60 bg-slate-950/40 p-6 shadow-[0_0_60px_rgba(217,70,239,0.05)] transition hover:-translate-y-0.5 hover:border-slate-700/70 md:p-10"
-      style={{ ['--smoke-hue' as any]: hue } as React.CSSProperties}
+      style={{ ['--smoke-rgb' as any]: smokeRgb } as React.CSSProperties}
     >
       {/* Ambient layers */}
       <div className="absolute inset-0">
@@ -89,16 +96,16 @@ function FeaturedHero({ product }: { product: Product }) {
           <div
             className="absolute inset-0 opacity-35"
             style={{
-              filter: 'grayscale(1) contrast(1.35) brightness(1.05)',
+              filter: 'grayscale(1) contrast(1.2) brightness(1.05)',
             }}
           >
             <video
-              className="h-full w-full object-cover scale-[1.08]"
+              className="pufff-smoke-video h-full w-full object-cover scale-[1.08]"
               autoPlay
               muted
               loop
               playsInline
-              preload="auto"
+              preload="metadata"
               poster="/smoke-poster.jpg"
             >
               <source src="/smoke.mp4" type="video/mp4" />
@@ -107,12 +114,8 @@ function FeaturedHero({ product }: { product: Product }) {
 
           {/* Tint overlay */}
           <div
-            className="absolute inset-0"
-            style={{
-              background: smokeTint,
-              mixBlendMode: 'color',
-              opacity: 1,
-            }}
+            className="absolute inset-0 mix-blend-screen opacity-25"
+            style={{ background: smokeHex }}
           />
 
           {/* Soft vignette + mask */}
@@ -193,11 +196,15 @@ function FeaturedHero({ product }: { product: Product }) {
             </div>
 
             <div className="relative flex items-center justify-center">
-              <img
-                src={(product as any).image_url || '/placeholder.png'}
-                alt={product.name}
-                className="h-[340px] w-auto select-none object-contain drop-shadow-[0_20px_45px_rgba(0,0,0,0.45)] transition duration-500 group-hover:-translate-y-1 group-hover:rotate-[0.5deg]"
-              />
+              <div className="relative h-[360px] w-full max-w-[280px]">
+                <img
+                  src={(product as any).image_url || '/placeholder.png'}
+                  alt={product.name}
+                  decoding="async"
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full select-none object-contain drop-shadow-[0_20px_45px_rgba(0,0,0,0.45)] transition duration-500 group-hover:-translate-y-1 group-hover:rotate-[0.5deg]"
+                />
+              </div>
             </div>
 
             <div className="mt-5 flex items-center justify-between">
@@ -259,7 +266,19 @@ function ProductRow({
   )
 }
 
-export default async function ShopPage() {
+type ShopPageProps = {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+function normalizeCategory(value?: string) {
+  return (value ?? '').trim().toLowerCase()
+}
+
+export default async function ShopPage({ searchParams }: ShopPageProps) {
+  const params = (await searchParams) ?? {}
+  const rawCat = Array.isArray(params.cat) ? params.cat[0] : params.cat
+  const selectedCat = normalizeCategory(rawCat)
+
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -282,6 +301,9 @@ export default async function ShopPage() {
   const categoryEntries = Array.from(byCategory.entries()).sort(
     (a, b) => b[1].length - a[1].length
   )
+  const visibleEntries = selectedCat
+    ? categoryEntries.filter(([cat]) => normalizeCategory(cat) === selectedCat)
+    : categoryEntries
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-10">
@@ -315,8 +337,41 @@ export default async function ShopPage() {
         </div>
       )}
 
-      {categoryEntries.length > 0 &&
-        categoryEntries.map(([cat, items]) => (
+      {categoryEntries.length > 0 && (
+        <section className="mt-10">
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href="/shop"
+              className={`rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] ${
+                selectedCat
+                  ? 'border-slate-800 bg-slate-950/40 text-slate-300 hover:border-slate-600'
+                  : 'border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-200'
+              }`}
+            >
+              All
+            </a>
+            {categoryEntries.map(([cat]) => {
+              const active = normalizeCategory(cat) === selectedCat
+              return (
+                <a
+                  key={cat}
+                  href={`/shop?cat=${encodeURIComponent(cat)}`}
+                  className={`rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] ${
+                    active
+                      ? 'border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-200'
+                      : 'border-slate-800 bg-slate-950/40 text-slate-300 hover:border-slate-600'
+                  }`}
+                >
+                  {cat}
+                </a>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {visibleEntries.length > 0 &&
+        visibleEntries.map(([cat, items]) => (
           <ProductRow
             key={cat}
             title={cat}

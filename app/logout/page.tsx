@@ -10,6 +10,7 @@ export default function LogoutPage() {
   useEffect(() => {
     const run = async () => {
       try {
+        await fetch('/api/admin/cookie', { method: 'DELETE' })
         await supabase.auth.signOut()
       } catch {
         // ignore
@@ -18,6 +19,9 @@ export default function LogoutPage() {
       // clear admin cookie
       document.cookie =
         'pufff_is_admin=false; path=/; max-age=0; samesite=lax'
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('pufff-admin-cookie'))
+      }
 
       router.replace('/shop')
     }

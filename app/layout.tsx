@@ -8,10 +8,32 @@ import LuxeAtmosphere from '@/components/ui/LuxeAtmosphere'
 import { CartProvider } from '@/components/cart/CartContext'
 import CartBadge from '@/components/cart/CartBadge'
 import HeaderLinks from '@/components/nav/HeaderLinks'
+import AndroidMotionGate from '@/components/utils/AndroidMotionGate'
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pufffstation.co.za'
 
 export const metadata: Metadata = {
-  title: 'PUFFF Station Vendors SA',
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: 'PUFFF Station Vendors SA',
+    template: '%s | PUFFF Station Vendors SA',
+  },
   description: 'Premium disposables. Maximum impact.',
+  openGraph: {
+    type: 'website',
+    url: siteUrl,
+    title: 'PUFFF Station Vendors SA',
+    description: 'Premium disposables. Maximum impact.',
+    siteName: 'PUFFF Station Vendors SA',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'PUFFF Station Vendors SA',
+    description: 'Premium disposables. Maximum impact.',
+  },
+  icons: {
+    icon: '/favicon.ico',
+  },
 }
 
 export default function RootLayout({
@@ -22,12 +44,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-slate-950 text-white antialiased">
+        <AndroidMotionGate />
         <LuxeAtmosphere />
         <AgeGate />
 
         <CartProvider>
           <div className="min-h-screen">
-            <header className="sticky top-0 z-50 border-b border-slate-800/60 bg-slate-950/55 backdrop-blur-md">
+            <header className="sticky top-0 z-50 border-b border-slate-800/60 bg-slate-950/55 backdrop-blur-md relative">
               <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4">
                 <Link href="/" className="group flex items-center gap-3">
                   <div className="relative h-10 w-10 overflow-hidden rounded-2xl border border-slate-800/60 bg-slate-950/40">

@@ -242,8 +242,25 @@ export default function SupportPage() {
         </h2>
 
         {loading && (
-          <div className="rounded-3xl border border-slate-800/80 bg-slate-950/60 p-6 text-sm text-slate-200">
-            Loading…
+          <div className="space-y-3">
+            {[0, 1].map((idx) => (
+              <div
+                key={idx}
+                className="animate-pulse rounded-3xl border border-slate-800/80 bg-slate-950/60 p-5"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-2">
+                    <div className="h-4 w-40 rounded-full bg-slate-800/80" />
+                    <div className="h-3 w-28 rounded-full bg-slate-800/80" />
+                  </div>
+                  <div className="h-6 w-20 rounded-full bg-slate-800/80" />
+                </div>
+                <div className="mt-4 space-y-2">
+                  <div className="h-3 w-full rounded-full bg-slate-800/70" />
+                  <div className="h-3 w-5/6 rounded-full bg-slate-800/70" />
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

@@ -35,6 +35,28 @@ function makeAnonClient() {
   })
 }
 
+async function applyRembg(input: Buffer) {
+  const url = process.env.REMBG_URL
+  if (!url) return input
+
+  try {
+    const body = new FormData()
+    body.append('image', new Blob([input], { type: 'image/png' }), 'upload.png')
+
+    const res = await fetch(url, {
+      method: 'POST',
+      body,
+      headers: { accept: 'image/png' },
+    })
+
+    if (!res.ok) return input
+    const buf = Buffer.from(await res.arrayBuffer())
+    return buf.length > 0 ? buf : input
+  } catch {
+    return input
+  }
+}
+
 async function requireAdmin(req: NextRequest) {
   const adminEmails = parseAdminEmails(process.env.NEXT_PUBLIC_ADMIN_EMAILS)
   if (adminEmails.length === 0) {
@@ -68,7 +90,8 @@ function sanitizeFilename(name: string) {
  * Creates a consistent square canvas and bottom-aligns the vape so it sits on the stage.
  */
 async function optimizeToWebpForPillar(imageFile: File) {
-  const input = Buffer.from(await imageFile.arrayBuffer())
+  const raw = Buffer.from(await imageFile.arrayBuffer())
+  const input = await applyRembg(raw)
 
   const OUT_W = 1200
   const OUT_H = 1200

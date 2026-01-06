@@ -35,6 +35,28 @@ function makeAnonClient() {
   })
 }
 
+async function applyRembg(input: Buffer) {
+  const url = process.env.REMBG_URL
+  if (!url) return input
+
+  try {
+    const body = new FormData()
+    body.append('image', new Blob([input], { type: 'image/png' }), 'upload.png')
+
+    const res = await fetch(url, {
+      method: 'POST',
+      body,
+      headers: { accept: 'image/png' },
+    })
+
+    if (!res.ok) return input
+    const buf = Buffer.from(await res.arrayBuffer())
+    return buf.length > 0 ? buf : input
+  } catch {
+    return input
+  }
+}
+
 async function requireAdmin(req: NextRequest) {
   const adminEmails = parseAdminEmails(process.env.NEXT_PUBLIC_ADMIN_EMAILS)
   if (adminEmails.length === 0) {
@@ -69,51 +91,56 @@ function isValidHex(hex: string) {
 }
 
 /**
- * ✅ This is the FULL "auto-fix any vape image" pipeline:
- * - Loads PNG/JPG/WebP
- * - Attempts to remove near-white backgrounds (for JPGs that aren't transparent)
- * - Trims excess transparent edges
+ * ✅ FULL IMAGE OPTIMIZATION PIPELINE:
+ * - JPG/PNG/WebP -> RGBA
+ * - Removes near-white backgrounds
+ * - Removes alpha halo edge blur (THIS fixes thick/bloated look)
+ * - Trims transparent edges
  * - Adds padding
- * - Resizes to a consistent 900x1200 canvas
- * - Outputs WEBP
+ * - Resizes into 900x1200 canvas
+ * - Outputs optimized WEBP
  */
 async function optimizeToWebpPerfect(imageFile: File) {
-  const input = Buffer.from(await imageFile.arrayBuffer())
+  const raw = Buffer.from(await imageFile.arrayBuffer())
+  const input = await applyRembg(raw)
 
-  // decode into RGBA so we can clean it reliably
   let img = sharp(input, { failOnError: false }).rotate().ensureAlpha()
 
-  // ✅ If it's a JPG with white bg, we "fake remove" near-white background
-  // This won’t be as perfect as remove.bg but it kills the worst cases.
-  // Keeps it FREE, and makes the site look consistent.
+  // Convert to raw RGBA for pixel-level cleaning
   const { data, info } = await img.raw().toBuffer({ resolveWithObject: true })
 
-  const out = Buffer.from(data) // mutable
+  const out = Buffer.from(data)
   const width = info.width
   const height = info.height
 
-  // remove near-white pixels by turning them transparent
-  // threshold = how strict
-  // lower = removes more, higher = removes less
+  // 1) Remove near-white background pixels
   const threshold = 245
 
   for (let i = 0; i < out.length; i += 4) {
     const r = out[i]
     const g = out[i + 1]
     const b = out[i + 2]
+    const a = out[i + 3]
 
-    // if the pixel is near-white, nuke alpha
+    // kill near-white pixels completely
     if (r >= threshold && g >= threshold && b >= threshold) {
       out[i + 3] = 0
+      continue
+    }
+
+    // 2) ✅ REMOVE ALPHA HALO / SOFT EDGE (this fixes “thick” look)
+    if (a > 0 && a < 60) {
+      out[i + 3] = 0
+    } else if (a >= 60 && a < 160) {
+      out[i + 3] = 220
     }
   }
 
   img = sharp(out, { raw: { width, height, channels: 4 } })
 
-  // ✅ trim removes transparent padding
-  // BUT trim can sometimes cut too much, so we add safe padding back
+  // Trim + add safe padding
   img = img
-    .trim() // removes transparent edges
+    .trim()
     .extend({
       top: 80,
       bottom: 140,
@@ -122,15 +149,13 @@ async function optimizeToWebpPerfect(imageFile: File) {
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
 
-  // ✅ Force consistent canvas size so every product looks the same scale
-  // contain = keeps aspect ratio, never stretches
+  // Force consistent canvas size
   img = img.resize(900, 1200, {
     fit: 'contain',
     background: { r: 0, g: 0, b: 0, alpha: 0 },
   })
 
-  // ✅ Export as webp
-  return await img.webp({ quality: 85, effort: 6 }).toBuffer()
+  return await img.webp({ quality: 86, effort: 6 }).toBuffer()
 }
 
 export async function POST(req: NextRequest) {

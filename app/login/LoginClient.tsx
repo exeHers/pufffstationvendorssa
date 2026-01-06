@@ -10,22 +10,88 @@ export default function LoginClient() {
   const params = useSearchParams()
   const nextPath = useMemo(() => params.get('next') ?? '/orders', [params])
 
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const initialMode = useMemo(
+    () => (params.get('mode') === 'signup' ? 'signup' : 'login'),
+    [params]
+  )
+  const [mode, setMode] = useState<'login' | 'signup'>(initialMode)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session?.user) router.replace(nextPath)
+  type AuthSession = { user: { id: string }; access_token: string }
+
+  async function syncAdminCookie(session: AuthSession | null) {
+    if (!session?.user?.id) return null
+
+    const res = await fetch('/api/admin/cookie', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ userId: session.user.id }),
     })
 
+    if (!res.ok) {
+      const payload = await res.json().catch(() => ({}))
+      throw new Error(payload?.error ?? 'Failed to set admin cookie.')
+    }
+
+    const payload = await res.json().catch(() => ({}))
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('pufff-admin-cookie'))
+    }
+    return typeof payload?.isAdmin === 'boolean' ? payload.isAdmin : null
+  }
+
+  async function handleSessionRedirect(session: AuthSession | null) {
+    if (!session?.user) return
+
+    const isAdmin = await syncAdminCookie(session)
+    if (nextPath.startsWith('/admin') && isAdmin === false) {
+      setError('Access denied. Your account is not marked as admin in the database.')
+      return
+    }
+
+    router.replace(nextPath)
+  }
+
+  useEffect(() => {
+    setMode(initialMode)
+  }, [initialMode])
+
+  useEffect(() => {
+    let active = true
+
+    const boot = async () => {
+      const { data } = await supabase.auth.getSession()
+      if (!active) return
+      if (data.session?.user) {
+        try {
+          await handleSessionRedirect(data.session as AuthSession)
+        } catch (err: any) {
+          if (active) setError(err?.message ?? 'Failed to load admin session.')
+        }
+      }
+    }
+
+    boot()
+
     const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
-      if (session?.user) router.replace(nextPath)
+      if (session?.user) {
+        handleSessionRedirect(session as AuthSession).catch((err: any) => {
+          if (active) setError(err?.message ?? 'Failed to load admin session.')
+        })
+      }
     })
-    return () => sub.subscription.unsubscribe()
+
+    return () => {
+      active = false
+      sub.subscription.unsubscribe()
+    }
   }, [router, nextPath])
 
   async function onSubmit(e: React.FormEvent) {
@@ -41,11 +107,14 @@ export default function LoginClient() {
     setLoading(true)
     try {
       if (mode === 'login') {
-        const { error: err } = await supabase.auth.signInWithPassword({
+        const { data, error: err } = await supabase.auth.signInWithPassword({
           email: email.trim(),
           password,
         })
         if (err) throw err
+        if (data.session?.user) {
+          await handleSessionRedirect(data.session as AuthSession)
+        }
       } else {
         const { error: err } = await supabase.auth.signUp({
           email: email.trim(),

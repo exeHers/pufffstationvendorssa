@@ -53,11 +53,12 @@ export default function ShopHero({
 
       {/* Smoke video layer */}
       <video
-        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-60"
+        className="pufff-smoke-video pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-60"
         autoPlay
         loop
         muted
         playsInline
+        preload="metadata"
       >
         <source src={smokeSrc} type="video/webm" />
       </video>
