@@ -5,6 +5,11 @@ import ProductCard from '@/components/products/ProductCard'
 
 export const dynamic = 'force-dynamic'
 
+function isValidHex(hex?: string | null) {
+  if (!hex) return false
+  return /^#[0-9a-fA-F]{6}$/.test(hex.trim())
+}
+
 function hexToHue(hex?: string | null) {
   if (!hex) return null
   const h = hex.replace('#', '').trim()
@@ -63,7 +68,8 @@ function FeaturedHero({ product }: { product: Product }) {
   const bulkMin = p.bulk_min
   const bulkPrice = p.bulk_price
 
-  const smokeTint = accentHex || `hsl(${hue} 95% 60%)`
+  const smokeHex = isValidHex(p.smoke_hex_scroll) ? p.smoke_hex_scroll.trim() : null
+  const smokeTint = smokeHex || accentHex || '#D946EF'
 
   return (
     <a
@@ -83,7 +89,7 @@ function FeaturedHero({ product }: { product: Product }) {
           <div
             className="absolute inset-0 opacity-35"
             style={{
-              filter: `hue-rotate(${hue}deg) saturate(1.25) contrast(1.15) brightness(1.05)`,
+              filter: 'grayscale(1) contrast(1.35) brightness(1.05)',
             }}
           >
             <video
@@ -101,8 +107,12 @@ function FeaturedHero({ product }: { product: Product }) {
 
           {/* Tint overlay */}
           <div
-            className="absolute inset-0 mix-blend-screen opacity-25"
-            style={{ background: smokeTint }}
+            className="absolute inset-0"
+            style={{
+              background: smokeTint,
+              mixBlendMode: 'color',
+              opacity: 1,
+            }}
           />
 
           {/* Soft vignette + mask */}
