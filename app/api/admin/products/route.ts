@@ -41,7 +41,7 @@ async function applyRembg(input: Buffer) {
 
   try {
     const body = new FormData()
-    body.append('image', new Blob([input], { type: 'image/png' }), 'upload.png')
+    body.append('image', new Blob([new Uint8Array(input)], { type: 'image/png' }), 'upload.png')
 
     const res = await fetch(url, {
       method: 'POST',
