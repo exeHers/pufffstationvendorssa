@@ -129,6 +129,11 @@ export default function AdminHomePage() {
             href="/admin/categories"
           />
           <AdminCard
+            title="Flavours"
+            desc="Manage flavour tags shown on the homepage and shop filters."
+            href="/admin/flavours"
+          />
+          <AdminCard
             title="Support"
             desc="View support tickets and respond to customers."
             href="/admin/support"

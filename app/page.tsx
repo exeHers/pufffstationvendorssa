@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { supabase, supabaseEnvReady } from '@/lib/supabaseClient'
 import type { Product } from '@/lib/types'
+import FlavourPicker from '@/components/home/FlavourPicker'
 
 export const dynamic = 'force-dynamic'
 
@@ -138,6 +139,10 @@ export default async function HomePage() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-12">
+        <FlavourPicker />
       </section>
 
       {featured.length > 0 ? (

@@ -6,7 +6,6 @@ import './smoke.css'
 import AgeGate from '@/components/age/AgeGate'
 import LuxeAtmosphere from '@/components/ui/LuxeAtmosphere'
 import { CartProvider } from '@/components/cart/CartContext'
-import CartBadge from '@/components/cart/CartBadge'
 import HeaderLinks from '@/components/nav/HeaderLinks'
 
 export const metadata: Metadata = {
@@ -50,15 +49,6 @@ export default function RootLayout({
 
                 <HeaderLinks />
 
-                <div className="flex items-center gap-3">
-                  <Link
-                    href="/cart"
-                    className="relative inline-flex items-center justify-center rounded-2xl border border-slate-800/70 bg-slate-950/50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white transition hover:border-slate-700/80"
-                  >
-                    Cart
-                    <CartBadge />
-                  </Link>
-                </div>
               </div>
             </header>
 
