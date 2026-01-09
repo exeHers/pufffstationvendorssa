@@ -21,20 +21,6 @@ export default function LoginClient() {
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
 
-<<<<<<< HEAD
-  type AuthSession = { user: { id: string }; access_token: string }
-
-  async function syncAdminCookie(session: AuthSession | null) {
-    if (!session?.user?.id) return null
-
-    const res = await fetch('/api/admin/cookie', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ userId: session.user.id }),
-=======
   useEffect(() => {
     const syncAdminCookie = async (token?: string | null) => {
       if (!token) return
@@ -48,72 +34,18 @@ export default function LoginClient() {
       const session = data.session
       if (session?.access_token) syncAdminCookie(session.access_token)
       if (session?.user) router.replace(nextPath)
->>>>>>> ai-build
     })
 
-    if (!res.ok) {
-      const payload = await res.json().catch(() => ({}))
-      throw new Error(payload?.error ?? 'Failed to set admin cookie.')
-    }
-
-    const payload = await res.json().catch(() => ({}))
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('pufff-admin-cookie'))
-    }
-    return typeof payload?.isAdmin === 'boolean' ? payload.isAdmin : null
-  }
-
-  async function handleSessionRedirect(session: AuthSession | null) {
-    if (!session?.user) return
-
-    const isAdmin = await syncAdminCookie(session)
-    if (nextPath.startsWith('/admin') && isAdmin === false) {
-      setError('Access denied. Your account is not marked as admin in the database.')
-      return
-    }
-
-    router.replace(nextPath)
-  }
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+      if (session?.access_token) syncAdminCookie(session.access_token)
+      if (session?.user) router.replace(nextPath)
+    })
+    return () => sub.subscription.unsubscribe()
+  }, [router, nextPath])
 
   useEffect(() => {
     setMode(initialMode)
   }, [initialMode])
-
-  useEffect(() => {
-    let active = true
-
-    const boot = async () => {
-      const { data } = await supabase.auth.getSession()
-      if (!active) return
-      if (data.session?.user) {
-        try {
-          await handleSessionRedirect(data.session as AuthSession)
-        } catch (err: any) {
-          if (active) setError(err?.message ?? 'Failed to load admin session.')
-        }
-      }
-    }
-
-    boot()
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
-<<<<<<< HEAD
-      if (session?.user) {
-        handleSessionRedirect(session as AuthSession).catch((err: any) => {
-          if (active) setError(err?.message ?? 'Failed to load admin session.')
-        })
-      }
-=======
-      if (session?.access_token) syncAdminCookie(session.access_token)
-      if (session?.user) router.replace(nextPath)
->>>>>>> ai-build
-    })
-
-    return () => {
-      active = false
-      sub.subscription.unsubscribe()
-    }
-  }, [router, nextPath])
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -128,22 +60,18 @@ export default function LoginClient() {
     setLoading(true)
     try {
       if (mode === 'login') {
-        const { data, error: err } = await supabase.auth.signInWithPassword({
+        const { error: err } = await supabase.auth.signInWithPassword({
           email: email.trim(),
           password,
         })
         if (err) throw err
-<<<<<<< HEAD
-        if (data.session?.user) {
-          await handleSessionRedirect(data.session as AuthSession)
-=======
+
         const { data: sess } = await supabase.auth.getSession()
         if (sess.session?.access_token) {
           await fetch('/api/admin/session', {
             method: 'POST',
             headers: { Authorization: `Bearer ${sess.session.access_token}` },
           })
->>>>>>> ai-build
         }
       } else {
         const { error: err } = await supabase.auth.signUp({
@@ -218,7 +146,7 @@ export default function LoginClient() {
             disabled={loading}
             className="w-full rounded-full bg-[#D946EF] px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_24px_rgba(217,70,239,0.8)] hover:brightness-110 active:scale-95 disabled:opacity-60"
           >
-            {loading ? 'Please wait…' : mode === 'login' ? 'Login' : 'Sign up'}
+            {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Sign up'}
           </button>
         </form>
 

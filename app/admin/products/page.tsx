@@ -609,33 +609,6 @@ export default function AdminProductsPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
             Quick tools (free)
           </p>
-<<<<<<< HEAD
-          <div className="mt-3 flex flex-wrap gap-2">
-            <a
-              href="https://www.remove.bg/"
-              target="_blank"
-              rel="noreferrer"
-              className="w-full rounded-full border border-slate-700 bg-black/30 px-4 py-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-slate-500 sm:w-auto"
-            >
-              Remove.bg (auto cutout)
-            </a>
-            <a
-              href="https://www.photopea.com/"
-              target="_blank"
-              rel="noreferrer"
-              className="w-full rounded-full border border-slate-700 bg-black/30 px-4 py-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-slate-500 sm:w-auto"
-            >
-              Photopea (manual cutout)
-            </a>
-            <a
-              href="https://www.canva.com/"
-              target="_blank"
-              rel="noreferrer"
-              className="w-full rounded-full border border-slate-700 bg-black/30 px-4 py-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-slate-500 sm:w-auto"
-            >
-              Canva (export transparent PNG)
-            </a>
-=======
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <div className="flex w-full max-w-sm items-center gap-2">
               <select
@@ -660,7 +633,6 @@ export default function AdminProductsPage() {
                 Open
               </button>
             </div>
->>>>>>> ai-build
           </div>
           <p className="mt-3 text-[11px] text-slate-400">
             Tip: Use transparent PNGs so the vape pops on black + smoke. White backgrounds will always look kak.

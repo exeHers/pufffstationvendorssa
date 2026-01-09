@@ -7,8 +7,6 @@ import ShopFilters from '@/components/shop/ShopFilters'
 
 export const dynamic = 'force-dynamic'
 
-<<<<<<< HEAD
-=======
 type Category = {
   id: string
   name: string
@@ -25,7 +23,6 @@ function isValidHex(hex?: string | null) {
   return /^#[0-9a-fA-F]{6}$/.test(hex.trim())
 }
 
->>>>>>> ai-build
 function hexToHue(hex?: string | null) {
   if (!hex) return null
   const h = hex.replace('#', '').trim()
@@ -49,10 +46,6 @@ function hexToHue(hex?: string | null) {
   return hue
 }
 
-function isValidHex(hex?: string | null) {
-  return !!hex && /^#[0-9a-fA-F]{6}$/.test(hex.trim())
-}
-
 function hexToRgb(hex?: string | null) {
   if (!isValidHex(hex)) return null
   const h = hex!.replace('#', '').trim()
@@ -62,7 +55,6 @@ function hexToRgb(hex?: string | null) {
   return `${r} ${g} ${b}`
 }
 
-// fallback if accent_hex is missing
 function pickHue(name: string) {
   const n = name.toLowerCase()
   if (n.includes('grape') || n.includes('berry') || n.includes('purple')) return 285
@@ -76,7 +68,7 @@ function pickHue(name: string) {
 function clampCategoryLabel(input: string) {
   const s = (input || '').trim()
   if (!s) return 'Other'
-  return s.length > 28 ? `${s.slice(0, 28)}…` : s
+  return s.length > 28 ? `${s.slice(0, 28)}...` : s
 }
 
 function getAccent(product: Product) {
@@ -113,20 +105,15 @@ function FeaturedHero({ product }: { product: Product }) {
       className="group relative block overflow-hidden rounded-[2.25rem] border border-slate-800/60 bg-slate-950/40 p-6 shadow-[0_0_60px_rgba(217,70,239,0.05)] transition hover:-translate-y-0.5 hover:border-slate-700/70 md:p-10"
       style={{ ['--smoke-rgb' as any]: smokeRgb } as React.CSSProperties}
     >
-      {/* Ambient layers */}
       <div className="absolute inset-0">
-        {/* Base haze / tiles */}
         <div className="pufff-haze opacity-60" />
         <div className="pufff-tile-breathe opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-br from-slate-950/75 via-slate-950/55 to-slate-900/60" />
 
-        {/* Smoke video (subtle premium) */}
         <div className="absolute inset-0 overflow-hidden">
           <div
             className="absolute inset-0 opacity-35"
-            style={{
-              filter: 'grayscale(1) contrast(1.2) brightness(1.05)',
-            }}
+            style={{ filter: 'grayscale(1) contrast(1.2) brightness(1.05)' }}
           >
             <video
               className="pufff-smoke-video h-full w-full object-cover scale-[1.08]"
@@ -141,18 +128,12 @@ function FeaturedHero({ product }: { product: Product }) {
             </video>
           </div>
 
-          {/* Tint overlay */}
-          <div
-            className="absolute inset-0 mix-blend-screen opacity-25"
-            style={{ background: smokeHex }}
-          />
+          <div className="absolute inset-0 mix-blend-screen opacity-25" style={{ background: smokeHex }} />
 
-          {/* Soft vignette + mask */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/70" />
           <div className="absolute inset-0 [mask-image:radial-gradient(70%_55%_at_50%_40%,black,transparent_70%)] bg-black/45" />
         </div>
 
-        {/* Accent glows */}
         <div
           className="absolute inset-0 opacity-25"
           style={{
@@ -164,7 +145,6 @@ function FeaturedHero({ product }: { product: Product }) {
       </div>
 
       <div className="relative grid gap-8 md:grid-cols-[1.05fr_0.95fr] md:items-center">
-        {/* Text */}
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">
             Featured Drop
@@ -198,9 +178,7 @@ function FeaturedHero({ product }: { product: Product }) {
           <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
             <span
               className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_0_35px_rgba(34,211,238,0.25)] transition group-hover:brightness-110"
-              style={{
-                background: accentHex || `hsl(${hue} 95% 60%)`,
-              }}
+              style={{ background: accentHex || `hsl(${hue} 95% 60%)` }}
             >
               View flavour
             </span>
@@ -211,13 +189,10 @@ function FeaturedHero({ product }: { product: Product }) {
           </div>
         </div>
 
-        {/* Image */}
         <div className="relative mx-auto w-full max-w-md">
           <div
             className="absolute -inset-8 rounded-[2.25rem] blur-3xl opacity-35"
-            style={{
-              background: accentHex || `hsl(${hue} 95% 60%)`,
-            }}
+            style={{ background: accentHex || `hsl(${hue} 95% 60%)` }}
           />
           <div className="relative overflow-hidden rounded-[2.25rem] border border-slate-800/60 bg-slate-950/40 p-6">
             <div className="absolute inset-0 opacity-30">
@@ -258,9 +233,7 @@ function RowHeader({ title, subtitle }: { title: string; subtitle?: string }) {
         <h2 className="text-xl font-extrabold tracking-tight text-white">
           {title}
         </h2>
-        {subtitle ? (
-          <p className="mt-1 text-sm text-slate-400">{subtitle}</p>
-        ) : null}
+        {subtitle ? <p className="mt-1 text-sm text-slate-400">{subtitle}</p> : null}
       </div>
       <div className="hidden text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 sm:block">
         Scroll
@@ -295,22 +268,6 @@ function ProductRow({
   )
 }
 
-<<<<<<< HEAD
-type ShopPageProps = {
-  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
-}
-
-function normalizeCategory(value?: string) {
-  return (value ?? '').trim().toLowerCase()
-}
-
-export default async function ShopPage({ searchParams }: ShopPageProps) {
-  const params = (await searchParams) ?? {}
-  const rawCat = Array.isArray(params.cat) ? params.cat[0] : params.cat
-  const selectedCat = normalizeCategory(rawCat)
-
-  const { data, error } = await supabase
-=======
 export default async function ShopPage({
   searchParams,
 }: {
@@ -365,7 +322,6 @@ export default async function ShopPage({
   const selectBase = '*'
 
   let productQuery = supabase
->>>>>>> ai-build
     .from('products')
     .select(flavour ? selectWithFlavour : selectBase)
     .eq('is_deleted', false)
@@ -394,9 +350,6 @@ export default async function ShopPage({
   const categoryEntries = Array.from(byCategory.entries()).sort(
     (a, b) => b[1].length - a[1].length
   )
-  const visibleEntries = selectedCat
-    ? categoryEntries.filter(([cat]) => normalizeCategory(cat) === selectedCat)
-    : categoryEntries
 
   const activeFlavourLabel = activeFlavour?.name || flavour
   const activeBrandLabel = activeBrand?.name || brand
@@ -448,7 +401,7 @@ export default async function ShopPage({
 
       {error && (
         <div className="mt-8 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200">
-          Eish… shop didn’t load. Check Supabase + your env keys.
+          Eish - shop didn't load. Check Supabase + your env keys.
         </div>
       )}
 
@@ -476,41 +429,8 @@ export default async function ShopPage({
         </div>
       )}
 
-      {categoryEntries.length > 0 && (
-        <section className="mt-10">
-          <div className="flex flex-wrap items-center gap-2">
-            <a
-              href="/shop"
-              className={`rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] ${
-                selectedCat
-                  ? 'border-slate-800 bg-slate-950/40 text-slate-300 hover:border-slate-600'
-                  : 'border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-200'
-              }`}
-            >
-              All
-            </a>
-            {categoryEntries.map(([cat]) => {
-              const active = normalizeCategory(cat) === selectedCat
-              return (
-                <a
-                  key={cat}
-                  href={`/shop?cat=${encodeURIComponent(cat)}`}
-                  className={`rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] ${
-                    active
-                      ? 'border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-200'
-                      : 'border-slate-800 bg-slate-950/40 text-slate-300 hover:border-slate-600'
-                  }`}
-                >
-                  {cat}
-                </a>
-              )
-            })}
-          </div>
-        </section>
-      )}
-
-      {visibleEntries.length > 0 &&
-        visibleEntries.map(([cat, items]) => (
+      {categoryEntries.length > 0 &&
+        categoryEntries.map(([cat, items]) => (
           <ProductRow
             key={cat}
             title={cat}
@@ -521,10 +441,7 @@ export default async function ShopPage({
 
       {filteredProducts.length > 10 && (
         <section className="mt-14">
-          <RowHeader
-            title="All drops"
-            subtitle="Not a warehouse grid. A curated feed."
-          />
+          <RowHeader title="All drops" subtitle="Not a warehouse grid. A curated feed." />
           <div className="mt-6 flex flex-col gap-5">
             {filteredProducts.map((p) => (
               <div key={p.id} className="max-w-4xl">

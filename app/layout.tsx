@@ -50,11 +50,7 @@ export default function RootLayout({
 
         <CartProvider>
           <div className="min-h-screen">
-<<<<<<< HEAD
-            <header className="sticky top-0 z-50 border-b border-slate-800/60 bg-slate-950/55 backdrop-blur-md relative">
-=======
             <header className="sticky top-0 z-50 border-b border-slate-800/40 bg-slate-950/24 backdrop-blur-md">
->>>>>>> ai-build
               <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4">
                 <Link href="/" className="group flex items-center gap-3">
                   <div className="relative h-11 w-11 overflow-hidden rounded-full border border-slate-800/60 bg-slate-950/40 sm:h-12 sm:w-12 lg:h-14 lg:w-14">
@@ -148,3 +144,4 @@ export default function RootLayout({
     </html>
   )
 }
+

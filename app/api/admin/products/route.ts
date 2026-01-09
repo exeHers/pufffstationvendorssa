@@ -101,14 +101,9 @@ function isValidHex(hex: string) {
  * - Outputs optimized WEBP
  */
 async function optimizeToWebpPerfect(imageFile: File) {
-<<<<<<< HEAD
-  const raw = Buffer.from(await imageFile.arrayBuffer())
-  const input = await applyRembg(raw)
-=======
   const input = Buffer.from(await imageFile.arrayBuffer())
   const OUT_W = 900
   const OUT_H = 1200
->>>>>>> ai-build
 
   let img = sharp(input, { failOnError: false }).rotate().ensureAlpha()
 
@@ -155,22 +150,14 @@ async function optimizeToWebpPerfect(imageFile: File) {
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
 
-<<<<<<< HEAD
-  // Force consistent canvas size
-  img = img.resize(900, 1200, {
-=======
   // ✅ Force consistent canvas size so every product looks the same scale
   // contain = keeps aspect ratio, never stretches
   img = img.resize(OUT_W, OUT_H, {
->>>>>>> ai-build
     fit: 'contain',
     background: { r: 0, g: 0, b: 0, alpha: 0 },
     withoutEnlargement: true,
   })
 
-<<<<<<< HEAD
-  return await img.webp({ quality: 86, effort: 6 }).toBuffer()
-=======
   const optimized = await img
     .sharpen({ sigma: 0.6, m1: 0.4, m2: 0.3 })
     .webp({ quality: 84, effort: 6, smartSubsample: true, alphaQuality: 90 })
@@ -181,7 +168,6 @@ async function optimizeToWebpPerfect(imageFile: File) {
   }
 
   return optimized
->>>>>>> ai-build
 }
 
 export async function POST(req: NextRequest) {
