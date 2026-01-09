@@ -40,10 +40,10 @@ export default async function HomePage() {
 
   return (
     <main className="relative w-full bg-[#05050c] text-white">
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0">
+      <section className="relative overflow-hidden bg-[#05050c]">
+        <div className="pointer-events-none absolute inset-0 z-0">
           <video
-            className="h-full w-full object-cover object-center opacity-90 blur-[1px]"
+            className="h-full w-full object-cover object-center opacity-95 [filter:brightness(0.88)_contrast(0.95)_saturate(1.12)]"
             autoPlay
             loop
             muted
@@ -51,12 +51,13 @@ export default async function HomePage() {
             preload="auto"
             poster="/hero/neon-smoke.png"
             aria-hidden="true"
+            style={{ transform: 'translateZ(0) scale(1.02)', willChange: 'transform' }}
           >
             <source src="/hero/neon-smoke.mp4" type="video/mp4" />
           </video>
-          <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/65 to-[#05050c]/98" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#05050c]/97 via-[#05050c]/75 to-transparent" />
-          <div className="absolute inset-0 bg-black/25" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#05050c]/95 via-[#05050c]/70 to-transparent" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0)_40%,rgba(0,0,0,0.55)_100%)]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-[#05050c]/90" />
           <div
             className="absolute inset-0 opacity-55"
             style={{
@@ -68,13 +69,13 @@ export default async function HomePage() {
           />
         </div>
 
-        <div className="relative z-10 mx-auto flex min-h-[85vh] w-full max-w-6xl flex-col items-start justify-center gap-12 px-4 pb-16 pt-16 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-xl">
+        <div className="relative z-10 mx-auto flex min-h-[85vh] w-full max-w-6xl flex-col items-start justify-center gap-10 px-4 pb-16 pt-16 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-[520px]">
             <p className="hero-fade hero-fade-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-cyan-200/80">
               PUFFF Station Vendors SA
             </p>
 
-            <h1 className="hero-fade hero-fade-2 mt-5 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
+            <h1 className="hero-fade hero-fade-2 mt-5 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-[3.4rem]">
               <span className="text-white">Clean stock.</span>{' '}
               <span className="bg-gradient-to-r from-cyan-200 via-fuchsia-200 to-purple-200 bg-clip-text text-transparent">
                 PUFFF Station
@@ -87,10 +88,10 @@ export default async function HomePage() {
               for SA vendors who want it smooth and legit.
             </p>
 
-            <div className="hero-fade hero-fade-3 mt-8 flex flex-wrap items-center gap-4">
+            <div className="hero-fade hero-fade-3 mt-7 flex flex-wrap items-center gap-4">
               <Link
                 href="/shop"
-                className="cta-pulse rounded-full bg-cyan-400/95 px-7 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-950 shadow-[0_0_30px_rgba(34,211,238,0.45)] transition hover:brightness-110 active:scale-95"
+                className="cta-pulse rounded-full bg-cyan-400/95 px-8 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-950 shadow-[0_0_34px_rgba(34,211,238,0.5)] transition hover:brightness-110 active:scale-95"
               >
                 Shop the Drop
               </Link>
@@ -103,7 +104,7 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            <p className="hero-fade hero-fade-3 mt-8 text-[11px] text-slate-300/70">
+            <p className="hero-fade hero-fade-3 mt-7 text-[11px] text-slate-300/70">
               Local vendors. Clean pulls. No kak stories.
             </p>
           </div>

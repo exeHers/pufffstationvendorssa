@@ -61,6 +61,18 @@ body {
   100% { transform: rotate(360deg); }
 }
 
+@keyframes heroFade {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0px); }
+}
+
+@keyframes ctaPulse {
+  0% { box-shadow: 0 0 0 rgba(34,211,238,0.0); }
+  50% { box-shadow: 0 0 24px rgba(34,211,238,0.35); }
+  100% { box-shadow: 0 0 0 rgba(34,211,238,0.0); }
+}
+
+
 @keyframes watermarkDrift {
   0% { transform: translate(0px, 0px) scale(1); opacity: 0.08; }
   50% { transform: translate(10px, -8px) scale(1.02); opacity: 0.12; }
@@ -137,6 +149,22 @@ body {
   will-change: transform, opacity;
 }
 
+.hero-fade {
+  animation: heroFade 0.8s ease-out both;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.hero-fade-1 { animation-delay: 0.05s; }
+.hero-fade-2 { animation-delay: 0.18s; }
+.hero-fade-3 { animation-delay: 0.32s; }
+
+.cta-pulse {
+  animation: ctaPulse 3s ease-in-out infinite;
+  will-change: box-shadow;
+}
+
+
 /* ============
    NEW: Luxe Atmosphere Utility Classes
    ============ */
@@ -211,7 +239,14 @@ body {
   .luxe-sheen,
   .luxe-bloom-a,
   .luxe-bloom-b,
-  .luxe-grain {
+  .luxe-grain,
+  .hero-fade,
+  .cta-pulse {
     animation: none !important;
+  }
+
+  .hero-fade {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }

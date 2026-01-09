@@ -79,6 +79,8 @@ function isValidHex(hex: string) {
  */
 async function optimizeToWebpPerfect(imageFile: File) {
   const input = Buffer.from(await imageFile.arrayBuffer())
+  const OUT_W = 900
+  const OUT_H = 1200
 
   // decode into RGBA so we can clean it reliably
   let img = sharp(input, { failOnError: false }).rotate().ensureAlpha()
@@ -124,13 +126,22 @@ async function optimizeToWebpPerfect(imageFile: File) {
 
   // ✅ Force consistent canvas size so every product looks the same scale
   // contain = keeps aspect ratio, never stretches
-  img = img.resize(900, 1200, {
+  img = img.resize(OUT_W, OUT_H, {
     fit: 'contain',
     background: { r: 0, g: 0, b: 0, alpha: 0 },
+    withoutEnlargement: true,
   })
 
-  // ✅ Export as webp
-  return await img.webp({ quality: 85, effort: 6 }).toBuffer()
+  const optimized = await img
+    .sharpen({ sigma: 0.6, m1: 0.4, m2: 0.3 })
+    .webp({ quality: 84, effort: 6, smartSubsample: true, alphaQuality: 90 })
+    .toBuffer()
+
+  if (!optimized || optimized.length < 2000) {
+    throw new Error('Image optimization failed (output too small).')
+  }
+
+  return optimized
 }
 
 export async function POST(req: NextRequest) {

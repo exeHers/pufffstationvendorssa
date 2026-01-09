@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
 import type { Product } from '@/lib/types'
 import ProductCard from '@/components/products/ProductCard'
+import ShopFilters from '@/components/shop/ShopFilters'
 
 export const dynamic = 'force-dynamic'
 
@@ -313,6 +314,21 @@ export default async function ShopPage({
     ...categories.map((c) => ({ label: c.name, value: c.name })),
   ]
 
+  const brandItems = brandOptions.map((option) => ({
+    label: option.label,
+    href: buildShopUrl({
+      brand: option.value || undefined,
+      flavour: flavour || undefined,
+    }),
+  }))
+  const flavourItems = flavourOptions.map((option) => ({
+    label: option.label,
+    href: buildShopUrl({
+      brand: brand || undefined,
+      flavour: option.value || undefined,
+    }),
+  }))
+
   const selectWithFlavour =
     '*, product_flavours!inner(flavour_id, flavours!inner(id,name,slug))'
   const selectBase = '*'
@@ -366,49 +382,12 @@ export default async function ShopPage({
           </p>
         </div>
 
-        <div className="flex w-full max-w-xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-          <details className="group w-full rounded-2xl border border-slate-800/70 bg-slate-950/70 px-4 py-3 text-left sm:max-w-[220px]">
-            <summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold uppercase tracking-[0.22em] text-slate-200">
-              {activeBrandLabel || 'All brands'}
-              <span className="text-slate-500">+</span>
-            </summary>
-            <div className="mt-3 flex flex-col gap-1">
-              {brandOptions.map((option) => (
-                <Link
-                  key={option.value || 'all-brands'}
-                  href={buildShopUrl({
-                    brand: option.value || undefined,
-                    flavour: flavour || undefined,
-                  })}
-                  className="rounded-xl px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-300 transition hover:bg-slate-800/70 hover:text-white"
-                >
-                  {option.label}
-                </Link>
-              ))}
-            </div>
-          </details>
-
-          <details className="group w-full rounded-2xl border border-slate-800/70 bg-slate-950/70 px-4 py-3 text-left sm:max-w-[220px]">
-            <summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold uppercase tracking-[0.22em] text-slate-200">
-              {activeFlavourLabel || 'All flavours'}
-              <span className="text-slate-500">+</span>
-            </summary>
-            <div className="mt-3 flex flex-col gap-1">
-              {flavourOptions.map((option) => (
-                <Link
-                  key={option.value || 'all-flavours'}
-                  href={buildShopUrl({
-                    brand: brand || undefined,
-                    flavour: option.value || undefined,
-                  })}
-                  className="rounded-xl px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-300 transition hover:bg-slate-800/70 hover:text-white"
-                >
-                  {option.label}
-                </Link>
-              ))}
-            </div>
-          </details>
-        </div>
+        <ShopFilters
+          brandLabel={activeBrandLabel || 'All brands'}
+          flavourLabel={activeFlavourLabel || 'All flavours'}
+          brandItems={brandItems}
+          flavourItems={flavourItems}
+        />
       </div>
 
       {hasFilters && (

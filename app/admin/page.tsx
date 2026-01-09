@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
+import { supabaseBrowser } from '@/lib/supabase/browser'
 
 type Profile = {
   id: string
@@ -18,25 +18,23 @@ export default function AdminHomePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    ;(async () => {
+    const supabase = supabaseBrowser()
+    let active = true
+    let checked = false
+
+    const loadAdmin = async (userId: string, userEmail: string) => {
+      if (!active) return
       setLoading(true)
       setError(null)
-
-      const { data: sess } = await supabase.auth.getSession()
-      const user = sess.session?.user
-
-      if (!user) {
-        router.replace('/login?next=/admin')
-        return
-      }
-
-      setEmail(user.email ?? '')
+      setEmail(userEmail ?? '')
 
       const { data: profile, error: profileErr } = await supabase
         .from('profiles')
         .select('id, role')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single<Profile>()
+
+      if (!active) return
 
       if (profileErr || !profile) {
         setError('Profile not found. Make sure this user exists in the profiles table.')
@@ -53,7 +51,51 @@ export default function AdminHomePage() {
       }
 
       setLoading(false)
-    })()
+    }
+
+    const resolveSession = async () => {
+      const { data: sessionData } = await supabase.auth.getSession()
+      const sessionUser = sessionData.session?.user
+      if (sessionUser) {
+        checked = true
+        await loadAdmin(sessionUser.id, sessionUser.email ?? '')
+        return
+      }
+
+      const { data: userData } = await supabase.auth.getUser()
+      const user = userData.user
+      if (user) {
+        checked = true
+        await loadAdmin(user.id, user.email ?? '')
+        return
+      }
+
+      if (active && !checked) {
+        checked = true
+        setLoading(false)
+        router.replace('/login?next=/admin')
+      }
+    }
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      const user = session?.user
+      if (event === 'INITIAL_SESSION') {
+        if (user) loadAdmin(user.id, user.email ?? '')
+        return
+      }
+      if (event === 'SIGNED_OUT') {
+        if (active && checked) router.replace('/login?next=/admin')
+        return
+      }
+      if (user) loadAdmin(user.id, user.email ?? '')
+    })
+
+    resolveSession()
+
+    return () => {
+      active = false
+      sub.subscription.unsubscribe()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

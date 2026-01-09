@@ -18,11 +18,22 @@ export default function LoginClient() {
   const [info, setInfo] = useState<string | null>(null)
 
   useEffect(() => {
+    const syncAdminCookie = async (token?: string | null) => {
+      if (!token) return
+      await fetch('/api/admin/session', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    }
+
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session?.user) router.replace(nextPath)
+      const session = data.session
+      if (session?.access_token) syncAdminCookie(session.access_token)
+      if (session?.user) router.replace(nextPath)
     })
 
     const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+      if (session?.access_token) syncAdminCookie(session.access_token)
       if (session?.user) router.replace(nextPath)
     })
     return () => sub.subscription.unsubscribe()
@@ -46,6 +57,13 @@ export default function LoginClient() {
           password,
         })
         if (err) throw err
+        const { data: sess } = await supabase.auth.getSession()
+        if (sess.session?.access_token) {
+          await fetch('/api/admin/session', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${sess.session.access_token}` },
+          })
+        }
       } else {
         const { error: err } = await supabase.auth.signUp({
           email: email.trim(),

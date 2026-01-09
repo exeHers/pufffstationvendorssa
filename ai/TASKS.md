@@ -16,11 +16,11 @@
 # PHASE 1 — Homepage Brand & Header Polish (High Priority)
 
 ## [ ] 1.1 Header: Desktop matches mobile dropdown style
-**Goal:** Desktop header must not list every category link. Replace with a "Flavours" dropdown.
+**Goal:** Desktop header must not list every category link, Must be placed in a menu dropdown.
 - Keep main nav: Home / Shop / Support / Login / Cart
-- Add dropdown: "Flavours" (or "Categories")
+- Add dropdown: "Flavours" (or "Categories") to shop page.
 - Dropdown lists flavour groups (Sweet, Fruity, Ice/Mint, Tobacco, Soda, Berry, Exotic etc.)
-- On click → navigates to filtered shop page.
+- On click → navigates to filtered shop page. Hover Dropdown for pc, and tap dropdown for mobile.
 
 **Done when:**
 - desktop header looks clean
