@@ -1,10 +1,31 @@
 import React from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
 import type { Product } from '@/lib/types'
 import ProductCard from '@/components/products/ProductCard'
+import ShopFilters from '@/components/shop/ShopFilters'
 
 export const dynamic = 'force-dynamic'
 
+<<<<<<< HEAD
+=======
+type Category = {
+  id: string
+  name: string
+}
+
+type Flavour = {
+  id: string
+  name: string
+  slug: string
+}
+
+function isValidHex(hex?: string | null) {
+  if (!hex) return false
+  return /^#[0-9a-fA-F]{6}$/.test(hex.trim())
+}
+
+>>>>>>> ai-build
 function hexToHue(hex?: string | null) {
   if (!hex) return null
   const h = hex.replace('#', '').trim()
@@ -68,6 +89,14 @@ function getAccent(product: Product) {
 
 function formatMoney(n: number) {
   return `R${Number(n).toFixed(2)}`
+}
+
+function buildShopUrl(params: { brand?: string; flavour?: string }) {
+  const sp = new URLSearchParams()
+  if (params.brand) sp.set('brand', params.brand)
+  if (params.flavour) sp.set('flavour', params.flavour)
+  const qs = sp.toString()
+  return qs ? `/shop?${qs}` : '/shop'
 }
 
 function FeaturedHero({ product }: { product: Product }) {
@@ -266,6 +295,7 @@ function ProductRow({
   )
 }
 
+<<<<<<< HEAD
 type ShopPageProps = {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }
@@ -280,19 +310,82 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const selectedCat = normalizeCategory(rawCat)
 
   const { data, error } = await supabase
+=======
+export default async function ShopPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ flavour?: string; brand?: string }>
+}) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const brand = (resolvedSearchParams?.brand || '').toString().trim()
+  const flavour = (resolvedSearchParams?.flavour || '').toString().toLowerCase().trim()
+
+  const [categoriesResult, flavoursResult] = await Promise.all([
+    supabase.from('categories').select('id,name').order('name', { ascending: true }),
+    supabase
+      .from('flavours')
+      .select('id,name,slug')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true }),
+  ])
+
+  const categories = (categoriesResult.data as Category[]) || []
+  const flavours = (flavoursResult.data as Flavour[]) || []
+
+  const activeBrand =
+    categories.find((c) => c.name.toLowerCase() === brand.toLowerCase()) || null
+  const activeFlavour = flavours.find((f) => f.slug === flavour) || null
+
+  const flavourOptions = [
+    { label: 'All flavours', value: '' },
+    ...flavours.map((f) => ({ label: f.name, value: f.slug })),
+  ]
+  const brandOptions = [
+    { label: 'All brands', value: '' },
+    ...categories.map((c) => ({ label: c.name, value: c.name })),
+  ]
+
+  const brandItems = brandOptions.map((option) => ({
+    label: option.label,
+    href: buildShopUrl({
+      brand: option.value || undefined,
+      flavour: flavour || undefined,
+    }),
+  }))
+  const flavourItems = flavourOptions.map((option) => ({
+    label: option.label,
+    href: buildShopUrl({
+      brand: brand || undefined,
+      flavour: option.value || undefined,
+    }),
+  }))
+
+  const selectWithFlavour =
+    '*, product_flavours!inner(flavour_id, flavours!inner(id,name,slug))'
+  const selectBase = '*'
+
+  let productQuery = supabase
+>>>>>>> ai-build
     .from('products')
-    .select('*')
+    .select(flavour ? selectWithFlavour : selectBase)
     .eq('is_deleted', false)
     .order('created_at', { ascending: false })
 
-  const products = (data as any as Product[]) || []
-  const anyProducts = products.length > 0
+  if (brand) productQuery = productQuery.ilike('category', brand)
+  if (flavour) productQuery = productQuery.eq('product_flavours.flavours.slug', flavour)
+
+  const { data, error } = await productQuery
+
+  const filteredProducts = (data as any as Product[]) || []
+  const anyProducts = filteredProducts.length > 0
 
   const featured =
-    products.find((p: any) => p.in_stock === true) || products[0] || null
+    filteredProducts.find((p: any) => p.in_stock === true) ||
+    filteredProducts[0] ||
+    null
 
   const byCategory = new Map<string, Product[]>()
-  for (const p of products) {
+  for (const p of filteredProducts) {
     const cat = clampCategoryLabel(((p as any).category as string) || '')
     if (!byCategory.has(cat)) byCategory.set(cat, [])
     byCategory.get(cat)!.push(p)
@@ -305,19 +398,53 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     ? categoryEntries.filter(([cat]) => normalizeCategory(cat) === selectedCat)
     : categoryEntries
 
+  const activeFlavourLabel = activeFlavour?.name || flavour
+  const activeBrandLabel = activeBrand?.name || brand
+  const hasFilters = Boolean(brand || flavour)
+
   return (
     <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-10">
-      <div className="flex flex-col gap-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-          Shop
-        </p>
-        <h1 className="text-4xl font-extrabold tracking-tight text-white">
-          Premium Disposables
-        </h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-slate-300">
-          Curated drops. Live motion. Smooth smoke. Pick a flavour and let it speak.
-        </p>
+      <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-col gap-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">
+            Shop
+          </p>
+          <h1 className="text-4xl font-extrabold tracking-tight text-white">
+            Premium Disposables
+          </h1>
+          <p className="max-w-2xl text-sm leading-relaxed text-slate-300">
+            Curated drops. Live motion. Smooth smoke. Pick a flavour and let it speak.
+          </p>
+        </div>
+
+        <ShopFilters
+          brandLabel={activeBrandLabel || 'All brands'}
+          flavourLabel={activeFlavourLabel || 'All flavours'}
+          brandItems={brandItems}
+          flavourItems={flavourItems}
+        />
       </div>
+
+      {hasFilters && (
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          {brand ? (
+            <span className="inline-flex items-center gap-2 rounded-full border border-slate-800/70 bg-slate-950/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-200">
+              Brand: {activeBrandLabel}
+            </span>
+          ) : null}
+          {flavour ? (
+            <span className="inline-flex items-center gap-2 rounded-full border border-slate-800/70 bg-slate-950/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-200">
+              Flavour: {activeFlavourLabel}
+            </span>
+          ) : null}
+          <Link
+            href="/shop"
+            className="inline-flex items-center rounded-full border border-slate-700/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-300 transition hover:border-slate-500 hover:text-white"
+          >
+            Clear filter
+          </Link>
+        </div>
+      )}
 
       {error && (
         <div className="mt-8 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200">
@@ -327,7 +454,19 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
       {!error && !anyProducts && (
         <div className="mt-8 rounded-2xl border border-slate-800/80 bg-slate-950/60 p-4 text-sm text-slate-300">
-          Nothing in stock yet. Admin must load products first.
+          {hasFilters ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <span>No products found for the selected filters.</span>
+              <Link
+                href="/shop"
+                className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200 transition hover:text-white"
+              >
+                Clear filter
+              </Link>
+            </div>
+          ) : (
+            <span>Nothing in stock yet. Admin must load products first.</span>
+          )}
         </div>
       )}
 
@@ -380,14 +519,14 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           />
         ))}
 
-      {products.length > 10 && (
+      {filteredProducts.length > 10 && (
         <section className="mt-14">
           <RowHeader
             title="All drops"
             subtitle="Not a warehouse grid. A curated feed."
           />
           <div className="mt-6 flex flex-col gap-5">
-            {products.map((p) => (
+            {filteredProducts.map((p) => (
               <div key={p.id} className="max-w-4xl">
                 <ProductCard product={p} />
               </div>

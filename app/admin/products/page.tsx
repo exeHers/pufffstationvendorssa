@@ -38,6 +38,29 @@ export default function AdminProductsPage() {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [ok, setOk] = useState<string | null>(null)
+  const removerOptions = [
+    {
+      value: 'adobe',
+      label: 'Adobe Express (Recommended)',
+      url: 'https://www.adobe.com/express/feature/image/remove-background',
+    },
+    {
+      value: 'pixlr',
+      label: 'Pixlr Remove BG',
+      url: 'https://pixlr.com/remove-background/',
+    },
+    {
+      value: 'foco',
+      label: 'FocoClipping',
+      url: 'https://www.fococlipping.com/',
+    },
+    {
+      value: 'cutout',
+      label: 'Cutout.pro',
+      url: 'https://www.cutout.pro/remove-background',
+    },
+  ]
+  const [remover, setRemover] = useState(removerOptions[0])
 
   const [email, setEmail] = useState('')
   const [isAdmin, setIsAdmin] = useState(false)
@@ -586,6 +609,7 @@ export default function AdminProductsPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
             Quick tools (free)
           </p>
+<<<<<<< HEAD
           <div className="mt-3 flex flex-wrap gap-2">
             <a
               href="https://www.remove.bg/"
@@ -611,6 +635,32 @@ export default function AdminProductsPage() {
             >
               Canva (export transparent PNG)
             </a>
+=======
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="flex w-full max-w-sm items-center gap-2">
+              <select
+                className="w-full max-w-sm rounded-2xl border border-slate-700 bg-black/30 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-200"
+                value={remover.value}
+                onChange={(e) => {
+                  const next = removerOptions.find((opt) => opt.value === e.target.value)
+                  setRemover(next || removerOptions[0])
+                }}
+              >
+                {removerOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => window.open(remover.url, '_blank', 'noopener,noreferrer')}
+                className="rounded-full border border-slate-700 bg-black/30 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-200 hover:border-slate-500"
+              >
+                Open
+              </button>
+            </div>
+>>>>>>> ai-build
           </div>
           <p className="mt-3 text-[11px] text-slate-400">
             Tip: Use transparent PNGs so the vape pops on black + smoke. White backgrounds will always look kak.

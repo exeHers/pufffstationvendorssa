@@ -21,6 +21,7 @@ export default function LoginClient() {
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
 
+<<<<<<< HEAD
   type AuthSession = { user: { id: string }; access_token: string }
 
   async function syncAdminCookie(session: AuthSession | null) {
@@ -33,6 +34,21 @@ export default function LoginClient() {
         authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify({ userId: session.user.id }),
+=======
+  useEffect(() => {
+    const syncAdminCookie = async (token?: string | null) => {
+      if (!token) return
+      await fetch('/api/admin/session', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    }
+
+    supabase.auth.getSession().then(({ data }) => {
+      const session = data.session
+      if (session?.access_token) syncAdminCookie(session.access_token)
+      if (session?.user) router.replace(nextPath)
+>>>>>>> ai-build
     })
 
     if (!res.ok) {
@@ -81,11 +97,16 @@ export default function LoginClient() {
     boot()
 
     const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+<<<<<<< HEAD
       if (session?.user) {
         handleSessionRedirect(session as AuthSession).catch((err: any) => {
           if (active) setError(err?.message ?? 'Failed to load admin session.')
         })
       }
+=======
+      if (session?.access_token) syncAdminCookie(session.access_token)
+      if (session?.user) router.replace(nextPath)
+>>>>>>> ai-build
     })
 
     return () => {
@@ -112,8 +133,17 @@ export default function LoginClient() {
           password,
         })
         if (err) throw err
+<<<<<<< HEAD
         if (data.session?.user) {
           await handleSessionRedirect(data.session as AuthSession)
+=======
+        const { data: sess } = await supabase.auth.getSession()
+        if (sess.session?.access_token) {
+          await fetch('/api/admin/session', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${sess.session.access_token}` },
+          })
+>>>>>>> ai-build
         }
       } else {
         const { error: err } = await supabase.auth.signUp({
