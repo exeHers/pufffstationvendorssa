@@ -41,52 +41,56 @@ export default async function HomePage() {
   return (
     <main className="relative w-full bg-[#05050c] text-white">
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0">
-          <Image
-            src="/hero/neon-smoke.png"
-            alt="Neon smoke background"
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover object-center"
-            quality={90}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/50 to-[#05050c]/95" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#05050c]/95 via-[#05050c]/60 to-transparent" />
+        <div className="pointer-events-none absolute inset-0">
+          <video
+            className="h-full w-full object-cover object-center opacity-90 blur-[1px]"
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            poster="/hero/neon-smoke.png"
+            aria-hidden="true"
+          >
+            <source src="/hero/neon-smoke.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/65 to-[#05050c]/98" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#05050c]/97 via-[#05050c]/75 to-transparent" />
+          <div className="absolute inset-0 bg-black/25" />
           <div
-            className="absolute inset-0 opacity-70"
+            className="absolute inset-0 opacity-55"
             style={{
               background:
-                'radial-gradient(900px 420px at 15% 20%, rgba(34,211,238,0.18), transparent 65%),' +
-                'radial-gradient(700px 380px at 75% 35%, rgba(217,70,239,0.16), transparent 60%),' +
-                'radial-gradient(800px 480px at 65% 80%, rgba(59,130,246,0.14), transparent 65%)',
+                'radial-gradient(900px 420px at 15% 20%, rgba(34,211,238,0.14), transparent 70%),' +
+                'radial-gradient(700px 380px at 75% 35%, rgba(217,70,239,0.12), transparent 68%),' +
+                'radial-gradient(800px 480px at 65% 80%, rgba(59,130,246,0.10), transparent 70%)',
             }}
           />
         </div>
 
         <div className="relative z-10 mx-auto flex min-h-[85vh] w-full max-w-6xl flex-col items-start justify-center gap-12 px-4 pb-16 pt-16 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-xl">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-cyan-200/80">
+            <p className="hero-fade hero-fade-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-cyan-200/80">
               PUFFF Station Vendors SA
             </p>
 
-            <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
-              <span className="text-white">Premium</span>{' '}
+            <h1 className="hero-fade hero-fade-2 mt-5 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
+              <span className="text-white">Clean stock.</span>{' '}
               <span className="bg-gradient-to-r from-cyan-200 via-fuchsia-200 to-purple-200 bg-clip-text text-transparent">
                 PUFFF Station
               </span>{' '}
-              drops for bold nights.
+              only. No kak stories.
             </h1>
 
-            <p className="mt-5 max-w-lg text-sm leading-relaxed text-slate-200/85 sm:text-base">
-              Cinematic neon, clean stock, and a premium checkout built for fast orders.
-              Your official PUFFF Station destination for SA vendors.
+            <p className="hero-fade hero-fade-3 mt-5 max-w-lg text-sm leading-relaxed text-slate-200/85 sm:text-base">
+              Fast dispatch, premium checkout, and official PUFFF Station drops. Built
+              for SA vendors who want it smooth and legit.
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center gap-4">
+            <div className="hero-fade hero-fade-3 mt-8 flex flex-wrap items-center gap-4">
               <Link
                 href="/shop"
-                className="rounded-full bg-cyan-400/95 px-7 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-950 shadow-[0_0_30px_rgba(34,211,238,0.45)] transition hover:brightness-110 active:scale-95"
+                className="cta-pulse rounded-full bg-cyan-400/95 px-7 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-950 shadow-[0_0_30px_rgba(34,211,238,0.45)] transition hover:brightness-110 active:scale-95"
               >
                 Shop the Drop
               </Link>
@@ -99,8 +103,8 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            <p className="mt-8 text-[11px] text-slate-300/70">
-              Local vendors, clean stock, no stories. Premium service coming next.
+            <p className="hero-fade hero-fade-3 mt-8 text-[11px] text-slate-300/70">
+              Local vendors. Clean pulls. No kak stories.
             </p>
           </div>
 
@@ -120,15 +124,15 @@ export default async function HomePage() {
                 <div className="mt-5 space-y-3 text-sm text-slate-200/85">
                   <div className="flex items-center gap-3">
                     <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.6)]" />
-                    Fast dispatch, smooth tracking, zero fuss.
+                    Fast dispatch, smooth tracking, zero drama.
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="h-2 w-2 rounded-full bg-fuchsia-300 shadow-[0_0_12px_rgba(217,70,239,0.6)]" />
-                    Verified vendors with premium inventory.
+                    Verified vendors, premium stock only.
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="h-2 w-2 rounded-full bg-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.6)]" />
-                    Exclusive drops only available here.
+                    Exclusive drops, no shady stories.
                   </div>
                 </div>
 
@@ -149,16 +153,24 @@ export default async function HomePage() {
 
       {featured.length > 0 ? (
         <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-16">
-          <div className="flex flex-col gap-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-400">
-              Featured Drops
-            </p>
-            <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-              A tight 3-pack. Premium, loud, ready.
-            </h2>
-            <p className="max-w-2xl text-sm text-slate-300">
-              Three featured flavours only. No grid overload, just the best of the moment.
-            </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-400">
+                Featured Drops
+              </p>
+              <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+                A tight 3-pack. Premium, loud, ready.
+              </h2>
+              <p className="max-w-2xl text-sm text-slate-300">
+                Three featured flavours only. No grid overload, just the best of the moment.
+              </p>
+            </div>
+            <Link
+              href="/shop"
+              className="mt-2 inline-flex text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200/80 transition hover:text-white sm:mt-0"
+            >
+              Browse all
+            </Link>
           </div>
 
           <div className="mt-8 grid gap-6 md:grid-cols-3">
@@ -169,7 +181,7 @@ export default async function HomePage() {
                 <Link
                   key={product.id}
                   href={`/shop/${product.id}`}
-                  className="group relative overflow-hidden rounded-[1.8rem] border border-slate-800/70 bg-slate-950/70 p-5 shadow-[0_0_35px_rgba(0,0,0,0.45)] transition hover:-translate-y-0.5 hover:border-slate-700/70"
+                className="group relative overflow-hidden rounded-[1.8rem] border border-slate-800/70 bg-slate-950/70 p-5 shadow-[0_0_35px_rgba(0,0,0,0.45)] transition hover:-translate-y-1 hover:border-slate-700/70 hover:shadow-[0_0_45px_rgba(34,211,238,0.18)]"
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-black/70" />
 
