@@ -282,10 +282,11 @@ function ProductRow({
 export default async function ShopPage({
   searchParams,
 }: {
-  searchParams?: { flavour?: string; brand?: string }
+  searchParams?: Promise<{ flavour?: string; brand?: string }>
 }) {
-  const brand = (searchParams?.brand || '').toString().trim()
-  const flavour = (searchParams?.flavour || '').toString().toLowerCase().trim()
+  const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const brand = (resolvedSearchParams?.brand || '').toString().trim()
+  const flavour = (resolvedSearchParams?.flavour || '').toString().toLowerCase().trim()
 
   const [categoriesResult, flavoursResult] = await Promise.all([
     supabase.from('categories').select('id,name').order('name', { ascending: true }),

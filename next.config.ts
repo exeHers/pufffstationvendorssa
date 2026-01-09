@@ -4,6 +4,7 @@ const SUPABASE_HOST = 'jtpifraxtevpxqyryacg.supabase.co'
 
 const nextConfig: NextConfig = {
   images: {
+    qualities: [75, 90],
     remotePatterns: [
       {
         protocol: 'https',

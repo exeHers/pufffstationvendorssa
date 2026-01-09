@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { supabase, supabaseEnvReady } from '@/lib/supabaseClient'
 import type { Product } from '@/lib/types'
 import FlavourPicker from '@/components/home/FlavourPicker'
+import { fetchActiveFlavours } from '@/lib/flavours'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +24,7 @@ function getCategory(product: Product) {
 }
 
 export default async function HomePage() {
+  const flavours = await fetchActiveFlavours()
   const products: Product[] = []
   if (supabaseEnvReady) {
     const { data } = await supabase
@@ -142,7 +144,7 @@ export default async function HomePage() {
       </section>
 
       <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-12">
-        <FlavourPicker />
+        <FlavourPicker flavours={flavours} />
       </section>
 
       {featured.length > 0 ? (
