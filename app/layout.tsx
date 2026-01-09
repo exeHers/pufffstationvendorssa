@@ -30,19 +30,19 @@ export default function RootLayout({
             <header className="sticky top-0 z-50 border-b border-slate-800/60 bg-slate-950/55 backdrop-blur-md">
               <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4">
                 <Link href="/" className="group flex items-center gap-3">
-                  <div className="relative h-10 w-10 overflow-hidden rounded-2xl border border-slate-800/60 bg-slate-950/40">
+                  <div className="relative h-11 w-11 overflow-hidden rounded-2xl border border-slate-800/60 bg-slate-950/40 sm:h-12 sm:w-12 lg:h-14 lg:w-14">
                     <div className="absolute inset-0 pufff-haze opacity-60" />
                     <div className="absolute inset-0 bg-gradient-to-br from-slate-950/50 via-slate-950/40 to-slate-900/60" />
-                    <div className="relative flex h-full w-full items-center justify-center text-sm font-black tracking-tight text-white">
+                    <div className="relative flex h-full w-full items-center justify-center text-base font-black tracking-tight text-white lg:text-lg">
                       P
                     </div>
                   </div>
 
                   <div>
-                    <div className="text-sm font-extrabold tracking-tight text-white">
+                    <div className="text-base font-extrabold tracking-tight text-white lg:text-lg">
                       PUFFF Station
                     </div>
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-400">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400 lg:text-xs">
                       Vendors SA
                     </div>
                   </div>
