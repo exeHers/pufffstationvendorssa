@@ -1,30 +1,12 @@
-import { createClient } from "@/lib/supabase/client";
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
-export type Flavour = {
-  id: string;
-  name: string;
-  slug: string;
-  sort_order: number;
-};
+export function createClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export async function fetchActiveFlavours(): Promise<Flavour[]> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("flavours")
-    .select("id,name,slug,sort_order")
-    .eq("is_active", true)
-    .order("sort_order", { ascending: true });
-
-  if (error) {
-    console.error("fetchActiveFlavours error:", {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code,
-    });
-    return [];
+  if (!url || !anon) {
+    throw new Error('Missing Supabase environment variables')
   }
 
-  return data ?? [];
+  return createSupabaseClient(url, anon)
 }
