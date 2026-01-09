@@ -259,7 +259,30 @@ function ProductRow({
   )
 }
 
-export default async function ShopPage() {
+const flavourMap: Record<string, string[]> = {
+  sweet: ['sweet', 'candy', 'dessert', 'vanilla', 'caramel', 'honey'],
+  fruity: ['fruit', 'mango', 'apple', 'peach', 'pineapple', 'melon', 'citrus'],
+  'ice-mint': ['ice', 'mint', 'cool', 'menthol'],
+  tobacco: ['tobacco', 'cigar', 'classic'],
+  soda: ['soda', 'cola', 'fizz'],
+  berry: ['berry', 'straw', 'blueberry', 'rasp', 'blackberry'],
+  exotic: ['exotic', 'dragon', 'lychee', 'guava', 'passion'],
+}
+
+function matchesFlavour(product: Product, flavourKey: string) {
+  const p: any = product
+  const haystack = `${product.name} ${product.description || ''} ${p.category || ''}`
+    .toLowerCase()
+    .trim()
+  const terms = flavourMap[flavourKey] || [flavourKey]
+  return terms.some((term) => haystack.includes(term))
+}
+
+export default async function ShopPage({
+  searchParams,
+}: {
+  searchParams?: { flavour?: string }
+}) {
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -267,13 +290,18 @@ export default async function ShopPage() {
     .order('created_at', { ascending: false })
 
   const products = (data as any as Product[]) || []
-  const anyProducts = products.length > 0
+  const flavour = (searchParams?.flavour || '').toString().toLowerCase().trim()
+  const filteredProducts =
+    flavour.length > 0 ? products.filter((p) => matchesFlavour(p, flavour)) : products
+  const anyProducts = filteredProducts.length > 0
 
   const featured =
-    products.find((p: any) => p.in_stock === true) || products[0] || null
+    filteredProducts.find((p: any) => p.in_stock === true) ||
+    filteredProducts[0] ||
+    null
 
   const byCategory = new Map<string, Product[]>()
-  for (const p of products) {
+  for (const p of filteredProducts) {
     const cat = clampCategoryLabel(((p as any).category as string) || '')
     if (!byCategory.has(cat)) byCategory.set(cat, [])
     byCategory.get(cat)!.push(p)
@@ -325,14 +353,14 @@ export default async function ShopPage() {
           />
         ))}
 
-      {products.length > 10 && (
+      {filteredProducts.length > 10 && (
         <section className="mt-14">
           <RowHeader
             title="All drops"
             subtitle="Not a warehouse grid. A curated feed."
           />
           <div className="mt-6 flex flex-col gap-5">
-            {products.map((p) => (
+            {filteredProducts.map((p) => (
               <div key={p.id} className="max-w-4xl">
                 <ProductCard product={p} />
               </div>
