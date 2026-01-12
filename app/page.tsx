@@ -1,9 +1,20 @@
+import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { supabase, supabaseEnvReady } from '@/lib/supabaseClient'
 import type { Product } from '@/lib/types'
 import FlavourPicker from '@/components/home/FlavourPicker'
+import ReviewFeed from '@/components/shop/ReviewFeed'
 import { fetchActiveFlavours } from '@/lib/flavours'
+
+export const metadata: Metadata = {
+  title: 'Clean Stock. Premium Drops.',
+  description: 'Fast dispatch, premium checkout, and official PUFFF Station drops. Built for SA vendors who want it smooth and legit.',
+  openGraph: {
+    title: 'Clean Stock. Premium Drops. | PUFFF Station Vendors SA',
+    description: 'Fast dispatch, premium checkout, and official PUFFF Station drops. Built for SA vendors who want it smooth and legit.',
+  },
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -26,50 +37,52 @@ function getCategory(product: Product) {
 export default async function HomePage() {
   const flavours = await fetchActiveFlavours()
   const products: Product[] = []
+  let featuredSettings = { enabled: true, title: 'Featured Drops', description: 'Our top picks.' }
+
   if (supabaseEnvReady) {
-    const { data } = await supabase
-      .from('products')
-      .select('*')
-      .eq('is_deleted', false)
-      .order('created_at', { ascending: false })
-      .limit(6)
-    products.push(...(((data as Product[]) || []) as Product[]))
+    const [productsRes, settingsRes] = await Promise.all([
+      supabase.from('products').select('*').eq('is_deleted', false).eq('is_featured', true).order('created_at', { ascending: false }),
+      supabase.from('settings').select('*').eq('key', 'featured_drops').single()
+    ])
+
+    if (productsRes.data) products.push(...(productsRes.data as Product[]))
+    if (settingsRes.data) featuredSettings = { ...featuredSettings, ...settingsRes.data.value }
   }
-  const inStock = products.filter((p: any) => p.in_stock !== false)
-  const featured = (inStock.length ? inStock : products).slice(0, 3)
 
   return (
-    <main className="relative w-full bg-[#05050c] text-white">
-      <section className="relative overflow-hidden bg-[#05050c]">
-        <div className="pointer-events-none absolute inset-0 z-0">
-          <video
-            className="h-full w-full object-cover object-center opacity-95 [filter:brightness(0.88)_contrast(0.95)_saturate(1.12)]"
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="auto"
-            poster="/hero/neon-smoke.png"
-            aria-hidden="true"
-            style={{ transform: 'translateZ(0) scale(1.02)', willChange: 'transform' }}
-          >
-            <source src="/hero/neon-smoke.mp4" type="video/mp4" />
-          </video>
-          <div className="absolute inset-0 bg-gradient-to-r from-[#05050c]/95 via-[#05050c]/70 to-transparent" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0)_40%,rgba(0,0,0,0.55)_100%)]" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-[#05050c]/90" />
-          <div
-            className="absolute inset-0 opacity-55"
-            style={{
-              background:
-                'radial-gradient(900px 420px at 15% 20%, rgba(34,211,238,0.14), transparent 70%),' +
-                'radial-gradient(700px 380px at 75% 35%, rgba(217,70,239,0.12), transparent 68%),' +
-                'radial-gradient(800px 480px at 65% 80%, rgba(59,130,246,0.10), transparent 70%)',
-            }}
-          />
-        </div>
+    <main className="relative w-full text-white overflow-x-hidden min-h-screen">
+      {/* PERSISTENT LIVE BACKGROUND VIDEO (Homepage Only) */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <video
+          className="h-full w-full object-cover object-center opacity-[0.7] [filter:brightness(0.6)_contrast(1.1)_grayscale(0.1)]"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          poster="/hero/neon-smoke.png"
+          aria-hidden="true"
+          style={{ transform: 'translateZ(0) scale(1.01)', willChange: 'transform' }}
+        >
+          <source src="/hero/neon-smoke.mp4" type="video/mp4" />
+        </video>
+        {/* Deepening the overlays for better text contrast */}
+        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black" />
+        <div
+          className="absolute inset-0 opacity-30"
+          style={{
+            background:
+              'radial-gradient(900px 420px at 15% 20%, rgba(34,211,238,0.2), transparent 70%),' +
+              'radial-gradient(700px 380px at 75% 35%, rgba(217,70,239,0.18), transparent 68%),' +
+              'radial-gradient(800px 480px at 65% 80%, rgba(59,130,246,0.15), transparent 70%)',
+          }}
+        />
+      </div>
 
-        <div className="relative z-10 mx-auto flex min-h-[85vh] w-full max-w-6xl flex-col items-start justify-center gap-10 px-4 pb-16 pt-16 lg:flex-row lg:items-center lg:justify-between">
+      <section className="relative overflow-hidden min-h-[85vh] flex items-center">
+        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-start justify-center gap-10 px-4 pb-16 pt-16 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-[520px]">
             <p className="hero-fade hero-fade-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-cyan-200/80">
               PUFFF Station Vendors SA
@@ -148,41 +161,46 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-12">
-        <FlavourPicker flavours={flavours} />
+      {/* Spacer to ensure content scrolls properly */}
+      <div className="h-10 relative z-10" />
+
+      <section className="relative z-10 mx-auto w-full max-w-6xl px-4 py-12">
+        <div className="rounded-[4rem] border border-white/10 bg-black/40 backdrop-blur-xl shadow-[0_0_80px_rgba(0,0,0,0.5)] overflow-hidden">
+          <FlavourPicker flavours={flavours} />
+        </div>
       </section>
 
-      {featured.length > 0 ? (
+      {featuredSettings.enabled && products.length > 0 ? (
         <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-16">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between rounded-[2rem] bg-black/40 p-8 border border-white/5 backdrop-blur-sm mb-8">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-400">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-cyan-400">
                 Featured Drops
               </p>
-              <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-                A tight 3-pack. Premium, loud, ready.
+              <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl uppercase">
+                {featuredSettings.title}
               </h2>
-              <p className="max-w-2xl text-sm text-slate-300">
-                Three featured flavours only. No grid overload, just the best of the moment.
+              <p className="max-w-2xl text-sm text-slate-300 mt-1">
+                {featuredSettings.description}
               </p>
             </div>
             <Link
               href="/shop"
-              className="mt-2 inline-flex text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200/80 transition hover:text-white sm:mt-0"
+              className="mt-2 inline-flex text-xs font-bold uppercase tracking-[0.22em] text-cyan-200 transition hover:text-white sm:mt-0 border-b border-cyan-400/30 pb-1"
             >
               Browse all
             </Link>
           </div>
 
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
-            {featured.map((product) => {
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {products.map((product) => {
               const p: any = product
               const imageUrl = p.image_url || '/placeholder.png'
               return (
                 <Link
                   key={product.id}
                   href={`/shop/${product.id}`}
-                className="group relative overflow-hidden rounded-[1.8rem] border border-slate-800/70 bg-slate-950/70 p-5 shadow-[0_0_35px_rgba(0,0,0,0.45)] transition hover:-translate-y-1 hover:border-slate-700/70 hover:shadow-[0_0_45px_rgba(34,211,238,0.18)]"
+                  className="group relative overflow-hidden rounded-[1.8rem] border border-white/5 bg-black/60 p-5 backdrop-blur-md shadow-[0_0_35px_rgba(0,0,0,0.45)] transition hover:-translate-y-1 hover:border-cyan-500/30 hover:shadow-[0_0_45px_rgba(34,211,238,0.18)]"
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-black/70" />
 
@@ -229,6 +247,8 @@ export default async function HomePage() {
           </div>
         </section>
       ) : null}
+
+      <ReviewFeed />
     </main>
   )
 }

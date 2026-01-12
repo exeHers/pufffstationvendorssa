@@ -1,6 +1,16 @@
+import type { Metadata } from 'next'
 import React from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
+
+export const metadata: Metadata = {
+  title: 'Shop Premium Disposables',
+  description: 'Browse our curated collection of premium disposables. Live motion, smooth smoke, and exclusive drops.',
+  openGraph: {
+    title: 'Shop Premium Disposables | PUFFF Station Vendors SA',
+    description: 'Browse our curated collection of premium disposables. Live motion, smooth smoke, and exclusive drops.',
+  },
+}
 import type { Product } from '@/lib/types'
 import ProductCard from '@/components/products/ProductCard'
 import ShopFilters from '@/components/shop/ShopFilters'
@@ -102,21 +112,19 @@ function FeaturedHero({ product }: { product: Product }) {
   return (
     <a
       href={`/shop/${product.id}`}
-      className="group relative block overflow-hidden rounded-[2.25rem] border border-slate-800/60 bg-slate-950/40 p-6 shadow-[0_0_60px_rgba(217,70,239,0.05)] transition hover:-translate-y-0.5 hover:border-slate-700/70 md:p-10"
+      className="group relative block overflow-hidden rounded-[2.25rem] border border-slate-800/80 bg-slate-950/20 p-6 shadow-2xl transition hover:border-slate-700 md:p-10"
       style={{ ['--smoke-rgb' as any]: smokeRgb } as React.CSSProperties}
     >
       <div className="absolute inset-0">
-        <div className="pufff-haze opacity-60" />
-        <div className="pufff-tile-breathe opacity-60" />
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/75 via-slate-950/55 to-slate-900/60" />
+        <div className="absolute inset-0 bg-[#0a0a0c]/40" />
 
         <div className="absolute inset-0 overflow-hidden">
           <div
-            className="absolute inset-0 opacity-35"
-            style={{ filter: 'grayscale(1) contrast(1.2) brightness(1.05)' }}
+            className="absolute inset-0 opacity-20"
+            style={{ filter: 'grayscale(1) contrast(1.1) brightness(0.9)' }}
           >
             <video
-              className="pufff-smoke-video h-full w-full object-cover scale-[1.08]"
+              className="pufff-smoke-video h-full w-full object-cover scale-[1.05]"
               autoPlay
               muted
               loop
@@ -128,14 +136,13 @@ function FeaturedHero({ product }: { product: Product }) {
             </video>
           </div>
 
-          <div className="absolute inset-0 mix-blend-screen opacity-25" style={{ background: smokeHex }} />
+          <div className="absolute inset-0 mix-blend-multiply opacity-30" style={{ background: smokeHex }} />
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/70" />
-          <div className="absolute inset-0 [mask-image:radial-gradient(70%_55%_at_50%_40%,black,transparent_70%)] bg-black/45" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0c] via-transparent to-[#0a0a0c]/80" />
         </div>
 
         <div
-          className="absolute inset-0 opacity-25"
+          className="absolute inset-0 opacity-15"
           style={{
             background:
               `radial-gradient(900px 380px at 20% 20%, rgba(217,70,239,0.22), transparent 60%),` +

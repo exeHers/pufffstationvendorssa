@@ -28,24 +28,14 @@ export default function HeaderLinks() {
     if (admins.length === 0) return
 
     const supabase = supabaseBrowser()
-    const syncAdminCookie = async (token?: string | null) => {
-      if (!token) return
-      await fetch('/api/admin/session', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-    }
-
     supabase.auth.getSession().then(({ data }) => {
       const email = data.session?.user?.email?.toLowerCase() ?? ''
-      if (data.session?.access_token) syncAdminCookie(data.session.access_token)
       setIsLoggedIn(Boolean(email))
       setIsAdmin(Boolean(email && admins.includes(email)))
     })
 
     const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
       const email = session?.user?.email?.toLowerCase() ?? ''
-      if (session?.access_token) syncAdminCookie(session.access_token)
       setIsLoggedIn(Boolean(email))
       setIsAdmin(Boolean(email && admins.includes(email)))
     })

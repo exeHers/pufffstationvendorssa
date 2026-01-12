@@ -22,25 +22,67 @@ export default function LoginClient() {
   const [info, setInfo] = useState<string | null>(null)
 
   useEffect(() => {
+    let mounting = true
     const syncAdminCookie = async (token?: string | null) => {
-      if (!token) return
-      await fetch('/api/admin/session', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      if (!token) return null
+      try {
+        const res = await fetch('/api/admin/session', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        return await res.json()
+      } catch (err) {
+        console.error('Session sync error:', err)
+        return null
+      }
     }
 
-    supabase.auth.getSession().then(({ data }) => {
+    const initAuth = async () => {
+      const { data } = await supabase.auth.getSession()
+      if (!mounting) return
+      
       const session = data.session
-      if (session?.access_token) syncAdminCookie(session.access_token)
-      if (session?.user) router.replace(nextPath)
+      if (session?.user) {
+        let isAdmin = false
+        if (session.access_token) {
+          const sync = await syncAdminCookie(session.access_token)
+          isAdmin = !!sync?.isAdmin
+        }
+        
+        if (nextPath.startsWith('/admin') && !isAdmin) {
+          router.replace('/shop')
+        } else {
+          router.replace(nextPath)
+        }
+      }
+    }
+
+    initAuth()
+
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounting) return
+      
+      if (session?.user) {
+        let isAdmin = false
+        if (session.access_token) {
+          const sync = await syncAdminCookie(session.access_token)
+          isAdmin = !!sync?.isAdmin
+        }
+        
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+          if (nextPath.startsWith('/admin') && !isAdmin) {
+            router.replace('/shop')
+          } else {
+            router.replace(nextPath)
+          }
+        }
+      }
     })
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
-      if (session?.access_token) syncAdminCookie(session.access_token)
-      if (session?.user) router.replace(nextPath)
-    })
-    return () => sub.subscription.unsubscribe()
+    return () => {
+      mounting = false
+      sub.subscription.unsubscribe()
+    }
   }, [router, nextPath])
 
   useEffect(() => {
@@ -67,12 +109,22 @@ export default function LoginClient() {
         if (err) throw err
 
         const { data: sess } = await supabase.auth.getSession()
+        let isActuallyAdmin = false
         if (sess.session?.access_token) {
-          await fetch('/api/admin/session', {
+          const res = await fetch('/api/admin/session', {
             method: 'POST',
             headers: { Authorization: `Bearer ${sess.session.access_token}` },
           })
+          const json = await res.json()
+          isActuallyAdmin = !!json?.isAdmin
         }
+
+        if (nextPath.startsWith('/admin') && !isActuallyAdmin) {
+          router.replace('/shop')
+          return
+        }
+        router.replace(nextPath)
+        return
       } else {
         const { error: err } = await supabase.auth.signUp({
           email: email.trim(),

@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 type MenuItem = {
   label: string
@@ -22,9 +23,28 @@ export default function ShopFilters({
   const [brandOpen, setBrandOpen] = useState(false)
   const [flavourOpen, setFlavourOpen] = useState(false)
 
+  const brandRef = useRef<HTMLDivElement>(null)
+  const flavourRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (brandRef.current && !brandRef.current.contains(event.target as Node)) {
+        setBrandOpen(false)
+      }
+      if (flavourRef.current && !flavourRef.current.contains(event.target as Node)) {
+        setFlavourOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   return (
     <div className="flex w-full max-w-xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-      <div className="group relative w-full rounded-2xl border border-slate-800/70 bg-slate-950/70 px-4 py-3 text-left sm:max-w-[220px]">
+      <div
+        ref={brandRef}
+        className="relative w-full rounded-2xl border border-slate-800/70 bg-slate-950/70 px-4 py-3 text-left transition-all duration-300 hover:border-[#D946EF]/50 sm:max-w-[220px]"
+      >
         <button
           type="button"
           onClick={() => {
@@ -33,30 +53,46 @@ export default function ShopFilters({
           }}
           aria-expanded={brandOpen}
           aria-haspopup="menu"
-          className="flex w-full items-center justify-between text-xs font-semibold uppercase tracking-[0.22em] text-slate-200"
+          className="flex w-full items-center justify-between text-[11px] font-bold uppercase tracking-[0.24em] text-slate-100"
         >
           {brandLabel}
-          <span className="text-slate-500">+</span>
+          <motion.span
+            animate={{ rotate: brandOpen ? 45 : 0 }}
+            className="text-[#D946EF]"
+          >
+            +
+          </motion.span>
         </button>
-        <div
-          className={`absolute left-0 right-0 z-20 mt-3 flex-col gap-1 rounded-2xl border border-slate-800/80 bg-slate-950/95 p-2 shadow-[0_18px_45px_rgba(0,0,0,0.7)] backdrop-blur-md ${
-            brandOpen ? 'flex' : 'hidden'
-          } md:block md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto md:group-hover:flex`}
-        >
-          {brandItems.map((option) => (
-            <Link
-              key={`${option.label}-${option.href}`}
-              href={option.href}
-              onClick={() => setBrandOpen(false)}
-              className="rounded-xl px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-300 transition hover:bg-slate-800/70 hover:text-white"
+        <AnimatePresence>
+          {brandOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="absolute left-0 right-0 z-20 mt-4 flex flex-col gap-1 overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-950/95 p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.8)] backdrop-blur-xl"
             >
-              {option.label}
-            </Link>
-          ))}
-        </div>
+              <div className="max-h-[240px] overflow-y-auto overflow-x-hidden p-0.5 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-800">
+                {brandItems.map((option) => (
+                  <Link
+                    key={`${option.label}-${option.href}`}
+                    href={option.href}
+                    onClick={() => setBrandOpen(false)}
+                    className="flex rounded-xl px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400 transition hover:bg-[#D946EF]/10 hover:text-[#D946EF]"
+                  >
+                    {option.label}
+                  </Link>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      <div className="group relative w-full rounded-2xl border border-slate-800/70 bg-slate-950/70 px-4 py-3 text-left sm:max-w-[220px]">
+      <div
+        ref={flavourRef}
+        className="relative w-full rounded-2xl border border-slate-800/70 bg-slate-950/70 px-4 py-3 text-left transition-all duration-300 hover:border-[#D946EF]/50 sm:max-w-[220px]"
+      >
         <button
           type="button"
           onClick={() => {
@@ -65,27 +101,40 @@ export default function ShopFilters({
           }}
           aria-expanded={flavourOpen}
           aria-haspopup="menu"
-          className="flex w-full items-center justify-between text-xs font-semibold uppercase tracking-[0.22em] text-slate-200"
+          className="flex w-full items-center justify-between text-[11px] font-bold uppercase tracking-[0.24em] text-slate-100"
         >
           {flavourLabel}
-          <span className="text-slate-500">+</span>
+          <motion.span
+            animate={{ rotate: flavourOpen ? 45 : 0 }}
+            className="text-[#D946EF]"
+          >
+            +
+          </motion.span>
         </button>
-        <div
-          className={`absolute left-0 right-0 z-20 mt-3 flex-col gap-1 rounded-2xl border border-slate-800/80 bg-slate-950/95 p-2 shadow-[0_18px_45px_rgba(0,0,0,0.7)] backdrop-blur-md ${
-            flavourOpen ? 'flex' : 'hidden'
-          } md:block md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto md:group-hover:flex`}
-        >
-          {flavourItems.map((option) => (
-            <Link
-              key={`${option.label}-${option.href}`}
-              href={option.href}
-              onClick={() => setFlavourOpen(false)}
-              className="rounded-xl px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-300 transition hover:bg-slate-800/70 hover:text-white"
+        <AnimatePresence>
+          {flavourOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="absolute left-0 right-0 z-20 mt-4 flex flex-col gap-1 overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-950/95 p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.8)] backdrop-blur-xl"
             >
-              {option.label}
-            </Link>
-          ))}
-        </div>
+              <div className="max-h-[240px] overflow-y-auto overflow-x-hidden p-0.5 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-800">
+                {flavourItems.map((option) => (
+                  <Link
+                    key={`${option.label}-${option.href}`}
+                    href={option.href}
+                    onClick={() => setFlavourOpen(false)}
+                    className="flex rounded-xl px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400 transition hover:bg-[#D946EF]/10 hover:text-[#D946EF]"
+                  >
+                    {option.label}
+                  </Link>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )

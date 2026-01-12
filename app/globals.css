@@ -1,24 +1,22 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 :root {
   color-scheme: dark;
 }
 
-html,
-body {
+html {
   height: 100%;
 }
 
 /* Mobile sanity: kill accidental sideways scroll from glows/absolute elements */
 body {
+  height: 100%;
   overflow-x: hidden;
   padding-bottom: env(safe-area-inset-bottom);
-}
-
-body {
-  background: #070712;
+  background: #0a0a0c;
+  text-rendering: geometricPrecision;
 }
 
 /* ============
@@ -169,13 +167,12 @@ body {
    NEW: Luxe Atmosphere Utility Classes
    ============ */
 
-/* A richer base background than plain #070712 */
+/* A richer base background than plain #070712 - MATTE FINISH */
 .luxe-base-bg {
   background:
-    radial-gradient(1200px 600px at 18% 12%, rgba(217,70,239,0.10), transparent 65%),
-    radial-gradient(900px 560px at 82% 88%, rgba(34,211,238,0.09), transparent 62%),
-    radial-gradient(900px 540px at 60% 45%, rgba(59,130,246,0.06), transparent 66%),
-    linear-gradient(180deg, rgba(7,7,18,0.96), rgba(7,7,18,1));
+    radial-gradient(1200px 600px at 18% 12%, rgba(217,70,239,0.04), transparent 65%),
+    radial-gradient(900px 560px at 82% 88%, rgba(34,211,238,0.04), transparent 62%),
+    linear-gradient(180deg, #0a0a0c 0%, #08080a 100%);
 }
 
 /* Moving sheen overlay */
@@ -220,11 +217,6 @@ body {
 /* Small improvements */
 * {
   -webkit-tap-highlight-color: transparent;
-}
-
-/* Better text smoothing */
-body {
-  text-rendering: geometricPrecision;
 }
 
 /* Respect reduced motion */

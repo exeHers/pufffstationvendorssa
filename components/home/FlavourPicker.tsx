@@ -2,35 +2,43 @@
 
 import Link from 'next/link'
 import type { Flavour } from '@/lib/flavours'
+import { motion } from 'framer-motion'
 
-const flavourStyles: Record<string, { ring: string; glow: string }> = {
+const flavourStyles: Record<string, { color: string; bg: string; border: string }> = {
   sweet: {
-    ring: 'ring-pink-400/40',
-    glow: 'hover:shadow-[0_0_30px_rgba(236,72,153,0.25)]',
+    color: 'text-pink-400',
+    bg: 'bg-pink-500/5',
+    border: 'group-hover:border-pink-500/50',
   },
   fruity: {
-    ring: 'ring-orange-400/40',
-    glow: 'hover:shadow-[0_0_30px_rgba(251,146,60,0.25)]',
+    color: 'text-orange-400',
+    bg: 'bg-orange-500/5',
+    border: 'group-hover:border-orange-500/50',
   },
   'ice-mint': {
-    ring: 'ring-cyan-400/40',
-    glow: 'hover:shadow-[0_0_30px_rgba(34,211,238,0.25)]',
+    color: 'text-cyan-400',
+    bg: 'bg-cyan-500/5',
+    border: 'group-hover:border-cyan-500/50',
   },
   tobacco: {
-    ring: 'ring-amber-500/40',
-    glow: 'hover:shadow-[0_0_30px_rgba(245,158,11,0.20)]',
+    color: 'text-amber-600',
+    bg: 'bg-amber-600/5',
+    border: 'group-hover:border-amber-600/50',
   },
   soda: {
-    ring: 'ring-violet-400/40',
-    glow: 'hover:shadow-[0_0_30px_rgba(167,139,250,0.25)]',
+    color: 'text-violet-400',
+    bg: 'bg-violet-500/5',
+    border: 'group-hover:border-violet-500/50',
   },
   berry: {
-    ring: 'ring-fuchsia-400/40',
-    glow: 'hover:shadow-[0_0_30px_rgba(217,70,239,0.25)]',
+    color: 'text-fuchsia-400',
+    bg: 'bg-fuchsia-500/5',
+    border: 'group-hover:border-fuchsia-500/50',
   },
   exotic: {
-    ring: 'ring-indigo-400/40',
-    glow: 'hover:shadow-[0_0_30px_rgba(99,102,241,0.25)]',
+    color: 'text-indigo-400',
+    bg: 'bg-indigo-500/5',
+    border: 'group-hover:border-indigo-500/50',
   },
 }
 
@@ -38,55 +46,67 @@ export default function FlavourPicker({ flavours }: { flavours: Flavour[] }) {
   if (!flavours || flavours.length === 0) return null
 
   return (
-    <section className="mt-12">
-      <div className="flex items-end justify-between gap-4">
+    <section className="p-8 md:p-12">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
         <div>
-          <h2 className="text-xl font-semibold text-white/90 md:text-2xl">
-            What flavour are you feeling today?
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400/80">Vibe Selector</span>
+          </div>
+          <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tight leading-none">
+            What flavour are you <br /> feeling today?
           </h2>
-          <p className="mt-2 text-white/60">
-            Pick a vibe - we'll show you matching drops.
+          <p className="mt-4 text-slate-400 text-xs md:text-sm font-medium max-w-md">
+            Pick a vibe below and we'll instantly filter the best official drops for your current mood.
           </p>
         </div>
         <Link
           href="/shop"
-          className="hidden text-sm text-white/70 transition hover:text-white md:inline-flex"
+          className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 transition hover:text-white"
         >
-          Browse all
+          Browse All
+          <span className="h-px w-8 bg-slate-800 transition-all group-hover:w-12 group-hover:bg-white" />
         </Link>
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
-        {flavours.map((flavour) => {
-          const styles = flavourStyles[flavour.slug] || {
-            ring: 'ring-white/15',
-            glow: 'hover:shadow-[0_0_30px_rgba(255,255,255,0.12)]',
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+        {flavours.map((flavour, idx) => {
+          const style = flavourStyles[flavour.slug] || {
+            color: 'text-white',
+            bg: 'bg-white/5',
+            border: 'group-hover:border-white/50',
           }
 
           return (
-            <Link
+            <motion.div
               key={flavour.id}
-              href={`/shop?flavour=${encodeURIComponent(flavour.slug)}`}
-              className={[
-                'group relative overflow-hidden rounded-2xl',
-                'border border-white/10 bg-white/[0.04]',
-                'px-4 py-4 sm:py-5',
-                'transition duration-300',
-                'hover:border-white/20 hover:bg-white/[0.06]',
-                'ring-1',
-                styles.ring,
-                styles.glow,
-              ].join(' ')}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.05 }}
             >
-              <div className="pointer-events-none absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100">
-                <div className="absolute -top-10 -right-10 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
-              </div>
+              <Link
+                href={`/shop?flavour=${encodeURIComponent(flavour.slug)}`}
+                className={`group relative flex flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-white/5 bg-black/40 p-10 text-center transition-all duration-500 hover:-translate-y-2 hover:bg-black/60 ${style.border}`}
+              >
+                {/* Background Glow */}
+                <div className={`absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 ${style.bg}`} />
+                
+                <div className="relative z-10">
+                  <h3 className="text-[13px] font-black uppercase tracking-widest text-white mb-2">
+                    {flavour.name}
+                  </h3>
+                  <div className={`text-[8px] font-bold uppercase tracking-[0.2em] opacity-0 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-0 translate-y-2 ${style.color}`}>
+                    View Selection →
+                  </div>
+                </div>
 
-              <div className="text-sm font-semibold text-white/90">
-                {flavour.name}
-              </div>
-              <div className="mt-1 text-xs text-white/50">Tap to explore</div>
-            </Link>
+                {/* Corner Accents */}
+                <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition-opacity">
+                   <div className="h-4 w-4 border-t border-r border-white rounded-tr-xl" />
+                </div>
+              </Link>
+            </motion.div>
           )
         })}
       </div>

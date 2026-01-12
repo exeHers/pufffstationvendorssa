@@ -1,8 +1,40 @@
+import type { Metadata, ResolvingMetadata } from 'next'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
 import AddToCartButton from '@/components/cart/AddToCartButton'
 import type { Product } from '@/lib/types'
 import PreviewSmokeVideo from '@/components/shop/PreviewSmokeVideo'
+import ReviewFeed from '@/components/shop/ReviewFeed'
+
+export async function generateMetadata(
+  { params }: Props,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const { id } = await params
+  const { data: product } = await supabase
+    .from('products')
+    .select('name, description, image_url')
+    .eq('id', id)
+    .single()
+
+  if (!product) return { title: 'Product Not Found' }
+
+  return {
+    title: product.name,
+    description: product.description || `Premium disposable: ${product.name}. Maximum impact.`,
+    openGraph: {
+      title: `${product.name} | PUFFF Station Vendors SA`,
+      description: product.description || `Premium disposable: ${product.name}. Maximum impact.`,
+      images: product.image_url ? [product.image_url] : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${product.name} | PUFFF Station Vendors SA`,
+      description: product.description || `Premium disposable: ${product.name}. Maximum impact.`,
+      images: product.image_url ? [product.image_url] : [],
+    },
+  }
+}
 
 function isValidHex(hex?: string | null) {
   if (!hex) return false
@@ -194,6 +226,8 @@ export default async function ProductDetailPage({ params }: Props) {
           </div>
         </div>
       </section>
+
+      <ReviewFeed />
     </main>
   )
 }

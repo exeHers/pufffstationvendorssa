@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabaseClient'
 import type { Product } from '@/lib/types'
+import ProductCard from '@/components/products/ProductCard'
 
 type Category = {
   id: string
@@ -82,6 +84,7 @@ export default function AdminProductsPage() {
   const [bulkMin, setBulkMin] = useState('')
   const [description, setDescription] = useState('')
   const [inStock, setInStock] = useState(true)
+  const [isFeatured, setIsFeatured] = useState(false)
 
   // brand accent (UI glow)
   const [accentHex, setAccentHex] = useState('#D946EF')
@@ -104,6 +107,7 @@ export default function AdminProductsPage() {
   const [eBulkMin, setEBulkMin] = useState('')
   const [eDescription, setEDescription] = useState('')
   const [eInStock, setEInStock] = useState(true)
+  const [eIsFeatured, setEIsFeatured] = useState(false)
 
   const [eAccentHex, setEAccentHex] = useState('#D946EF')
 
@@ -196,6 +200,7 @@ export default function AdminProductsPage() {
     setEBulkMin(pp.bulk_min != null ? String(pp.bulk_min) : '')
     setEDescription(pp.description ?? '')
     setEInStock(pp.in_stock !== false)
+    setEIsFeatured(Boolean(pp.is_featured))
 
     setEAccentHex(pp.accent_hex && isValidHex(pp.accent_hex) ? pp.accent_hex : '#D946EF')
 
@@ -245,6 +250,32 @@ export default function AdminProductsPage() {
 
     return list as Product[]
   }, [products, showRemoved, filterCategory, filterStock, q])
+
+  // Preview data for "Create" section
+  const createPreviewProduct = useMemo(() => {
+    return {
+      id: 'preview',
+      name: name || 'Product Name',
+      category: category || 'Category',
+      price: Number(price) || 0,
+      description: description || 'Product description goes here.',
+      image_url: image ? URL.createObjectURL(image) : null,
+      in_stock: inStock,
+      accent_hex: accentHex,
+      smoke_hex_scroll: smokeHexScroll,
+      smoke_hex_preview: smokeHexPreview,
+      is_featured: isFeatured,
+    } as any as Product
+  }, [name, category, price, description, image, inStock, accentHex, smokeHexScroll, smokeHexPreview, isFeatured])
+
+  // Cleanup blob URL
+  useEffect(() => {
+    return () => {
+      if (createPreviewProduct.image_url?.startsWith('blob:')) {
+        URL.revokeObjectURL(createPreviewProduct.image_url)
+      }
+    }
+  }, [createPreviewProduct.image_url])
 
   // ---- Create ----
   async function onCreate() {
@@ -308,6 +339,7 @@ export default function AdminProductsPage() {
       fd.append('description', description.trim())
       fd.append('in_stock', inStock ? 'true' : 'false')
       fd.append('accent_hex', accentHex.trim())
+      fd.append('is_featured', isFeatured ? 'true' : 'false')
       fd.append('smoke_hex_scroll', smokeHexScroll.trim())
       fd.append('smoke_hex_preview', smokeHexPreview.trim())
       if (bp != null) fd.append('bulk_price', String(bp))
@@ -332,6 +364,7 @@ export default function AdminProductsPage() {
       setBulkMin('')
       setDescription('')
       setInStock(true)
+      setIsFeatured(false)
 
       setAccentHex('#D946EF')
       setSmokeHexScroll('#00FFFF')
@@ -405,6 +438,7 @@ export default function AdminProductsPage() {
           bulk_min: bm,
           description: eDescription.trim(),
           in_stock: eInStock,
+          is_featured: eIsFeatured,
           accent_hex: eAccentHex.trim(),
           smoke_hex_scroll: eSmokeHexScroll.trim(),
           smoke_hex_preview: eSmokeHexPreview.trim(),
@@ -508,7 +542,7 @@ export default function AdminProductsPage() {
 
   async function onHardDelete(p: Product) {
     const confirmed = window.confirm(
-      `Permanently delete "${p.name}"?\n\nThis will remove the product and its image from storage. This cannot be undone.`
+      `⚠️ PERMANENT DELETE: "${p.name}"\n\nThis will permanently erase the product and its optimized image from Supabase. This action cannot be reversed.\n\nProceed with hard delete?`
     )
     if (!confirmed) return
 
@@ -657,6 +691,16 @@ export default function AdminProductsPage() {
         <div className="rounded-3xl border border-slate-800 bg-black/55 p-5 sm:p-6">
           <h2 className="text-lg font-bold">Create product</h2>
 
+          {/* Preview Block */}
+          <div className="mt-5 space-y-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Live Preview</p>
+            <div className="rounded-3xl border border-slate-800/60 bg-slate-950/40 p-4">
+              <div className="mx-auto w-full max-w-[240px]">
+                <ProductCard product={createPreviewProduct} />
+              </div>
+            </div>
+          </div>
+
           <div className="mt-5 grid gap-4">
             <label className="grid gap-2">
               <span className="text-xs text-slate-300">Name</span>
@@ -710,6 +754,19 @@ export default function AdminProductsPage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
+              <label className="grid gap-2">
+                <span className="text-xs text-slate-300">Featured Drop</span>
+                <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={isFeatured}
+                    onChange={(e) => setIsFeatured(e.target.checked)}
+                    className="h-4 w-4 accent-fuchsia-500"
+                  />
+                  <span className="text-slate-200">{isFeatured ? 'Yes' : 'No'}</span>
+                </div>
+              </label>
+
               <label className="grid gap-2">
                 <span className="text-xs text-slate-300">Bulk price (optional)</span>
                 <input
@@ -898,7 +955,7 @@ export default function AdminProductsPage() {
                   }`}
                 >
                   <div
-                    className="h-12 w-12 rounded-xl border border-slate-800 bg-black/40 relative overflow-hidden"
+                    className="h-12 w-12 rounded-xl border border-slate-800 bg-black/40 relative overflow-hidden flex-shrink-0"
                     style={{ boxShadow: `0 0 22px ${accent}33` }}
                   >
                     {pp.image_url ? (
@@ -982,6 +1039,32 @@ export default function AdminProductsPage() {
               )}
 
               <div className="mt-6 grid gap-4">
+                {/* Edit Preview */}
+                <div className="space-y-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Preview</p>
+                  <div className="rounded-3xl border border-slate-800/60 bg-slate-950/40 p-4">
+                    <div className="mx-auto w-full max-w-[240px]">
+                      <ProductCard
+                        product={
+                          {
+                            ...selected,
+                            name: eName,
+                            category: eCategory,
+                            price: Number(ePrice),
+                            description: eDescription,
+                            in_stock: eInStock,
+                            is_featured: eIsFeatured,
+                            accent_hex: eAccentHex,
+                            smoke_hex_scroll: eSmokeHexScroll,
+                            smoke_hex_preview: eSmokeHexPreview,
+                            image_url: eImageUrl,
+                          } as any
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <label className="grid gap-2">
                   <span className="text-xs text-slate-300">Name</span>
                   <input
@@ -1030,6 +1113,19 @@ export default function AdminProductsPage() {
                     </div>
                   </label>
                 </div>
+
+                <label className="grid gap-2">
+                  <span className="text-xs text-slate-300">Featured Drop</span>
+                  <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={eIsFeatured}
+                      onChange={(e) => setEIsFeatured(e.target.checked)}
+                      className="h-4 w-4 accent-fuchsia-500"
+                    />
+                    <span className="text-slate-200">{eIsFeatured ? 'Yes' : 'No'}</span>
+                  </div>
+                </label>
 
                 <label className="grid gap-2">
                   <span className="text-xs text-slate-300">UI Accent colour</span>
@@ -1126,32 +1222,34 @@ export default function AdminProductsPage() {
                       {busy ? 'Saving…' : 'Save changes'}
                     </button>
 
-                    {(selected as any).is_deleted ? (
-                      <>
+                    <div className="grid grid-cols-2 gap-3">
+                      {(selected as any).is_deleted ? (
+                        <>
+                          <button
+                            onClick={() => onRestore(selected)}
+                            disabled={busy}
+                            className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-60"
+                          >
+                            {busy ? '...' : 'Restore'}
+                          </button>
+                          <button
+                            onClick={() => onHardDelete(selected)}
+                            disabled={busy}
+                            className="rounded-full border border-red-500/50 bg-red-500/10 px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-red-200 hover:bg-red-500/20 disabled:opacity-60"
+                          >
+                            {busy ? '...' : 'Hard Delete'}
+                          </button>
+                        </>
+                      ) : (
                         <button
-                          onClick={() => onRestore(selected)}
+                          onClick={() => onRemove(selected)}
                           disabled={busy}
-                          className="w-full rounded-full border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm font-bold text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-60"
+                          className="col-span-2 rounded-full border border-red-500/40 bg-red-500/10 px-5 py-3 text-[11px] font-bold uppercase tracking-widest text-red-200 hover:bg-red-500/20 disabled:opacity-60"
                         >
-                          {busy ? 'Working…' : 'Restore product'}
+                          {busy ? 'Working…' : 'Soft Delete (Hide from Shop)'}
                         </button>
-                        <button
-                          onClick={() => onHardDelete(selected)}
-                          disabled={busy}
-                          className="w-full rounded-full border border-red-500/50 bg-red-500/10 px-5 py-3 text-sm font-bold text-red-200 hover:bg-red-500/20 disabled:opacity-60"
-                        >
-                          {busy ? 'Working…' : 'Hard delete (permanent)'}
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => onRemove(selected)}
-                        disabled={busy}
-                        className="w-full rounded-full border border-red-500/40 bg-red-500/10 px-5 py-3 text-sm font-bold text-red-200 hover:bg-red-500/20 disabled:opacity-60"
-                      >
-                        {busy ? 'Working…' : 'Remove product'}
-                      </button>
-                    )}
+                      )}
+                    </div>
 
                     <button
                       onClick={() => onToggleStock(selected)}

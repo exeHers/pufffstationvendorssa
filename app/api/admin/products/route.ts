@@ -185,6 +185,7 @@ export async function POST(req: NextRequest) {
     const price = Number(fd.get('price') ?? '0')
     const description = String(fd.get('description') ?? '').trim()
     const in_stock = String(fd.get('in_stock') ?? 'true') === 'true'
+    const is_featured = String(fd.get('is_featured') ?? 'false') === 'true'
 
     const accent_hex_raw = String(fd.get('accent_hex') ?? '').trim()
     const smoke_hex_scroll_raw = String(fd.get('smoke_hex_scroll') ?? '').trim()
@@ -254,6 +255,7 @@ export async function POST(req: NextRequest) {
         description: description || null,
         image_url,
         in_stock,
+        is_featured,
         accent_hex,
         smoke_hex_scroll,
         smoke_hex_preview,

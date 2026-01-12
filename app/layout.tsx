@@ -9,30 +9,51 @@ import LuxeAtmosphere from '@/components/ui/LuxeAtmosphere'
 import { CartProvider } from '@/components/cart/CartContext'
 import HeaderLinks from '@/components/nav/HeaderLinks'
 import AndroidMotionGate from '@/components/utils/AndroidMotionGate'
+import Footer from '@/components/layout/Footer'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pufffstation.co.za'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'PUFFF Station Vendors SA',
+    default: 'PUFFF Station Vendors SA | Premium Disposables',
     template: '%s | PUFFF Station Vendors SA',
   },
-  description: 'Premium disposables. Maximum impact.',
+  description: 'Experience the pinnacle of luxury vaping with PUFFF Station Vendors SA. Premium disposables, maximum impact, and a neon-infused aesthetic.',
+  keywords: ['vaping', 'disposables', 'South Africa', 'luxury vapes', 'neon aesthetic', 'PUFFF Station'],
+  authors: [{ name: 'PUFFF Station Vendors SA' }],
+  creator: 'PUFFF Station Vendors SA',
+  publisher: 'PUFFF Station Vendors SA',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   openGraph: {
     type: 'website',
+    locale: 'en_ZA',
     url: siteUrl,
-    title: 'PUFFF Station Vendors SA',
-    description: 'Premium disposables. Maximum impact.',
+    title: 'PUFFF Station Vendors SA | Premium Disposables',
+    description: 'Experience the pinnacle of luxury vaping with PUFFF Station Vendors SA. Premium disposables, maximum impact, and a neon-infused aesthetic.',
     siteName: 'PUFFF Station Vendors SA',
+    images: [
+      {
+        url: '/logo.png',
+        width: 800,
+        height: 800,
+        alt: 'PUFFF Station Vendors SA',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PUFFF Station Vendors SA',
-    description: 'Premium disposables. Maximum impact.',
+    title: 'PUFFF Station Vendors SA | Premium Disposables',
+    description: 'Experience the pinnacle of luxury vaping with PUFFF Station Vendors SA. Premium disposables, maximum impact, and a neon-infused aesthetic.',
+    images: ['/logo.png'],
   },
   icons: {
     icon: '/favicon.ico',
+    apple: '/logo.png',
   },
 }
 
@@ -84,64 +105,10 @@ export default function RootLayout({
 
             <main className="min-h-[calc(100vh-180px)]">{children}</main>
 
-            <footer className="mt-14 border-t border-slate-800/70 bg-slate-950/70">
-              <div className="mx-auto w-full max-w-6xl px-4 py-12">
-                <div className="grid gap-8 md:grid-cols-[1.2fr_0.8fr_0.8fr]">
-                  <div>
-                    <div className="text-sm font-extrabold text-white">
-                      PUFFF Station Vendors SA
-                    </div>
-                    <div className="mt-2 max-w-md text-xs leading-relaxed text-slate-400">
-                      Premium disposables intended for adults only. 18+ required.
-                      <span className="block mt-2 text-slate-500">
-                        Support: support@pufffstationsa.co.za
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-                    <div className="text-[10px] text-slate-500">Policies</div>
-                    <Link href="/terms" className="block transition hover:text-white">
-                      Terms &amp; Conditions
-                    </Link>
-                    <Link href="/privacy" className="block transition hover:text-white">
-                      Privacy Policy
-                    </Link>
-                    <Link href="/refunds" className="block transition hover:text-white">
-                      Refunds &amp; Returns
-                    </Link>
-                  </div>
-
-                  <div className="space-y-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-                    <div className="text-[10px] text-slate-500">Quick Links</div>
-                    <Link href="/support" className="block transition hover:text-white">
-                      Support
-                    </Link>
-                    <Link href="/shop" className="block transition hover:text-white">
-                      Shop
-                    </Link>
-                    <Link href="/" className="block transition hover:text-white">
-                      Home
-                    </Link>
-                    <a
-                      href="https://instagram.com"
-                      className="block transition hover:text-white"
-                    >
-                      Instagram
-                    </a>
-                  </div>
-                </div>
-
-                <div className="mt-10 flex flex-col gap-3 border-t border-slate-800/60 pt-6 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-                  <span>© {new Date().getFullYear()} PUFFF Station Vendors SA</span>
-                  <span>Adults only. 18+.</span>
-                </div>
-              </div>
-            </footer>
+            <Footer />
           </div>
         </CartProvider>
       </body>
     </html>
   )
 }
-

@@ -29,16 +29,36 @@ export async function POST(req: Request) {
     return res
   }
 
-  const adminEmails = parseAdminEmails(process.env.ADMIN_EMAILS)
+  const adminEmails = parseAdminEmails(process.env.ADMIN_EMAILS || process.env.NEXT_PUBLIC_ADMIN_EMAILS)
   const db = supabaseAdmin()
-  const { data, error } = await db.auth.getUser(token)
+  const { data: userData, error: userError } = await db.auth.getUser(token)
 
-  if (process.env.NODE_ENV === 'development') {
-    console.info('[admin session] token', Boolean(token), 'error', !!error)
+  if (userError || !userData?.user) {
+    const res = NextResponse.json({ ok: false, error: 'Invalid user' }, { status: 401 })
+    res.cookies.set('pufff_is_admin', 'false', { path: '/', maxAge: 0 })
+    return res
   }
 
-  const email = data.user?.email?.toLowerCase() ?? ''
-  const isAdmin = Boolean(email && adminEmails.includes(email))
+  const user = userData.user
+  const email = user.email?.toLowerCase() ?? ''
+
+  // 1. Check email list if provided
+  let isAdmin = adminEmails.length === 0 || adminEmails.includes(email)
+
+  // 2. Check profiles table (Database truth)
+  if (isAdmin) {
+    const { data: profile } = await db
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    
+    isAdmin = profile?.role === 'admin'
+  }
+
+  if (process.env.NODE_ENV === 'development') {
+    console.info('[admin session] user:', email, 'isAdmin:', isAdmin)
+  }
 
   const res = NextResponse.json({ ok: true, isAdmin })
   res.cookies.set('pufff_is_admin', isAdmin ? 'true' : 'false', {

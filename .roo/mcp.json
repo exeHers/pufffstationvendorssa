@@ -1,0 +1,49 @@
+{
+  "servers": {
+    "filesystem": {
+      "command": "roo-mcp",
+      "args": [
+        "filesystem",
+        "--root",
+        "."
+      ]
+    },
+    "git": {
+      "command": "roo-mcp",
+      "args": [
+        "git"
+      ]
+    },
+    "terminal": {
+      "command": "roo-mcp",
+      "args": [
+        "terminal"
+      ]
+    },
+    "node": {
+      "command": "roo-mcp",
+      "args": [
+        "node"
+      ]
+    }
+  },
+  "mcpServers": {
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@0.5.5",
+        "--access-token",
+        "sbp_b696fa212986e33d1c6a1dbf9560ab7c00b83f4c"
+      ]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "C:/Users/Envyyy/pufffstationvendorssa"
+      ]
+    }
+  }
+}

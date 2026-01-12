@@ -1,0 +1,281 @@
+'use client'
+
+import Link from 'next/link'
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
+import { supabaseBrowser } from '@/lib/supabase/browser'
+import PulseTab from '@/components/admin/PulseTab'
+import QuickActionsTab from '@/components/admin/QuickActionsTab'
+
+type Profile = {
+  id: string
+  role: string | null
+}
+
+const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
+
+export default function AdminClient() {
+  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [role, setRole] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const checkingRef = useRef(false)
+
+  const loadAdmin = useCallback(async (userId: string, userEmail: string) => {
+    if (checkingRef.current) return
+    checkingRef.current = true
+    
+    setLoading(true)
+    setError(null)
+    const emailLower = userEmail.toLowerCase()
+    setEmail(emailLower)
+
+    if (ADMIN_EMAILS.length > 0 && !ADMIN_EMAILS.includes(emailLower)) {
+       setError('Access Denied. Your email is not authorized for admin access.')
+       setLoading(false)
+       return
+    }
+
+    const supabase = supabaseBrowser()
+    const { data: profile, error: profileErr } = await supabase
+      .from('profiles')
+      .select('id, role')
+      .eq('id', userId)
+      .single<Profile>()
+
+    if (profileErr || !profile) {
+      setError('Profile not found. Make sure this user exists in the profiles table.')
+      setLoading(false)
+      return
+    }
+
+    setRole(profile.role ?? 'user')
+
+    if (profile.role !== 'admin') {
+      setError('Access denied. Your account is not marked as admin in the database.')
+      setLoading(false)
+      return
+    }
+
+    setLoading(false)
+    checkingRef.current = false
+  }, [])
+
+  useEffect(() => {
+    const supabase = supabaseBrowser()
+    let mounted = true
+
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!mounted) return
+
+      if (session?.user) {
+        await loadAdmin(session.user.id, session.user.email ?? '')
+      } else {
+        // Double check with getUser as fallback
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!mounted) return
+        
+        if (user) {
+          await loadAdmin(user.id, user.email ?? '')
+        } else {
+          setLoading(false)
+          router.replace('/login?next=/admin')
+        }
+      }
+    }
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return
+      
+      if (event === 'SIGNED_OUT') {
+        router.replace('/login?next=/admin')
+      } else if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) {
+        if (session?.user) {
+          loadAdmin(session.user.id, session.user.email ?? '')
+        }
+      }
+    })
+
+    checkAuth()
+
+    return () => {
+      mounted = false
+      sub.subscription.unsubscribe()
+    }
+  }, [loadAdmin, router])
+
+  const isAdmin = role === 'admin'
+
+  return (
+    <main className="mx-auto max-w-6xl space-y-8 px-4 pb-16 pt-8">
+      <header className="flex flex-col gap-3 border-b border-slate-800/70 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+             <div className="h-2 w-2 rounded-full bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.8)]" />
+             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#D946EF]">
+               PUFFF Admin Panel
+             </p>
+          </div>
+          <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-white uppercase">
+            Operational Hub
+          </h1>
+          <p className="mt-1 text-[10px] uppercase tracking-widest text-slate-500 font-bold">
+            Authorized: <span className="text-slate-300 ml-1">{email || '...'}</span>
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2 sm:justify-end">
+          <Link
+            href="/shop"
+            className="w-full rounded-full border border-slate-800 px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-slate-300 transition hover:border-[#D946EF] hover:text-[#D946EF] sm:w-auto"
+          >
+            Live Shop
+          </Link>
+
+          <Link
+            href="/logout"
+            className="w-full rounded-full bg-slate-900 border border-slate-800 px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400 transition hover:border-red-400 hover:text-red-200 sm:w-auto"
+          >
+            Terminal Out
+          </Link>
+        </div>
+      </header>
+
+      {loading && (
+        <section className="rounded-3xl border border-slate-800/80 bg-slate-950/60 p-12 text-center">
+           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-800 border-t-fuchsia-500" />
+           <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Verifying Credentials...</p>
+        </section>
+      )}
+
+      {!loading && !isAdmin && (
+        <section className="rounded-3xl border border-red-500/30 bg-red-500/5 p-8 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-xl text-red-500">
+             ⚠
+          </div>
+          <h2 className="text-lg font-extrabold text-white mb-2 uppercase">Access Prohibited</h2>
+          <p className="text-xs text-red-200/70 max-w-md mx-auto">{error || 'You do not have administrative privileges.'}</p>
+          <div className="mt-6">
+             <Link href="/" className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-white">Return to surface</Link>
+          </div>
+        </section>
+      )}
+
+      {!loading && isAdmin && (
+        <Suspense fallback={<div>Loading Tabs...</div>}>
+          <AdminTabs />
+        </Suspense>
+      )}
+    </main>
+  )
+}
+
+function AdminTabs() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const activeTab = searchParams.get('tab') || 'management'
+
+  const setActiveTab = (tab: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', tab)
+    router.replace(`${pathname}?${params.toString()}`)
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-wrap gap-2 rounded-[2rem] border border-slate-800/60 bg-slate-950/40 p-1.5 w-fit">
+        {[
+          { id: 'management', label: 'Management' },
+          { id: 'pulse', label: 'Pulse' },
+          { id: 'actions', label: 'Quick Actions' },
+        ].map(tab => (
+           <button
+             key={tab.id}
+             onClick={() => setActiveTab(tab.id)}
+             className={`rounded-full px-6 py-2 text-[11px] font-bold uppercase tracking-[0.18em] transition ${
+               activeTab === tab.id
+                 ? 'bg-[#D946EF] text-white shadow-[0_0_20px_rgba(217,70,239,0.5)]'
+                 : 'text-slate-500 hover:text-white'
+             }`}
+           >
+             {tab.label}
+           </button>
+        ))}
+      </div>
+
+      <AnimatePresence mode="wait">
+        {activeTab === 'management' && (
+          <motion.section
+            key="management"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            <AdminCard title="Inventory" desc="Vape stocks & visual FX." href="/admin/products" icon="📦" />
+            <AdminCard title="Spotlight" desc="Featured home drops." href="/admin/featured-drops" icon="🌟" />
+            <AdminCard title="Order Flow" desc="Shipping & logistics." href="/admin/orders" icon="🚚" />
+            <AdminCard title="Brand DNA" desc="Categories & identity." href="/admin/categories" icon="💎" />
+            <AdminCard title="Palette" desc="Flavour filter tags." href="/admin/flavours" icon="🍭" />
+            <AdminCard title="Support" desc="Customer terminal." href="/admin/support" icon="✉️" />
+          </motion.section>
+        )}
+
+        {activeTab === 'pulse' && (
+          <motion.section
+            key="pulse"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+          >
+            <PulseTab />
+          </motion.section>
+        )}
+
+        {activeTab === 'actions' && (
+          <motion.section
+            key="actions"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+          >
+            <QuickActionsTab />
+          </motion.section>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function AdminCard({ title, desc, href, icon }: { title: string; desc: string; href: string; icon: string }) {
+  return (
+    <Link
+      href={href}
+      className="group relative overflow-hidden rounded-[2rem] border border-slate-800/80 bg-gradient-to-br from-slate-950/80 via-slate-950/40 to-slate-900/60 p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(0,0,0,0.6)] hover:border-fuchsia-500/50"
+    >
+      <div className="absolute -right-4 -top-4 text-5xl opacity-[0.03] transition-all duration-500 group-hover:scale-125 group-hover:opacity-[0.07] grayscale">
+        {icon}
+      </div>
+      <div className="relative flex h-full flex-col justify-between gap-6">
+        <div>
+          <div className="mb-3 text-2xl">{icon}</div>
+          <h2 className="text-lg font-black uppercase tracking-tight text-white transition duration-300 group-hover:text-fuchsia-400">
+            {title}
+          </h2>
+          <p className="mt-2 text-[11px] leading-relaxed text-slate-500 group-hover:text-slate-300">
+            {desc}
+          </p>
+        </div>
+        <div className="flex w-fit items-center gap-2 rounded-full border border-slate-800 bg-black/40 px-4 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 transition duration-300 group-hover:border-fuchsia-500/50 group-hover:text-white">
+          Enter
+          <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+        </div>
+      </div>
+    </Link>
+  )
+}
+
