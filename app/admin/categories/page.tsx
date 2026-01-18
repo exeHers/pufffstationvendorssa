@@ -100,14 +100,14 @@ export default function AdminCategoriesPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Elfbar, Vapengin, IQOS..."
-              className="mt-2 w-full rounded-2xl border border-slate-700/70 bg-slate-950/50 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-300/60"
+              className="mt-2 w-full rounded-2xl border border-white/[0.05] bg-slate-950/50 px-4 py-3 text-sm text-slate-100 outline-none focus:border-violet-500/50"
             />
           </div>
-
+ 
           <button
             onClick={addCategory}
             disabled={!canSubmit}
-            className="rounded-2xl bg-fuchsia-500 px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-2xl bg-violet-600 px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Add
           </button>

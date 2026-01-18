@@ -118,34 +118,27 @@ export default async function ProductDetailPage({ params }: Props) {
             <div className="pufff-haze opacity-60" />
             <PreviewSmokeVideo
               className="pufff-smoke-video absolute inset-0 h-full w-full object-cover"
+              id={product.id}
+              hex={previewSmoke}
               style={{
                 transform: 'translateZ(0) scale(1.25)',
                 objectPosition: '50% 22%',
                 opacity: 0.95,
-                filter: 'grayscale(1) contrast(1.25) brightness(0.95)',
+                filter: `url(#smoke-filter-${product.id}) contrast(1.2) brightness(1.05)`,
               }}
               src="/preview.mp4"
               poster="/preview.jpg"
             />
-
-            {/* exact colour overlay */}
+ 
+            {/* Ambient matte glow */}
             <div
               className="absolute inset-0"
               style={{
-                background: previewSmoke,
-                opacity: 0.62,
+                background:
+                  'radial-gradient(70% 60% at 50% 45%, var(--smoke), transparent 80%)',
                 mixBlendMode: 'screen',
-                filter: 'saturate(2.2) contrast(1.25)',
-              }}
-            />
-
-            {/* glow */}
-            <div
-              className="absolute inset-0"
-              style={{
-                background: previewSmoke,
-                opacity: 0.28,
-                filter: 'blur(22px) saturate(2.6)',
+                opacity: 0.35,
+                filter: 'blur(10px)',
               }}
             />
 

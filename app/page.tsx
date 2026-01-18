@@ -5,6 +5,7 @@ import { supabase, supabaseEnvReady } from '@/lib/supabaseClient'
 import type { Product } from '@/lib/types'
 import FlavourPicker from '@/components/home/FlavourPicker'
 import ReviewFeed from '@/components/shop/ReviewFeed'
+import HomeBackgroundVideo from '@/components/home/HomeBackgroundVideo'
 import { fetchActiveFlavours } from '@/lib/flavours'
 
 export const metadata: Metadata = {
@@ -50,38 +51,10 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="relative w-full text-white overflow-x-hidden min-h-screen">
-      {/* PERSISTENT LIVE BACKGROUND VIDEO (Homepage Only) */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <video
-          className="h-full w-full object-cover object-center opacity-[0.7] [filter:brightness(0.6)_contrast(1.1)_grayscale(0.1)]"
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          poster="/hero/neon-smoke.png"
-          aria-hidden="true"
-          style={{ transform: 'translateZ(0) scale(1.01)', willChange: 'transform' }}
-        >
-          <source src="/hero/neon-smoke.mp4" type="video/mp4" />
-        </video>
-        {/* Deepening the overlays for better text contrast */}
-        <div className="absolute inset-0 bg-black/60" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black" />
-        <div
-          className="absolute inset-0 opacity-30"
-          style={{
-            background:
-              'radial-gradient(900px 420px at 15% 20%, rgba(34,211,238,0.2), transparent 70%),' +
-              'radial-gradient(700px 380px at 75% 35%, rgba(217,70,239,0.18), transparent 68%),' +
-              'radial-gradient(800px 480px at 65% 80%, rgba(59,130,246,0.15), transparent 70%)',
-          }}
-        />
-      </div>
+    <main className="relative w-full text-white overflow-x-hidden min-h-screen bg-transparent">
+      <HomeBackgroundVideo />
 
-      <section className="relative overflow-hidden min-h-[85vh] flex items-center">
+      <section className="relative overflow-hidden min-h-[85vh] flex items-center z-10">
         <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-start justify-center gap-10 px-4 pb-16 pt-16 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-[520px]">
             <p className="hero-fade hero-fade-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-cyan-200/80">
@@ -104,7 +77,7 @@ export default async function HomePage() {
             <div className="hero-fade hero-fade-3 mt-7 flex flex-wrap items-center gap-4">
               <Link
                 href="/shop"
-                className="cta-pulse rounded-full bg-cyan-400/95 px-8 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-950 shadow-[0_0_34px_rgba(34,211,238,0.5)] transition hover:brightness-110 active:scale-95"
+                className="cta-pulse rounded-full bg-cyan-600 px-8 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:brightness-110 active:scale-95"
               >
                 Shop the Drop
               </Link>
@@ -123,7 +96,7 @@ export default async function HomePage() {
           </div>
 
           <div className="w-full max-w-md">
-            <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-black/45 p-6 shadow-[0_0_50px_rgba(15,23,42,0.65)]">
+            <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.04] bg-slate-900/40 p-6 shadow-2xl">
               <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-black/60" />
               <div className="absolute inset-0 opacity-60 [mask-image:radial-gradient(70%_60%_at_50%_35%,black,transparent_75%)] bg-black/40" />
 
@@ -165,16 +138,16 @@ export default async function HomePage() {
       <div className="h-10 relative z-10" />
 
       <section className="relative z-10 mx-auto w-full max-w-6xl px-4 py-12">
-        <div className="rounded-[4rem] border border-white/10 bg-black/40 backdrop-blur-xl shadow-[0_0_80px_rgba(0,0,0,0.5)] overflow-hidden">
+        <div className="rounded-[4rem] border border-white/[0.04] bg-slate-900/40 backdrop-blur-xl shadow-2xl overflow-hidden">
           <FlavourPicker flavours={flavours} />
         </div>
       </section>
 
       {featuredSettings.enabled && products.length > 0 ? (
         <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-16">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between rounded-[2rem] bg-black/40 p-8 border border-white/5 backdrop-blur-sm mb-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between rounded-[2rem] bg-slate-900/40 p-8 border border-white/[0.04] backdrop-blur-sm mb-8">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-cyan-400">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-cyan-500/80">
                 Featured Drops
               </p>
               <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl uppercase">
@@ -200,7 +173,7 @@ export default async function HomePage() {
                 <Link
                   key={product.id}
                   href={`/shop/${product.id}`}
-                  className="group relative overflow-hidden rounded-[1.8rem] border border-white/5 bg-black/60 p-5 backdrop-blur-md shadow-[0_0_35px_rgba(0,0,0,0.45)] transition hover:-translate-y-1 hover:border-cyan-500/30 hover:shadow-[0_0_45px_rgba(34,211,238,0.18)]"
+                  className="group relative overflow-hidden rounded-[1.8rem] border border-white/[0.04] bg-slate-950/60 p-5 backdrop-blur-md shadow-2xl transition hover:-translate-y-1 hover:border-cyan-500/20"
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-black/70" />
 

@@ -28,7 +28,7 @@ export default async function ReviewFeed() {
   return (
     <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-20 mt-16">
       <div 
-        className={`mb-10 text-center rounded-[2.5rem] bg-black/50 border border-white/5 py-8 ${config.card_blur ? 'backdrop-blur-md' : ''} max-w-2xl mx-auto shadow-2xl`}
+        className={`mb-10 text-center rounded-[2.5rem] bg-slate-900/40 border border-white/[0.04] py-8 ${config.card_blur ? 'backdrop-blur-md' : ''} max-w-2xl mx-auto shadow-2xl`}
       >
         <p 
           className="text-[11px] font-bold uppercase tracking-[0.3em]"
@@ -45,10 +45,9 @@ export default async function ReviewFeed() {
         {reviews.map((r: any) => (
           <div 
             key={r.id} 
-            className={`rounded-[2rem] border border-white/10 bg-black/60 p-6 ${config.card_blur ? 'backdrop-blur-lg' : ''} transition hover:border-[var(--hb)] hover:shadow-[var(--hs)]`}
-            style={{ 
-              ['--hb' as any]: `${config.accent_color}4d`, // border color with alpha
-              ['--hs' as any]: `0 0 30px ${config.accent_color}26` // shadow with alpha
+            className={`rounded-[2rem] border border-white/[0.04] bg-slate-950/60 p-6 ${config.card_blur ? 'backdrop-blur-lg' : ''} transition hover:border-[var(--hb)] hover:shadow-2xl`}
+            style={{
+              ['--hb' as any]: `${config.accent_color}33`, // border color with alpha
             } as React.CSSProperties}
           >
             <div className="flex gap-0.5 text-[10px] mb-3">
@@ -63,7 +62,7 @@ export default async function ReviewFeed() {
               ))}
             </div>
             <p className="text-xs text-slate-200 leading-relaxed italic mb-4">"{r.text || 'Lekker drops.'}"</p>
-            <div className="flex items-center gap-2 border-t border-white/5 pt-4">
+            <div className="flex items-center gap-2 border-t border-white/[0.03] pt-4">
                <div 
                  className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-black text-white"
                  style={{ background: `linear-gradient(to bottom right, ${config.accent_color}, #000)` }}

@@ -71,7 +71,7 @@ export default function RootLayout({
 
         <CartProvider>
           <div className="min-h-screen">
-            <header className="sticky top-0 z-50 border-b border-slate-800/40 bg-slate-950/24 backdrop-blur-md">
+            <header className="sticky top-0 z-50 border-b border-white/[0.03] bg-slate-950/60 backdrop-blur-md">
               <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4">
                 <Link href="/" className="group flex items-center gap-3">
                   <div className="relative h-11 w-11 overflow-hidden rounded-full border border-slate-800/60 bg-slate-950/40 sm:h-12 sm:w-12 lg:h-14 lg:w-14">
@@ -94,7 +94,7 @@ export default function RootLayout({
                     <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400 lg:text-xs">
                       Vendors SA
                     </div>
-                    <span className="absolute -bottom-2 left-0 h-[2px] w-16 rounded-full bg-gradient-to-r from-cyan-400/70 via-fuchsia-400/70 to-purple-400/70 opacity-70 blur-[1px]" />
+                    <span className="absolute -bottom-2 left-0 h-[1.5px] w-16 rounded-full bg-gradient-to-r from-cyan-500/40 via-violet-500/40 to-purple-500/40 opacity-50" />
                   </div>
                 </Link>
 

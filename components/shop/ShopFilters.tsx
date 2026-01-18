@@ -43,7 +43,7 @@ export default function ShopFilters({
     <div className="flex w-full max-w-xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
       <div
         ref={brandRef}
-        className="relative w-full rounded-2xl border border-slate-800/70 bg-slate-950/70 px-4 py-3 text-left transition-all duration-300 hover:border-[#D946EF]/50 sm:max-w-[220px]"
+        className="relative w-full rounded-2xl border border-white/[0.05] bg-slate-900/60 px-4 py-3 text-left transition-all duration-300 hover:border-violet-500/30 sm:max-w-[220px]"
       >
         <button
           type="button"
@@ -58,7 +58,7 @@ export default function ShopFilters({
           {brandLabel}
           <motion.span
             animate={{ rotate: brandOpen ? 45 : 0 }}
-            className="text-[#D946EF]"
+            className="text-violet-400"
           >
             +
           </motion.span>
@@ -78,7 +78,7 @@ export default function ShopFilters({
                     key={`${option.label}-${option.href}`}
                     href={option.href}
                     onClick={() => setBrandOpen(false)}
-                    className="flex rounded-xl px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400 transition hover:bg-[#D946EF]/10 hover:text-[#D946EF]"
+                    className="flex rounded-xl px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400 transition hover:bg-violet-500/10 hover:text-violet-400"
                   >
                     {option.label}
                   </Link>
@@ -91,7 +91,7 @@ export default function ShopFilters({
 
       <div
         ref={flavourRef}
-        className="relative w-full rounded-2xl border border-slate-800/70 bg-slate-950/70 px-4 py-3 text-left transition-all duration-300 hover:border-[#D946EF]/50 sm:max-w-[220px]"
+        className="relative w-full rounded-2xl border border-white/[0.05] bg-slate-900/60 px-4 py-3 text-left transition-all duration-300 hover:border-violet-500/30 sm:max-w-[220px]"
       >
         <button
           type="button"
@@ -106,7 +106,7 @@ export default function ShopFilters({
           {flavourLabel}
           <motion.span
             animate={{ rotate: flavourOpen ? 45 : 0 }}
-            className="text-[#D946EF]"
+            className="text-violet-400"
           >
             +
           </motion.span>
@@ -126,7 +126,7 @@ export default function ShopFilters({
                     key={`${option.label}-${option.href}`}
                     href={option.href}
                     onClick={() => setFlavourOpen(false)}
-                    className="flex rounded-xl px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400 transition hover:bg-[#D946EF]/10 hover:text-[#D946EF]"
+                    className="flex rounded-xl px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400 transition hover:bg-violet-500/10 hover:text-violet-400"
                   >
                     {option.label}
                   </Link>

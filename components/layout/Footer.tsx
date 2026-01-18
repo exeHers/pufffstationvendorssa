@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabaseBrowser } from '@/lib/supabase/browser'
 import Link from 'next/link'
@@ -14,6 +15,8 @@ export default function Footer() {
   const [sent, setSent] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [loadingUser, setLoadingUser] = useState(true)
+  const pathname = usePathname()
+  const isHome = pathname === '/'
 
   useEffect(() => {
     async function getUser() {
@@ -40,7 +43,6 @@ export default function Footer() {
         text, 
         customer_name: name || user.email?.split('@')[0] || 'Authenticated User', 
         is_approved: false,
-        user_id: user.id 
       })
     
     if (error) {
@@ -58,7 +60,7 @@ export default function Footer() {
   }
 
   return (
-    <footer className="mt-14 border-t border-white/5 bg-black/40 backdrop-blur-md relative z-10">
+    <footer className={`mt-14 border-t border-white/5 relative z-10 ${isHome ? 'bg-slate-950' : 'bg-black/40 backdrop-blur-md'}`}>
       <div className="mx-auto w-full max-w-6xl px-4 py-12">
         <div className="grid gap-8 md:grid-cols-[1.2fr_0.8fr_0.8fr]">
           <div>
@@ -74,9 +76,9 @@ export default function Footer() {
             <div className="mt-6">
               <button 
                 onClick={() => setShowReviewForm(true)}
-                className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#D946EF] hover:brightness-110 transition flex items-center gap-2"
+                className="text-[11px] font-bold uppercase tracking-[0.15em] text-violet-400 hover:text-violet-300 transition flex items-center gap-2"
               >
-                <span className="h-2 w-2 rounded-full bg-[#D946EF] shadow-[0_0_8px_rgba(217,70,239,0.6)]" />
+                <span className="h-2 w-2 rounded-full bg-violet-500/80" />
                 Give Us a Review
               </button>
             </div>
@@ -223,7 +225,7 @@ export default function Footer() {
                       <button 
                         type="submit"
                         disabled={busy}
-                        className="flex-[2] rounded-full bg-fuchsia-500 py-3 text-[11px] font-black uppercase tracking-widest text-white shadow-[0_0_20px_rgba(217,70,239,0.3)] hover:brightness-110 active:scale-95 disabled:opacity-50"
+                        className="flex-[2] rounded-full bg-violet-600 py-3 text-[11px] font-black uppercase tracking-widest text-white transition hover:bg-violet-500 active:scale-95 disabled:opacity-50"
                       >
                         {busy ? 'SENDING...' : 'SUBMIT REVIEW'}
                       </button>

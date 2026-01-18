@@ -6,8 +6,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import type { Product } from '@/lib/types'
 import { useCart } from '@/components/cart/CartContext'
-
-function isValidHex(hex?: string | null) {
+import SmokeFilter from '@/components/ui/SmokeFilter'
+ 
+ function isValidHex(hex?: string | null) {
   return !!hex && /^#[0-9a-fA-F]{6}$/.test(hex.trim())
 }
 
@@ -44,7 +45,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const inStock = p.in_stock !== false
 
   // ✅ Smoke hex comes from admin (EXACT)
-  const smokeHex = isValidHex(p.smoke_hex_scroll) ? p.smoke_hex_scroll.trim() : '#D946EF'
+  const smokeHex = isValidHex(p.smoke_hex_scroll) ? p.smoke_hex_scroll.trim() : '#7c3aed'
   const accentHex = isValidHex(p.accent_hex) ? p.accent_hex.trim() : smokeHex
 
   const desc = (product.description || '').trim()
@@ -91,7 +92,7 @@ export default function ProductCard({ product }: { product: Product }) {
     <Link
       ref={ref as any}
       href={`/shop/${product.id}`}
-      className="group relative block overflow-hidden rounded-[2.1rem] border border-slate-800/70 bg-black/70 shadow-[0_0_45px_rgba(0,0,0,0.65)] transition hover:-translate-y-0.5 hover:border-slate-700/70"
+      className="group relative block overflow-hidden rounded-[2.1rem] border border-white/[0.03] bg-slate-950/80 shadow-2xl transition hover:-translate-y-0.5 hover:border-white/[0.08]"
       style={{
         ...cssVars,
         transform: 'translateZ(0)',
@@ -104,7 +105,7 @@ export default function ProductCard({ product }: { product: Product }) {
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/60 to-black/95" />
         <div
-          className="absolute inset-0 opacity-[0.08]"
+          className="absolute inset-0 opacity-[0.05]"
           style={{
             background:
               `radial-gradient(520px 220px at 18% 18%, var(--accent), transparent 70%),` +
@@ -133,7 +134,7 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/* Stage */}
-        <div className="relative mt-4 overflow-hidden rounded-[1.9rem] border border-slate-800/60 bg-black/60 p-4">
+        <div className="relative mt-4 overflow-hidden rounded-[1.9rem] border border-white/[0.04] bg-slate-900/40 p-4">
           {/* ✅ Smoke layer (isolated + masked + neon) */}
           <div
             className="pointer-events-none absolute inset-0 z-0"
@@ -148,13 +149,16 @@ export default function ProductCard({ product }: { product: Product }) {
           >
             {showSmoke ? (
               <>
+                {/* SVG Filter for exact hex mapping */}
+                <SmokeFilter id={product.id} hex={smokeHex} />
+                
                 {/* Video base */}
                 <video
-                  className="pufff-smoke-video absolute inset-0 h-full w-full object-cover opacity-[0.68]"
+                  className="pufff-smoke-video absolute inset-0 h-full w-full object-cover opacity-[0.8]"
                   style={{
-                    transform: 'scale(1.35)',
+                    transform: 'translateZ(0) scale(1.35)',
                     objectPosition: '50% 22%',
-                    filter: 'grayscale(1) contrast(1.5) brightness(1.15)',
+                    filter: `url(#smoke-filter-${product.id}) contrast(1.2) brightness(1.1)`,
                   }}
                   autoPlay
                   muted
@@ -165,35 +169,25 @@ export default function ProductCard({ product }: { product: Product }) {
                 >
                   <source src="/scroll.mp4" type="video/mp4" />
                 </video>
-
-                {/* ✅ Exact hex tint */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background: 'var(--smoke)',
-                    mixBlendMode: 'screen',
-                    opacity: 0.68,
-                  }}
-                />
-
-                {/* ?. Neon core glow */}
+ 
+                {/* ?. Neon core glow - subtle and matte */}
                 <div
                   className="absolute inset-0"
                   style={{
                     background:
-                      'radial-gradient(65% 55% at 50% 42%, var(--smoke), transparent 70%)',
+                      'radial-gradient(65% 55% at 50% 42%, var(--smoke), transparent 75%)',
                     mixBlendMode: 'screen',
-                    opacity: 0.45,
-                    filter: 'blur(6px) saturate(1.2)',
+                    opacity: 0.35,
+                    filter: 'blur(8px)',
                   }}
                 />
-
-                {/* ✅ Neon pop */}
+ 
+                {/* ✅ Neon pop - desaturated for matte feel */}
                 <div
-                  className="absolute inset-0 opacity-60"
+                  className="absolute inset-0 opacity-40"
                   style={{
-                    boxShadow: `inset 0 0 110px var(--smoke)`,
-                    filter: 'blur(12px) saturate(1.15)',
+                    boxShadow: `inset 0 0 120px var(--smoke)`,
+                    filter: 'blur(14px)',
                   }}
                 />
               </>
@@ -215,10 +209,10 @@ export default function ProductCard({ product }: { product: Product }) {
           {/* Pedestal */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20">
             <div
-              className="absolute left-1/2 top-7 h-10 w-[75%] -translate-x-1/2 rounded-full blur-2xl opacity-45"
+              className="absolute left-1/2 top-7 h-10 w-[75%] -translate-x-1/2 rounded-full blur-2xl opacity-30"
               style={{ background: 'var(--accent)' }}
             />
-            <div className="absolute left-1/2 top-10 h-8 w-[72%] -translate-x-1/2 rounded-full bg-black/70 blur-xl" />
+            <div className="absolute left-1/2 top-10 h-8 w-[72%] -translate-x-1/2 rounded-full bg-slate-950/70 blur-xl" />
             <div className="absolute left-1/2 top-14 h-5 w-[66%] -translate-x-1/2 rounded-full bg-black/80 blur-lg" />
           </div>
 
@@ -266,10 +260,10 @@ export default function ProductCard({ product }: { product: Product }) {
           <button
             onClick={handleAdd}
             disabled={!inStock}
-            className="inline-flex items-center justify-center rounded-2xl px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-black shadow-[0_0_35px_rgba(34,211,238,0.18)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55"
+            className="inline-flex items-center justify-center rounded-2xl px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55"
             style={{
-              background: inStock ? 'var(--accent)' : 'rgba(148,163,184,0.25)',
-              color: inStock ? 'rgba(2,6,23,0.95)' : 'rgba(226,232,240,0.85)',
+              background: inStock ? 'var(--accent)' : 'rgba(51, 65, 85, 0.3)',
+              color: inStock ? 'rgba(2, 6, 23, 0.95)' : 'rgba(148, 163, 184, 0.85)',
             }}
           >
             Add to cart

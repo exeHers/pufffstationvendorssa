@@ -1,15 +1,18 @@
 'use client'
-
-import { useEffect, useMemo, useRef } from 'react'
-
-type Props = {
-  className?: string
-  style?: React.CSSProperties
-  src: string
-  poster?: string
-}
-
-export default function PreviewSmokeVideo({ className, style, src, poster }: Props) {
+ 
+ import { useEffect, useMemo, useRef } from 'react'
+ import SmokeFilter from '@/components/ui/SmokeFilter'
+ 
+ type Props = {
+   className?: string
+   style?: React.CSSProperties
+   src: string
+   poster?: string
+   id: string
+   hex: string
+ }
+ 
+ export default function PreviewSmokeVideo({ className, style, src, poster, id, hex }: Props) {
   const aRef = useRef<HTMLVideoElement | null>(null)
   const bRef = useRef<HTMLVideoElement | null>(null)
   const fadingRef = useRef(false)
@@ -88,6 +91,7 @@ export default function PreviewSmokeVideo({ className, style, src, poster }: Pro
 
   return (
     <>
+      <SmokeFilter id={id} hex={hex} />
       <video
         ref={aRef}
         className={className}

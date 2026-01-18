@@ -14,7 +14,7 @@ export default function CartPage() {
       {/* Page header */}
       <header className="flex flex-col gap-3 border-b border-slate-800/70 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#D946EF]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-violet-400">
             CART · YOUR STASH
           </p>
           <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
@@ -28,13 +28,13 @@ export default function CartPage() {
         <div className="flex flex-wrap gap-2 sm:justify-end">
           <Link
             href="/"
-            className="w-full rounded-full border border-slate-700 px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 transition hover:border-[#D946EF] hover:text-[#D946EF] sm:w-auto"
+            className="w-full rounded-full border border-white/[0.08] px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 transition hover:border-violet-500/50 hover:text-violet-400 sm:w-auto"
           >
             Home
           </Link>
           <Link
             href="/shop"
-            className="w-full rounded-full bg-[#D946EF] px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-[0_0_20px_rgba(217,70,239,0.7)] transition hover:brightness-110 active:scale-95 sm:w-auto"
+            className="w-full rounded-full bg-violet-600 px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-white transition hover:bg-violet-500 active:scale-95 sm:w-auto"
           >
             Back to Shop
           </Link>
@@ -53,7 +53,7 @@ export default function CartPage() {
           <div className="mt-5 flex justify-center gap-3">
             <Link
               href="/shop"
-              className="rounded-full bg-[#D946EF] px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_0_20px_rgba(217,70,239,0.7)] hover:brightness-110 active:scale-95 transition"
+              className="rounded-full bg-violet-600 px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.2em] text-white transition hover:bg-violet-500 active:scale-95 transition"
             >
               Browse the Stash
             </Link>
@@ -219,7 +219,7 @@ export default function CartPage() {
 
             <Link
               href="/checkout"
-              className="mt-2 block w-full rounded-full bg-[#D946EF] px-4 py-2.5 text-center text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_24px_rgba(217,70,239,0.8)] transition hover:brightness-110 active:scale-95"
+              className="mt-2 block w-full rounded-full bg-violet-600 px-4 py-2.5 text-center text-[11px] font-bold uppercase tracking-[0.22em] text-white transition hover:bg-violet-500 active:scale-95"
             >
               Checkout & Pay
             </Link>

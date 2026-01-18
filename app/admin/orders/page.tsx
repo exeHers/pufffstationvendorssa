@@ -122,19 +122,19 @@ export default function AdminOrdersPage() {
           <p className="mt-2 text-sm text-slate-300">Access denied.</p>
           <p className="mt-2 text-xs text-slate-400">Signed in as: {email || '—'}</p>
           <div className="mt-6">
-            <Link href="/admin" className="underline text-fuchsia-300">Back to dashboard</Link>
+            <Link href="/admin" className="underline text-violet-400">Back to dashboard</Link>
           </div>
         </div>
       </main>
     )
   }
-
+ 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 text-white">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-fuchsia-400">Admin</p>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Orders</h1>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-violet-400">Admin</p>
+          <h1 className="mt-2 text-3xl font-extrabold tracking-tight uppercase">Order Stream</h1>
           <p className="mt-1 text-sm text-slate-300">Update status + tracking (emails later via Resend).</p>
         </div>
         <Link href="/admin" className="w-full rounded-full border border-slate-700 px-4 py-2 text-center text-sm sm:w-auto">Back</Link>
@@ -182,7 +182,7 @@ export default function AdminOrdersPage() {
               <button
                 key={o.id}
                 onClick={() => openOrder(o)}
-                className="w-full text-left rounded-2xl border border-slate-800 bg-slate-950/40 p-4 hover:border-fuchsia-500/40"
+                className="w-full text-left rounded-2xl border border-white/[0.05] bg-slate-950/40 p-4 hover:border-violet-500/40 transition"
               >
                 <div className="flex items-center justify-between gap-3">
                   <p className="truncate font-semibold">{o.full_name ?? o.email ?? o.id}</p>
@@ -248,7 +248,7 @@ export default function AdminOrdersPage() {
               <button
                 onClick={updateOrder}
                 disabled={loading}
-                className="rounded-full bg-fuchsia-500 px-5 py-3 text-sm font-bold shadow-[0_0_22px_rgba(217,70,239,0.85)] disabled:opacity-60"
+                className="rounded-full bg-violet-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-violet-500 disabled:opacity-60"
               >
                 {loading ? 'Updating…' : 'Update order'}
               </button>

@@ -4,6 +4,11 @@
 
 :root {
   color-scheme: dark;
+  --bg-deep-matte: #0a0a0c;
+  --surface-matte: #0f0f12;
+  --matte-purple: #4a2b6b;
+  --matte-purple-light: #6b4a8b;
+  --matte-border: rgba(255, 255, 255, 0.04);
 }
 
 html {
@@ -15,7 +20,7 @@ body {
   height: 100%;
   overflow-x: hidden;
   padding-bottom: env(safe-area-inset-bottom);
-  background: #0a0a0c;
+  background: var(--bg-deep-matte);
   text-rendering: geometricPrecision;
 }
 
@@ -167,12 +172,12 @@ body {
    NEW: Luxe Atmosphere Utility Classes
    ============ */
 
-/* A richer base background than plain #070712 - MATTE FINISH */
+/* A richer base background - DEEP MATTE FINISH */
 .luxe-base-bg {
   background:
-    radial-gradient(1200px 600px at 18% 12%, rgba(217,70,239,0.04), transparent 65%),
-    radial-gradient(900px 560px at 82% 88%, rgba(34,211,238,0.04), transparent 62%),
-    linear-gradient(180deg, #0a0a0c 0%, #08080a 100%);
+    radial-gradient(1200px 600px at 18% 12%, rgba(74,43,107,0.03), transparent 65%),
+    radial-gradient(900px 560px at 82% 88%, rgba(34,211,238,0.02), transparent 62%),
+    linear-gradient(180deg, var(--bg-deep-matte) 0%, #080809 100%);
 }
 
 /* Moving sheen overlay */
@@ -197,12 +202,12 @@ body {
 }
 
 .luxe-bloom-a {
-  background: radial-gradient(circle at 30% 30%, rgba(217,70,239,0.45), transparent 65%);
+  background: radial-gradient(circle at 30% 30%, rgba(74,43,107,0.25), transparent 65%);
   animation: luxeBloomA 10.5s ease-in-out infinite;
 }
 
 .luxe-bloom-b {
-  background: radial-gradient(circle at 40% 35%, rgba(34,211,238,0.40), transparent 65%);
+  background: radial-gradient(circle at 40% 35%, rgba(34,161,238,0.20), transparent 65%);
   animation: luxeBloomB 11.5s ease-in-out infinite;
 }
 

@@ -177,8 +177,8 @@ export default function AdminSupportPage() {
       {/* HEADER (kept your vibe) */}
       <header className="flex flex-col gap-3 border-b border-slate-800/70 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#D946EF]">ADMIN</p>
-          <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Support</h1>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-violet-400">ADMIN</p>
+          <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-white uppercase">Support Terminal</h1>
           <p className="mt-1 text-xs text-slate-300">
             Signed in as <span className="font-semibold text-slate-100">{adminEmail || '...'}</span>
           </p>
@@ -188,21 +188,21 @@ export default function AdminSupportPage() {
           <button
             type="button"
             onClick={() => fetchTickets(false)}
-            className="w-full rounded-full border border-slate-700 px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 transition hover:border-[#D946EF] hover:text-[#D946EF] sm:w-auto"
+            className="w-full rounded-full border border-white/[0.05] px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 transition hover:border-violet-500/50 hover:text-violet-400 sm:w-auto"
           >
             Refresh
           </button>
 
           <Link
             href="/admin"
-            className="w-full rounded-full border border-slate-700 px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 transition hover:border-[#D946EF] hover:text-[#D946EF] sm:w-auto"
+            className="w-full rounded-full border border-white/[0.05] px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 transition hover:border-violet-500/50 hover:text-violet-400 sm:w-auto"
           >
             Dashboard
           </Link>
 
           <Link
             href="/support"
-            className="w-full rounded-full bg-[#D946EF] px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-[0_0_20px_rgba(217,70,239,0.7)] transition hover:brightness-110 active:scale-95 sm:w-auto"
+            className="w-full rounded-full bg-violet-600 px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-white transition hover:bg-violet-500 active:scale-95 sm:w-auto"
           >
             Customer view
           </Link>
@@ -267,8 +267,8 @@ export default function AdminSupportPage() {
                     onClick={() => setActiveId(t.id)}
                     className={`w-full rounded-2xl border px-3 py-3 text-left transition ${
                       activeId === t.id
-                        ? 'border-fuchsia-500/50 bg-fuchsia-500/10'
-                        : 'border-slate-800 bg-black/30 hover:bg-black/50'
+                        ? 'border-violet-500/50 bg-violet-500/10'
+                        : 'border-white/[0.05] bg-black/30 hover:bg-black/50'
                     }`}
                   >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -327,7 +327,7 @@ export default function AdminSupportPage() {
                       value={reply}
                       onChange={(e) => setReply(e.target.value)}
                       rows={6}
-                      className="mt-2 w-full rounded-2xl border border-slate-800 bg-black/30 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-500"
+                      className="mt-2 w-full rounded-2xl border border-white/[0.05] bg-black/30 px-4 py-3 text-sm text-slate-100 outline-none focus:border-violet-500/50"
                       placeholder="Type your reply to the customer..."
                     />
 
@@ -344,7 +344,7 @@ export default function AdminSupportPage() {
                       type="button"
                       onClick={sendReply}
                       disabled={sending}
-                      className="mt-4 w-full rounded-full bg-[#D946EF] px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_24px_rgba(217,70,239,0.8)] hover:brightness-110 active:scale-95 disabled:opacity-60 transition"
+                      className="mt-4 w-full rounded-full bg-violet-600 px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white transition hover:bg-violet-500 active:scale-95 disabled:opacity-60"
                     >
                       {sending ? 'Sending…' : 'Send reply'}
                     </button>

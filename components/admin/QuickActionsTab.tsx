@@ -5,7 +5,7 @@ import { supabaseBrowser } from '@/lib/supabase/browser'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 
-export default function QuickActionsTab() {
+export default function QuickActionsTab({ onOpenQuickAdd }: { onOpenQuickAdd: () => void }) {
   const [stats, setStats] = useState({ products: 0, orders: 0, reviews: 0 })
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -119,7 +119,10 @@ export default function QuickActionsTab() {
           <p className="text-[11px] text-slate-500 uppercase font-bold tracking-tight mb-8">Hardware-level store control</p>
         </div>
         <div className="grid gap-4 relative">
-           <Link href="/admin/products" className="group/btn w-full relative overflow-hidden rounded-2xl border border-slate-800 bg-black/60 p-4 transition-all hover:border-white">
+           <button
+             onClick={onOpenQuickAdd}
+             className="group/btn w-full relative overflow-hidden rounded-2xl border border-slate-800 bg-black/60 p-4 transition-all hover:border-white"
+           >
               <div className="flex items-center justify-between">
                 <div className="flex flex-col text-left">
                   <span className="text-[10px] font-black uppercase text-white tracking-widest">Direct Injection</span>
@@ -127,7 +130,7 @@ export default function QuickActionsTab() {
                 </div>
                 <span className="text-xl group-hover/btn:translate-x-1 transition-transform">🚀</span>
               </div>
-           </Link>
+           </button>
 
            <button
              onClick={handleBulkStockToggle}

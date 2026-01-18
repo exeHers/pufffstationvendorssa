@@ -1,86 +1,42 @@
-# ParkStationVendorsSA – Active Tasks
+# PUFFF Station — Phase 2 Roadmap
 
-## Priority: Homepage & UX Improvements
-
-### 1. Persistent Live Background Video (Homepage Only)
-- The MP4 live video must act as a **fixed background layer** on the homepage.
-- When the user scrolls, all content (hero text, features, products, etc.) should scroll **over** the video.
-- The video should not be contained inside a section.
-- The footer must **not** appear over the video.
-- This behavior applies **only to the homepage**.
+## Phase 1: Compliance & Legal Foundation
+### 1. Mandatory Legal Documentation
+- [ ] Create `/app/terms/page.tsx` with comprehensive Terms of Service.
+- [ ] Create `/app/privacy/page.tsx` with a detailed Privacy Policy.
+- [ ] Create `/app/refunds/page.tsx` outlining the Refund & Return Policy.
+- [ ] Implement a robust, legally compliant age verification gate.
 
 ---
 
-### 2. Featured Drops (Admin-Controlled)
-- Featured Drops must be:
-  - Enableable / disableable from the Admin Panel
-  - Have customizable title and description set by the admin
-- The Featured Drops admin controls must be moved:
-  - They should live inside **Admin → Management**
-  - They must not be their own separate admin section
+## Phase 2: "Matte" Theme Polish & UI Consistency
+### 2. Eradicate "Fuchsia" & "Pink" Remnants
+- [ ] Replace all instances of `fuchsia`, `pink`, `#D946EF`, and `#ff00ff` with the new "Matte Violet" palette.
+- [ ] Standardize all interactive elements (buttons, links, inputs) to use CSS variables for consistent theming.
+
+### 3. Homepage `is_featured` Logic
+- [ ] Implement a dedicated "Featured" section on the homepage that exclusively displays products with the `is_featured` flag.
+- [ ] Ensure this section is visually distinct and prioritized.
 
 ---
 
-### 3. Product Deletion System
-- Products must support:
-  - **Soft delete** (hide from users but keep in database)
-  - **Hard delete** (permanently remove from Supabase and all references)
-- The admin must be able to choose which delete type to use.
+## Phase 3: Admin Dashboard Overhaul
+### 4. Search & Filtering Implementation
+- [ ] Add search and filter functionality to the Products, Orders, and Reviews sections of the admin dashboard.
+- [ ] Implement sorting by date, price, and status.
+
+### 5. Advanced Analytics Dashboard
+- [ ] Create a new "Analytics" tab in the admin dashboard.
+- [ ] Display key metrics like total sales, top-selling products, and new customers.
+- [ ] Integrate charts and graphs for visual trend analysis.
 
 ---
 
-### 4. Matte UI Theme
-- The overall site background must have a more **matte** appearance.
-- The shop section should remain purple, but must look more **muted and matte**, not glossy or vibrant.
+## Phase 4: Technical Debt & Scalability
+### 6. Database-Backed Cart
+- [ ] Migrate the cart from `localStorage` to a database-backed system.
+- [ ] Ensure cart contents are synchronized across devices when a user is logged in.
 
----
-
-### 5. Quick Add Panel (Admin)
-- The Quick Add panel must become fully functional.
-- It must allow the admin to quickly:
-  - Add products
-  - Update inventory
-  - Perform fast actions without navigating through multiple screens
-- It is designed for speed and convenience.
-
----
-
-### 6. Reviews System
-- Add a **“Give Us a Review”** option in the site footer.
-- Users must be able to submit:
-  - 1 to 5 star rating
-  - Optional text
-
----
-
-### 7. Admin-Controlled Reviews Display
-- The admin must be able to:
-  - View all submitted reviews
-  - Choose which reviews to display publicly
-- Display rules:
-  - Reviews appear at the **bottom of the homepage**
-  - If Featured Drops is enabled → Reviews appear **below Featured Drops**
-  - If Featured Drops is disabled → Reviews appear in its place
-
----
-
-### 8. Admin Panel Expansion
-- The Admin Panel should become more powerful and detailed.
-- Roo Code is allowed to propose **useful improvements**, but:
-  - It must not invent features outside this scope
-  - It must not break existing systems
-  - If unsure, it must ask the owner (you) before implementing
-
----
-
-## Agent Rules
-
-- Follow this file as the **source of truth**
-- Do not invent new systems not listed here
-- Do not remove existing functionality unless instructed
-- If a decision is unclear, **ask the project owner**
-- Prefer extending existing code instead of rewriting
-- After every successful task:
-  - Run the app
-  - Ensure nothing is broken
-  - Commit clean, working code
+### 7. Centralized Error Logging
+- [ ] Implement a centralized error logging service (e.g., Sentry, LogRocket) to capture and monitor all front-end and back-end errors.
+- [ ] Set up alerts for critical issues to enable proactive debugging.

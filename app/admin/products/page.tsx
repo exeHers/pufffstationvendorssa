@@ -486,23 +486,28 @@ export default function AdminProductsPage() {
       `Remove "${p.name}" from the shop?\n\nSoft delete — you can restore later.`
     )
     if (!confirmed) return
-
+ 
     setBusy(true)
     setErr(null)
     setOk(null)
-
+ 
     try {
-      const { error } = await supabase
-        .from('products')
-        .update({
-          is_deleted: true,
-          deleted_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', p.id)
-
-      if (error) throw new Error(error.message)
-
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess.session?.access_token
+      if (!token) throw new Error('No session token. Please log in again.')
+ 
+      const res = await fetch('/api/admin/products/manage', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action: 'soft_delete', id: p.id }),
+      })
+ 
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json?.error ?? 'Failed to remove product.')
+ 
       await refreshProducts()
       setOk('Removed ✅')
       closeDrawer()
@@ -517,19 +522,24 @@ export default function AdminProductsPage() {
     setBusy(true)
     setErr(null)
     setOk(null)
-
+ 
     try {
-      const { error } = await supabase
-        .from('products')
-        .update({
-          is_deleted: false,
-          deleted_at: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', p.id)
-
-      if (error) throw new Error(error.message)
-
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess.session?.access_token
+      if (!token) throw new Error('No session token. Please log in again.')
+ 
+      const res = await fetch('/api/admin/products/manage', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action: 'restore', id: p.id }),
+      })
+ 
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json?.error ?? 'Failed to restore product.')
+ 
       await refreshProducts()
       setOk('Restored ✅')
       closeDrawer()
@@ -609,7 +619,7 @@ export default function AdminProductsPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-fuchsia-400">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-violet-400">
             Admin
           </p>
           <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Products</h1>
@@ -639,8 +649,8 @@ export default function AdminProductsPage() {
 
       {/* Helpers */}
       <div className="mt-5 grid gap-3">
-        <div className="rounded-3xl border border-slate-800 bg-black/55 p-4 sm:p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+        <div className="rounded-3xl border border-white/[0.05] bg-slate-900/40 p-4 sm:p-5">
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">
             Quick tools (free)
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -761,7 +771,7 @@ export default function AdminProductsPage() {
                     type="checkbox"
                     checked={isFeatured}
                     onChange={(e) => setIsFeatured(e.target.checked)}
-                    className="h-4 w-4 accent-fuchsia-500"
+                    className="h-4 w-4 accent-violet-500"
                   />
                   <span className="text-slate-200">{isFeatured ? 'Yes' : 'No'}</span>
                 </div>
@@ -794,19 +804,19 @@ export default function AdminProductsPage() {
               <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3">
                 <input
                   type="color"
-                  value={isValidHex(accentHex) ? accentHex : '#D946EF'}
+                  value={isValidHex(accentHex) ? accentHex : '#7c3aed'}
                   onChange={(e) => setAccentHex(e.target.value)}
-                  className="h-10 w-14 cursor-pointer rounded-xl border border-slate-700 bg-transparent"
+                  className="h-10 w-14 cursor-pointer rounded-xl border border-white/[0.1] bg-transparent"
                 />
                 <input
                   value={accentHex}
                   onChange={(e) => setAccentHex(e.target.value)}
                   className="w-full bg-transparent text-sm text-white outline-none"
-                  placeholder="#D946EF"
+                  placeholder="#7c3aed"
                 />
                 <div
-                  className="h-10 w-10 rounded-xl border border-slate-700"
-                  style={{ background: isValidHex(accentHex) ? accentHex : '#D946EF' }}
+                  className="h-10 w-10 rounded-xl border border-white/[0.1]"
+                  style={{ background: isValidHex(accentHex) ? accentHex : '#7c3aed' }}
                 />
               </div>
             </label>
@@ -840,19 +850,19 @@ export default function AdminProductsPage() {
               <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3">
                 <input
                   type="color"
-                  value={isValidHex(smokeHexPreview) ? smokeHexPreview : '#D946EF'}
+                  value={isValidHex(smokeHexPreview) ? smokeHexPreview : '#7c3aed'}
                   onChange={(e) => setSmokeHexPreview(e.target.value)}
-                  className="h-10 w-14 cursor-pointer rounded-xl border border-slate-700 bg-transparent"
+                  className="h-10 w-14 cursor-pointer rounded-xl border border-white/[0.1] bg-transparent"
                 />
                 <input
                   value={smokeHexPreview}
                   onChange={(e) => setSmokeHexPreview(e.target.value)}
                   className="w-full bg-transparent text-sm text-white outline-none"
-                  placeholder="#D946EF"
+                  placeholder="#7c3aed"
                 />
                 <div
-                  className="h-10 w-10 rounded-xl border border-slate-700"
-                  style={{ background: isValidHex(smokeHexPreview) ? smokeHexPreview : '#D946EF' }}
+                  className="h-10 w-10 rounded-xl border border-white/[0.1]"
+                  style={{ background: isValidHex(smokeHexPreview) ? smokeHexPreview : '#7c3aed' }}
                 />
               </div>
             </label>
@@ -883,7 +893,7 @@ export default function AdminProductsPage() {
             <button
               onClick={onCreate}
               disabled={busy}
-              className="rounded-full bg-fuchsia-500 px-5 py-3 text-sm font-bold shadow-[0_0_22px_rgba(217,70,239,0.85)] disabled:opacity-60"
+              className="rounded-full bg-violet-600 px-5 py-3 text-sm font-bold transition hover:bg-violet-500 disabled:opacity-60"
             >
               {busy ? 'Creating…' : 'Create product'}
             </button>
@@ -927,13 +937,14 @@ export default function AdminProductsPage() {
                 <option value="out">Out of stock</option>
               </select>
 
-              <label className="flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm">
+              <label className="flex items-center gap-2 rounded-2xl border border-white/[0.05] bg-slate-950/50 px-4 py-3 text-sm cursor-pointer">
                 <input
                   type="checkbox"
                   checked={showRemoved}
                   onChange={(e) => setShowRemoved(e.target.checked)}
+                  className="accent-violet-500"
                 />
-                Show removed
+                <span className="text-slate-400">Show removed</span>
               </label>
             </div>
           </div>
@@ -950,8 +961,8 @@ export default function AdminProductsPage() {
                 <button
                   key={p.id}
                   onClick={() => openDrawer(p)}
-                  className={`w-full text-left flex flex-col gap-4 rounded-2xl border bg-slate-950/30 p-4 transition hover:border-fuchsia-500/40 sm:flex-row sm:items-center ${
-                    removed ? 'border-red-500/30 opacity-80' : 'border-slate-800'
+                  className={`w-full text-left flex flex-col gap-4 rounded-2xl border bg-slate-950/30 p-4 transition hover:border-violet-500/40 sm:flex-row sm:items-center ${
+                    removed ? 'border-red-500/30 opacity-80' : 'border-white/[0.05]'
                   }`}
                 >
                   <div
@@ -973,6 +984,11 @@ export default function AdminProductsPage() {
                     <p className="text-xs text-slate-400">
                       {cat} • {money(p.price)} • {pp.in_stock === false ? 'Out' : 'In stock'}
                     </p>
+                    {p.updated_at && (
+                      <p className="mt-0.5 text-[9px] text-slate-600 uppercase font-black tracking-widest">
+                        Sync: {new Date(p.updated_at).toLocaleDateString()}
+                      </p>
+                    )}
 
                     {pp.smoke_hex_scroll || pp.smoke_hex_preview ? (
                       <p className="mt-1 text-[10px] uppercase tracking-[0.22em] text-slate-500">
@@ -985,7 +1001,7 @@ export default function AdminProductsPage() {
                     )}
                   </div>
 
-                  <div className="text-xs font-bold text-fuchsia-300 sm:ml-auto">EDIT</div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-violet-400 sm:ml-auto">Terminal Edit</div>
                 </button>
               )
             })}
@@ -1212,43 +1228,46 @@ export default function AdminProductsPage() {
                 </label>
 
                 {/* Sticky bottom actions */}
-                <div className="sticky bottom-0 -mx-5 sm:-mx-6 mt-4 border-t border-slate-800 bg-slate-950/95 px-5 sm:px-6 py-4 backdrop-blur-xl">
+                <div className="sticky bottom-0 -mx-5 sm:-mx-6 mt-4 border-t border-white/[0.04] bg-slate-950/95 px-5 sm:px-6 py-4 backdrop-blur-xl">
                   <div className="grid gap-3">
                     <button
                       onClick={onSaveEdit}
                       disabled={busy}
-                      className="w-full rounded-full bg-fuchsia-500 px-5 py-3 text-sm font-bold shadow-[0_0_22px_rgba(217,70,239,0.85)] disabled:opacity-60"
+                      className="w-full rounded-full bg-violet-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-violet-500 active:scale-[0.98] disabled:opacity-60"
                     >
                       {busy ? 'Saving…' : 'Save changes'}
                     </button>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      {(selected as any).is_deleted ? (
-                        <>
+ 
+                    <div className="mt-2 rounded-2xl border border-red-500/10 bg-red-500/[0.02] p-3">
+                      <p className="mb-3 text-center text-[10px] font-black uppercase tracking-widest text-red-400/60">Danger Zone</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        {(selected as any).is_deleted ? (
+                          <>
+                            <button
+                              onClick={() => onRestore(selected)}
+                              disabled={busy}
+                              className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-emerald-200 transition hover:bg-emerald-500/20 disabled:opacity-60"
+                            >
+                              {busy ? '...' : 'Restore'}
+                            </button>
+                            <button
+                              onClick={() => onHardDelete(selected)}
+                              disabled={busy}
+                              className="rounded-full border border-red-500/40 bg-red-500/10 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-red-200 transition hover:bg-red-500/20 disabled:opacity-60"
+                            >
+                              {busy ? '...' : 'Hard Delete'}
+                            </button>
+                          </>
+                        ) : (
                           <button
-                            onClick={() => onRestore(selected)}
+                            onClick={() => onRemove(selected)}
                             disabled={busy}
-                            className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-60"
+                            className="col-span-2 rounded-full border border-red-500/30 bg-red-500/10 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-red-200 transition hover:bg-red-500/20 disabled:opacity-60"
                           >
-                            {busy ? '...' : 'Restore'}
+                            {busy ? 'Working…' : 'Soft Delete (Hide from Shop)'}
                           </button>
-                          <button
-                            onClick={() => onHardDelete(selected)}
-                            disabled={busy}
-                            className="rounded-full border border-red-500/50 bg-red-500/10 px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-red-200 hover:bg-red-500/20 disabled:opacity-60"
-                          >
-                            {busy ? '...' : 'Hard Delete'}
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          onClick={() => onRemove(selected)}
-                          disabled={busy}
-                          className="col-span-2 rounded-full border border-red-500/40 bg-red-500/10 px-5 py-3 text-[11px] font-bold uppercase tracking-widest text-red-200 hover:bg-red-500/20 disabled:opacity-60"
-                        >
-                          {busy ? 'Working…' : 'Soft Delete (Hide from Shop)'}
-                        </button>
-                      )}
+                        )}
+                      </div>
                     </div>
 
                     <button

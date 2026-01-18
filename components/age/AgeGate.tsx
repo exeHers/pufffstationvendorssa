@@ -83,58 +83,56 @@ export default function AgeGate() {
           className="absolute inset-0 opacity-20"
           style={{
             background:
-              'radial-gradient(900px 380px at 20% 20%, rgba(217,70,239,0.35), transparent 60%), radial-gradient(900px 380px at 80% 80%, rgba(34,211,238,0.28), transparent 60%)',
+              'radial-gradient(900px 380px at 20% 20%, rgba(124, 58, 237, 0.2), transparent 60%), radial-gradient(900px 380px at 80% 80%, rgba(34, 211, 238, 0.15), transparent 60%)',
           }}
         />
-
+ 
         <div className="relative p-7 sm:p-9">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-              Legal Notice
+              Age Verification
             </div>
-            <div className="rounded-full border border-slate-800/70 bg-slate-950/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-300">
+            <div className="rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-red-300">
               18+ only
             </div>
           </div>
-
+ 
           <h2 className="mt-5 text-3xl font-extrabold tracking-tight text-white">
-            Confirm your age.
+            Are you over 18?
           </h2>
-
+ 
           <p className="mt-3 text-sm leading-relaxed text-slate-300">
-            This store sells disposable vape products intended for adults only.
-            Please confirm you are <span className="font-semibold text-white">18 years or older</span>{' '}
-            to continue.
+            This website sells nicotine products which are intended for adult smokers only. You must be of legal smoking age in your jurisdiction to enter.
           </p>
-
+ 
           {allowed === null ? (
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <button
                 onClick={handleYes}
-                className="inline-flex w-full items-center justify-center rounded-2xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_0_35px_rgba(34,211,238,0.35)] transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
+                className="inline-flex w-full items-center justify-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-400/40"
               >
                 Yes, I am 18+
               </button>
-
+ 
               <button
                 onClick={handleNo}
-                className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-800/80 bg-slate-950/60 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-fuchsia-500/40 hover:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30"
+                className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-800/80 bg-slate-950/60 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-red-500/40 hover:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-red-400/30"
               >
-                No, take me back
+                No, I am under 18
               </button>
             </div>
           ) : (
             <div className="mt-7 rounded-2xl border border-rose-500/25 bg-rose-500/10 p-5">
-              <h3 className="text-base font-bold text-white">Access denied</h3>
+              <h3 className="text-base font-bold text-white">Access Denied</h3>
               <p className="mt-2 text-sm text-rose-100/90">
-                Sorry — you must be 18+ to view this website.
+                You must be 18 or older to enter this website.
               </p>
             </div>
           )}
-
+ 
           <p className="mt-6 text-xs leading-relaxed text-slate-400">
-            By continuing, you confirm you meet the legal age requirement in your region.
+            By clicking "Yes", you confirm you are of legal smoking age.
           </p>
         </div>
       </div>

@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 import type { Product } from '@/lib/types'
 import ProductCard from '@/components/products/ProductCard'
 import ShopFilters from '@/components/shop/ShopFilters'
+import SmokeFilter from '@/components/ui/SmokeFilter'
 
 export const dynamic = 'force-dynamic'
 
@@ -106,22 +107,23 @@ function FeaturedHero({ product }: { product: Product }) {
   const p: any = product
   const bulkMin = p.bulk_min
   const bulkPrice = p.bulk_price
-  const smokeHex = isValidHex(p.smoke_hex_scroll) ? p.smoke_hex_scroll.trim() : accentHex || '#D946EF'
-  const smokeRgb = hexToRgb(smokeHex) || '217 70 239'
+  const smokeHex = isValidHex(p.smoke_hex_scroll) ? p.smoke_hex_scroll.trim() : accentHex || '#7c3aed'
+  const smokeRgb = hexToRgb(smokeHex) || '124 58 237'
 
   return (
     <a
       href={`/shop/${product.id}`}
-      className="group relative block overflow-hidden rounded-[2.25rem] border border-slate-800/80 bg-slate-950/20 p-6 shadow-2xl transition hover:border-slate-700 md:p-10"
+      className="group relative block overflow-hidden rounded-[2.25rem] border border-white/[0.04] bg-slate-950/40 p-6 shadow-2xl transition hover:border-white/[0.08] md:p-10"
       style={{ ['--smoke-rgb' as any]: smokeRgb } as React.CSSProperties}
     >
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-[#0a0a0c]/40" />
 
         <div className="absolute inset-0 overflow-hidden">
+          <SmokeFilter id={`hero-${product.id}`} hex={smokeHex} />
           <div
-            className="absolute inset-0 opacity-20"
-            style={{ filter: 'grayscale(1) contrast(1.1) brightness(0.9)' }}
+            className="absolute inset-0 opacity-[0.25]"
+            style={{ filter: `url(#smoke-filter-hero-${product.id}) contrast(1.1) brightness(0.9)` }}
           >
             <video
               className="pufff-smoke-video h-full w-full object-cover scale-[1.05]"
@@ -135,9 +137,7 @@ function FeaturedHero({ product }: { product: Product }) {
               <source src="/smoke.mp4" type="video/mp4" />
             </video>
           </div>
-
-          <div className="absolute inset-0 mix-blend-multiply opacity-30" style={{ background: smokeHex }} />
-
+ 
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0c] via-transparent to-[#0a0a0c]/80" />
         </div>
 
@@ -145,8 +145,8 @@ function FeaturedHero({ product }: { product: Product }) {
           className="absolute inset-0 opacity-15"
           style={{
             background:
-              `radial-gradient(900px 380px at 20% 20%, rgba(217,70,239,0.22), transparent 60%),` +
-              `radial-gradient(900px 380px at 80% 80%, rgba(34,211,238,0.18), transparent 60%)`,
+              `radial-gradient(900px 380px at 20% 20%, rgba(124,58,237,0.15), transparent 60%),` +
+              `radial-gradient(900px 380px at 80% 80%, rgba(34,211,238,0.12), transparent 60%)`,
           }}
         />
       </div>
@@ -184,8 +184,8 @@ function FeaturedHero({ product }: { product: Product }) {
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
             <span
-              className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_0_35px_rgba(34,211,238,0.25)] transition group-hover:brightness-110"
-              style={{ background: accentHex || `hsl(${hue} 95% 60%)` }}
+              className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold text-slate-950 transition group-hover:brightness-110"
+              style={{ background: accentHex || `hsl(${hue} 60% 50%)` }}
             >
               View flavour
             </span>
@@ -201,7 +201,7 @@ function FeaturedHero({ product }: { product: Product }) {
             className="absolute -inset-8 rounded-[2.25rem] blur-3xl opacity-35"
             style={{ background: accentHex || `hsl(${hue} 95% 60%)` }}
           />
-          <div className="relative overflow-hidden rounded-[2.25rem] border border-slate-800/60 bg-slate-950/40 p-6">
+          <div className="relative overflow-hidden rounded-[2.25rem] border border-white/[0.04] bg-slate-950/40 p-6">
             <div className="absolute inset-0 opacity-30">
               <div className="pufff-smoke-pad opacity-70" />
             </div>

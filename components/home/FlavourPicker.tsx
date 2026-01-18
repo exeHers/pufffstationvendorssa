@@ -87,7 +87,7 @@ export default function FlavourPicker({ flavours }: { flavours: Flavour[] }) {
             >
               <Link
                 href={`/shop?flavour=${encodeURIComponent(flavour.slug)}`}
-                className={`group relative flex flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-white/5 bg-black/40 p-10 text-center transition-all duration-500 hover:-translate-y-2 hover:bg-black/60 ${style.border}`}
+                className={`group relative flex flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-white/[0.03] bg-slate-950/40 p-10 text-center transition-all duration-500 hover:-translate-y-1 hover:bg-slate-900/40 ${style.border}`}
               >
                 {/* Background Glow */}
                 <div className={`absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 ${style.bg}`} />
@@ -102,8 +102,8 @@ export default function FlavourPicker({ flavours }: { flavours: Flavour[] }) {
                 </div>
 
                 {/* Corner Accents */}
-                <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition-opacity">
-                   <div className="h-4 w-4 border-t border-r border-white rounded-tr-xl" />
+                <div className="absolute top-0 right-0 p-2 opacity-[0.05] group-hover:opacity-20 transition-opacity">
+                   <div className="h-4 w-4 border-t border-r border-white rounded-tr-lg" />
                 </div>
               </Link>
             </motion.div>

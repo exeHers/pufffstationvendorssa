@@ -149,7 +149,7 @@ export default function CheckoutClient() {
     <main className="mx-auto max-w-5xl space-y-8 px-4 pb-16 pt-8">
       <header className="flex flex-col gap-3 border-b border-slate-800/70 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#D946EF]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-violet-400">
             CHECKOUT
           </p>
           <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
@@ -163,13 +163,13 @@ export default function CheckoutClient() {
         <div className="flex flex-wrap gap-2 sm:justify-end">
           <Link
             href="/cart"
-            className="w-full rounded-full border border-slate-700 px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 transition hover:border-[#D946EF] hover:text-[#D946EF] sm:w-auto"
+            className="w-full rounded-full border border-white/[0.08] px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 transition hover:border-violet-500/50 hover:text-violet-400 sm:w-auto"
           >
             Back to cart
           </Link>
           <Link
             href="/shop"
-            className="w-full rounded-full bg-[#D946EF] px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-[0_0_20px_rgba(217,70,239,0.7)] transition hover:brightness-110 active:scale-95 sm:w-auto"
+            className="w-full rounded-full bg-violet-600 px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-white transition hover:bg-violet-500 active:scale-95 sm:w-auto"
           >
             Shop
           </Link>
@@ -233,8 +233,8 @@ export default function CheckoutClient() {
                   onClick={() => setMode('door')}
                   className={`rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-[0.2em] transition ${
                     mode === 'door'
-                      ? 'bg-fuchsia-500 text-white shadow-[0_0_22px_rgba(217,70,239,0.85)]'
-                      : 'border border-slate-800 bg-slate-950/60 text-slate-200 hover:border-fuchsia-500'
+                      ? 'bg-violet-600 text-white'
+                      : 'border border-white/[0.08] bg-slate-950/60 text-slate-200 hover:border-violet-500/50'
                   }`}
                 >
                   Door delivery
@@ -244,8 +244,8 @@ export default function CheckoutClient() {
                   onClick={() => setMode('pudo')}
                   className={`rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-[0.2em] transition ${
                     mode === 'pudo'
-                      ? 'bg-fuchsia-500 text-white shadow-[0_0_22px_rgba(217,70,239,0.85)]'
-                      : 'border border-slate-800 bg-slate-950/60 text-slate-200 hover:border-fuchsia-500'
+                      ? 'bg-violet-600 text-white'
+                      : 'border border-white/[0.08] bg-slate-950/60 text-slate-200 hover:border-violet-500/50'
                   }`}
                 >
                   Courier Guy / PUDO
@@ -356,7 +356,7 @@ export default function CheckoutClient() {
               type="button"
               disabled={loading || !canCheckout}
               onClick={createOrderAndPay}
-              className="mt-2 w-full rounded-full bg-[#D946EF] px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_24px_rgba(217,70,239,0.8)] hover:brightness-110 active:scale-95 disabled:opacity-60 transition"
+              className="mt-2 w-full rounded-full bg-violet-600 px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white transition hover:bg-violet-500 active:scale-95 disabled:opacity-60 transition"
             >
               {loading ? 'Starting payment…' : 'Pay with Ozow'}
             </button>
