@@ -1,8 +1,7 @@
-import type { NextConfig } from 'next'
-
+/** @type {import('next').NextConfig} */
 const SUPABASE_HOST = 'jtpifraxtevpxqyryacg.supabase.co'
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   images: {
     remotePatterns: [
       {
