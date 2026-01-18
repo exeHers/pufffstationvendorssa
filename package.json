@@ -8,7 +8,8 @@
     "build:cloudflare": "next build --webpack && npx @cloudflare/next-on-pages",
     "start": "next start",
     "lint": "next lint",
-    "pages:deploy": "npm run build:cloudflare && npx wrangler pages deploy .vercel/output/static"
+    "pages:deploy": "npm run build:cloudflare && npx wrangler pages deploy .vercel/output/static",
+    "deploy": "npm run build:cloudflare && npx wrangler pages deploy .vercel/output/static"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.87.1",
