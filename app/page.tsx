@@ -63,10 +63,10 @@ export default async function HomePage() {
 
             <h1 className="hero-fade hero-fade-2 mt-5 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-[3.4rem]">
               <span className="text-white">Clean stock.</span>{' '}
-              <span className="bg-gradient-to-r from-cyan-200 via-fuchsia-200 to-purple-200 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-cyan-200 via-violet-200 to-purple-200 bg-clip-text text-transparent">
                 PUFFF Station
               </span>{' '}
-              only. No kak stories.
+              only. No Eskom Promises.
             </h1>
 
             <p className="hero-fade hero-fade-3 mt-5 max-w-lg text-sm leading-relaxed text-slate-200/85 sm:text-base">
@@ -91,7 +91,7 @@ export default async function HomePage() {
             </div>
 
             <p className="hero-fade hero-fade-3 mt-7 text-[11px] text-slate-300/70">
-              Local vendors. Clean pulls. No kak stories.
+              Local vendors. Clean pulls. No Eskom Promises.
             </p>
           </div>
 
@@ -114,12 +114,12 @@ export default async function HomePage() {
                     Fast dispatch, smooth tracking, zero drama.
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="h-2 w-2 rounded-full bg-fuchsia-300 shadow-[0_0_12px_rgba(217,70,239,0.6)]" />
+                    <span className="h-2 w-2 rounded-full bg-violet-300 shadow-[0_0_12px_rgba(196, 181, 253, 0.6)]" />
                     Verified vendors, premium stock only.
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="h-2 w-2 rounded-full bg-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.6)]" />
-                    Exclusive drops, no shady stories.
+                    Exclusive drops, no Eskom Promises.
                   </div>
                 </div>
 

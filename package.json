@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
+    "build:cloudflare": "next build --webpack && npx @cloudflare/next-on-pages",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "pages:deploy": "npm run build:cloudflare && npx wrangler pages deploy .vercel/output/static"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.87.1",
@@ -16,7 +18,8 @@
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "resend": "^4.0.0",
-    "swr": "^2.3.7"
+    "swr": "^2.3.7",
+    "@cloudflare/next-on-pages": "^1.13.7"
   },
   "devDependencies": {
     "@types/node": "^20",

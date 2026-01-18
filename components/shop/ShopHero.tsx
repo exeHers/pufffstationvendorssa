@@ -47,7 +47,7 @@ export default function ShopHero({
     >
       {/* Background glow */}
       <div className="absolute inset-0">
-        <div className="absolute -inset-28 bg-[radial-gradient(circle_at_30%_20%,rgba(217,70,239,0.25),transparent_60%)]" />
+        <div className="absolute -inset-28 bg-[radial-gradient(circle_at_30%_20%,var(--matte-purple),transparent_60%)]" />
         <div className="absolute -inset-28 bg-[radial-gradient(circle_at_75%_60%,rgba(34,211,238,0.20),transparent_55%)]" />
       </div>
 
@@ -98,7 +98,7 @@ export default function ShopHero({
           {secondaryCtaText && secondaryCtaHref ? (
             <a
               href={secondaryCtaHref}
-              className="inline-flex items-center justify-center rounded-full border border-slate-700/80 bg-slate-950/30 px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-200 transition hover:border-fuchsia-400/70 hover:text-fuchsia-200 active:scale-95"
+              className="inline-flex items-center justify-center rounded-full border border-slate-700/80 bg-slate-950/30 px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-200 transition hover:border-violet-400/70 hover:text-violet-200 active:scale-95"
             >
               {secondaryCtaText}
             </a>

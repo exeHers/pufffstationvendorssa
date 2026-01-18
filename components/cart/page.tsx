@@ -24,7 +24,7 @@ export default function CartPage() {
         <div className="flex gap-3">
           <Link
             href="/shop"
-            className="rounded-full border border-slate-700 px-5 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-200 transition hover:border-[#D946EF] hover:text-[#D946EF]"
+            className="rounded-full border border-slate-700 px-5 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-200 transition hover:border-violet-500 hover:text-violet-400"
           >
             Back to shop
           </Link>
@@ -48,7 +48,7 @@ export default function CartPage() {
           <div className="mt-4">
             <Link
               href="/shop"
-              className="inline-flex rounded-full bg-[#D946EF] px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white shadow-[0_0_22px_rgba(217,70,239,0.7)] transition hover:brightness-110 active:scale-95"
+              className="inline-flex rounded-full bg-violet-600 px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white shadow-[0_0_22px_rgba(124,58,237,0.7)] transition hover:brightness-110 active:scale-95"
             >
               Browse shop
             </Link>
@@ -166,7 +166,7 @@ export default function CartPage() {
 
             <button
               type="button"
-              className="mt-5 w-full rounded-full bg-[#D946EF] px-6 py-3 text-[11px] font-extrabold uppercase tracking-[0.18em] text-white shadow-[0_0_22px_rgba(217,70,239,0.7)] transition hover:brightness-110 active:scale-95"
+              className="mt-5 w-full rounded-full bg-violet-600 px-6 py-3 text-[11px] font-extrabold uppercase tracking-[0.18em] text-white shadow-[0_0_22px_rgba(124,58,237,0.7)] transition hover:brightness-110 active:scale-95"
               onClick={() => alert("Checkout coming next, my bru. We'll wire payments properly.")}
             >
               Checkout

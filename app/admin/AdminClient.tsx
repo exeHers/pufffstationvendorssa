@@ -148,7 +148,7 @@ export default function AdminClient() {
 
       {loading && (
         <section className="rounded-3xl border border-slate-800/80 bg-slate-950/60 p-12 text-center">
-           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-800 border-t-fuchsia-500" />
+           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-800 border-t-violet-500" />
            <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Verifying Credentials...</p>
         </section>
       )}

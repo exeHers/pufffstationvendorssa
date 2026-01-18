@@ -87,7 +87,7 @@ export default function QuickActionsTab({ onOpenQuickAdd }: { onOpenQuickAdd: ()
                 <span className="text-[9px] uppercase font-black text-slate-500 tracking-widest">Active Inventory</span>
                 <span className="text-xs font-bold text-slate-300">Skus Online</span>
               </div>
-              <span className="text-2xl text-fuchsia-500 font-black tracking-tighter">{stats.products}</span>
+              <span className="text-2xl text-violet-500 font-black tracking-tighter">{stats.products}</span>
            </div>
            <div className="flex justify-between items-center p-4 rounded-2xl bg-black/40 border border-slate-900 group-hover:border-slate-800 transition-colors">
               <div className="flex flex-col">
@@ -139,7 +139,7 @@ export default function QuickActionsTab({ onOpenQuickAdd }: { onOpenQuickAdd: ()
            >
               <div className="flex items-center justify-between">
                 <div className="flex flex-col text-left">
-                  <span className="text-[10px] font-black uppercase text-fuchsia-400 tracking-widest">
+                  <span className="text-[10px] font-black uppercase text-violet-400 tracking-widest">
                     {busy ? 'SYNCHRONIZING...' : 'Mass Restock'}
                   </span>
                   <span className="text-[9px] text-slate-500 font-bold uppercase">Reset all in-stock flags</span>

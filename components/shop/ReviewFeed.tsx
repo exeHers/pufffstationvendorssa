@@ -19,7 +19,7 @@ export default async function ReviewFeed() {
   const config = configRes.data?.value || {
     header_title: 'Wall of PUFFF',
     header_subtitle: 'Vendor Feedback',
-    accent_color: '#D946EF',
+    accent_color: 'var(--matte-purple)',
     card_blur: true
   }
 

@@ -6,9 +6,9 @@ import { motion } from 'framer-motion'
 
 const flavourStyles: Record<string, { color: string; bg: string; border: string }> = {
   sweet: {
-    color: 'text-pink-400',
-    bg: 'bg-pink-500/5',
-    border: 'group-hover:border-pink-500/50',
+    color: 'text-violet-400',
+    bg: 'bg-violet-500/5',
+    border: 'group-hover:border-violet-500/50',
   },
   fruity: {
     color: 'text-orange-400',
@@ -31,9 +31,9 @@ const flavourStyles: Record<string, { color: string; bg: string; border: string 
     border: 'group-hover:border-violet-500/50',
   },
   berry: {
-    color: 'text-fuchsia-400',
-    bg: 'bg-fuchsia-500/5',
-    border: 'group-hover:border-fuchsia-500/50',
+    color: 'text-violet-400',
+    bg: 'bg-violet-500/5',
+    border: 'group-hover:border-violet-500/50',
   },
   exotic: {
     color: 'text-indigo-400',

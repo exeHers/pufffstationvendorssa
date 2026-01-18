@@ -173,7 +173,7 @@ export default function Footer() {
               ) : !sent ? (
                 <>
                   <h2 className="text-xl font-extrabold text-white mb-2">Drop a Review</h2>
-                  <p className="text-xs text-slate-400 mb-6 italic">Signed in as: <span className="text-fuchsia-400 not-italic font-bold">{user.email}</span></p>
+                  <p className="text-xs text-slate-400 mb-6 italic">Signed in as: <span className="text-violet-400 not-italic font-bold">{user.email}</span></p>
                   
                   <form onSubmit={handleSubmitReview} className="space-y-4">
                     <div>
@@ -184,33 +184,33 @@ export default function Footer() {
                             key={star}
                             type="button"
                             onClick={() => setRating(star)}
-                            className={`text-2xl transition ${rating >= star ? 'text-fuchsia-500 grayscale-0' : 'text-slate-700 grayscale'}`}
+                            className={`text-2xl transition ${rating >= star ? 'text-violet-500 grayscale-0' : 'text-slate-700 grayscale'}`}
                           >
                             ★
                           </button>
                         ))}
                       </div>
                     </div>
-
+ 
                     <label className="grid gap-2">
                       <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-2">Display Name</span>
-                      <input 
+                      <input
                         required
                         value={name}
                         onChange={e => setName(e.target.value)}
                         placeholder="Name or handle"
-                        className="rounded-2xl border border-slate-800 bg-slate-900/50 px-5 py-3 text-sm text-white outline-none focus:border-fuchsia-500/50"
+                        className="rounded-2xl border border-slate-800 bg-slate-900/50 px-5 py-3 text-sm text-white outline-none focus:border-violet-500/50"
                       />
                     </label>
-
+ 
                     <label className="grid gap-2">
                       <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-2">Comment</span>
-                      <textarea 
+                      <textarea
                         value={text}
                         onChange={e => setText(e.target.value)}
                         rows={3}
                         placeholder="Optional details..."
-                        className="rounded-2xl border border-slate-800 bg-slate-900/50 px-5 py-3 text-sm text-white outline-none focus:border-fuchsia-500/50"
+                        className="rounded-2xl border border-slate-800 bg-slate-900/50 px-5 py-3 text-sm text-white outline-none focus:border-violet-500/50"
                       />
                     </label>
 
@@ -234,7 +234,7 @@ export default function Footer() {
                 </>
               ) : (
                 <div className="py-12 text-center">
-                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-fuchsia-500/10 text-3xl text-fuchsia-500">
+                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-violet-500/10 text-3xl text-violet-500">
                       ✓
                    </div>
                    <h2 className="text-xl font-extrabold text-white">Lekker!</h2>

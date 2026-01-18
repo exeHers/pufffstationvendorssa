@@ -21,8 +21,8 @@ export function Skeleton({ className }: { className?: string }) {
 
 export function ProductSkeleton() {
   return (
-    <div className="flex flex-col gap-4 rounded-[2rem] border border-slate-800/60 bg-slate-950/40 p-5">
-      <Skeleton className="aspect-square w-full rounded-2xl" />
+    <div className="flex flex-col gap-4 rounded-[2rem] border border-white/[0.04] bg-slate-950/40 p-5">
+      <Skeleton className="aspect-square w-full rounded-2xl bg-black/40" />
       <div className="space-y-2">
         <Skeleton className="h-5 w-2/3" />
         <Skeleton className="h-4 w-full" />
