@@ -32,20 +32,22 @@ function safeNumber(value: unknown) {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
+  const [items, setItems] = useState<CartItem[]>([])
+
+  // Load cart
+  useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) {
         const parsed = JSON.parse(raw) as CartItem[]
         if (Array.isArray(parsed)) {
-          return parsed
+          setItems(parsed)
         }
       }
     } catch (error) {
       console.error("Failed to parse cart from localStorage", error)
     }
-    return []
-  })
+  }, [])
 
   // Persist cart
   useEffect(() => {

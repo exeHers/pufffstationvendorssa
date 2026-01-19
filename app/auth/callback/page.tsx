@@ -4,9 +4,13 @@ import { useEffect, useMemo } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 
 export default function AuthCallbackPage() {
-  const supabase = useMemo(() => supabaseBrowser(), []);
+  const supabase = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    return supabaseBrowser();
+  }, []);
 
   useEffect(() => {
+    if (!supabase) return;
     (async () => {
       // This will pick up the session after email confirmation / magic link.
       await supabase.auth.getSession();
