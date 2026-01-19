@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/client'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 
 export const runtime = 'nodejs'
 
@@ -10,28 +11,19 @@ function parseAdminEmails(value?: string) {
     .filter(Boolean)
 }
 
-function requireEnv(name: string, value?: string) {
-  if (!value) throw new Error(`Missing env var: ${name}`)
-  return value
-}
-
 async function assertAdmin(req: Request) {
-  const SUPABASE_URL = requireEnv('NEXT_PUBLIC_SUPABASE_URL', process.env.NEXT_PUBLIC_SUPABASE_URL)
-  const SERVICE_ROLE = requireEnv('SUPABASE_SERVICE_ROLE_KEY', process.env.SUPABASE_SERVICE_ROLE_KEY)
   const ADMIN_EMAILS = parseAdminEmails(process.env.NEXT_PUBLIC_ADMIN_EMAILS)
 
   const authHeader = req.headers.get('authorization') ?? ''
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
   if (!token) throw new Error('Missing Authorization token')
 
-  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE)
+  const supabase = createClient()
   const { data, error } = await supabase.auth.getUser(token)
   if (error || !data?.user) throw new Error('Invalid session token')
 
   const email = (data.user.email ?? '').toLowerCase()
   if (!email || !ADMIN_EMAILS.includes(email)) throw new Error('Access denied (not admin)')
-
-  return supabase
 }
 
 type Action =
@@ -63,7 +55,8 @@ function parseStoragePath(imageUrl: string) {
 
 export async function POST(req: Request) {
   try {
-    const supabase = await assertAdmin(req)
+    await assertAdmin(req)
+    const supabase = supabaseAdmin()
     const body = (await req.json()) as Action
 
     const id = String(body.id ?? '').trim()
