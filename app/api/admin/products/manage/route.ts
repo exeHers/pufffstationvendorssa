@@ -66,11 +66,11 @@ export async function POST(req: Request) {
     const supabase = await assertAdmin(req)
     const body = (await req.json()) as Action
 
-    const id = String((body as any)?.id ?? '').trim()
+    const id = String(body.id ?? '').trim()
     if (!id) return NextResponse.json({ error: 'Missing product id' }, { status: 400 })
 
     if (body.action === 'set_stock') {
-      const in_stock = Boolean((body as any).in_stock)
+      const in_stock = Boolean(body.in_stock)
       const { data, error } = await supabase
         .from('products')
         .update({ in_stock })
@@ -112,7 +112,7 @@ export async function POST(req: Request) {
 
       if (fetchErr) return NextResponse.json({ error: fetchErr.message }, { status: 400 })
 
-      const imageUrl = (existing as any)?.image_url as string | null
+      const imageUrl = existing?.image_url
       if (imageUrl) {
         const parsed = parseStoragePath(imageUrl)
         if (parsed) {
@@ -134,7 +134,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'Server error' }, { status: 401 })
+  } catch (e: unknown) {
+    return NextResponse.json({ error: (e as Error).message ?? 'Server error' }, { status: 401 })
   }
 }

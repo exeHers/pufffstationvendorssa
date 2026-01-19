@@ -41,8 +41,8 @@ export async function POST(req: NextRequest) {
 
     const isAdmin = await setAdminCookie(userId)
     return NextResponse.json({ ok: true, isAdmin })
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'Server error' }, { status: 500 })
+  } catch (e: unknown) {
+    return NextResponse.json({ error: (e as Error).message ?? 'Server error' }, { status: 500 })
   }
 }
 
@@ -50,7 +50,7 @@ export async function DELETE() {
   try {
     await clearAdminCookie()
     return NextResponse.json({ ok: true })
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'Server error' }, { status: 500 })
+  } catch (e: unknown) {
+    return NextResponse.json({ error: (e as Error).message ?? 'Server error' }, { status: 500 })
   }
 }

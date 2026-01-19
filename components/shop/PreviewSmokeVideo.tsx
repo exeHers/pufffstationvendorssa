@@ -84,7 +84,7 @@
       a.removeEventListener('timeupdate', handleTimeUpdate)
       b.removeEventListener('timeupdate', handleTimeUpdate)
     }
-  }, [])
+  }, [style])
 
   const { opacity: _opacity, ...restStyle } = style ?? {}
   const videoStyle = useMemo(() => restStyle, [restStyle])

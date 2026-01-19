@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { Resend } from 'resend'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 export const runtime = 'nodejs'
@@ -51,6 +50,7 @@ export async function POST(request: Request) {
     if (!apiKey) return NextResponse.json({ error: 'Missing RESEND_API_KEY' }, { status: 500 })
     if (!from) return NextResponse.json({ error: 'Missing SUPPORT_FROM_EMAIL' }, { status: 500 })
 
+    const { Resend } = await import('resend')
     const resend = new Resend(apiKey)
     const db = supabaseAdmin()
 
@@ -100,8 +100,8 @@ export async function POST(request: Request) {
     if (sErr) return NextResponse.json({ error: sErr.message }, { status: 500 })
 
     return NextResponse.json({ success: true, emailId: send.data?.id })
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'Unknown error' }, { status: 500 })
+  } catch (e: unknown) {
+    return NextResponse.json({ error: (e as Error).message ?? 'Unknown error' }, { status: 500 })
   }
 }
 

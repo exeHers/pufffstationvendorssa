@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: orderErr.message }, { status: 500 })
     }
 
-    const to = (order?.customer_email as string | undefined) ?? undefined
+    const to = order?.email ?? undefined
     if (!to) {
       return NextResponse.json({ error: 'Order has no customer_email' }, { status: 400 })
     }
@@ -45,11 +45,11 @@ export async function POST(req: Request) {
     const html = renderOrderUpdateEmail({
       event,
       orderId,
-      customerName: (order?.customer_name as string | undefined) ?? 'Customer',
+      customerName: order?.full_name ?? 'Customer',
       total: Number(order?.total_amount ?? 0),
       courier: (order?.courier_name as string | undefined) ?? 'Courier Guy / PUDO',
       trackingNumber: (order?.tracking_number as string | undefined) ?? '',
-      trackingUrl: (order?.tracking_url as string | undefined) ?? '',
+      trackingUrl: '',
       ordersUrl: `${siteUrl}/orders`,
     })
 
@@ -65,8 +65,8 @@ export async function POST(req: Request) {
     const result = await resend.emails.send({ from, to, subject, html })
 
     return NextResponse.json({ ok: true, result })
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'Unknown error' }, { status: 500 })
+  } catch (e: unknown) {
+    return NextResponse.json({ error: (e as Error).message ?? 'Unknown error' }, { status: 500 })
   }
 }
 

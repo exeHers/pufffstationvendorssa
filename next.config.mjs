@@ -11,6 +11,18 @@ const nextConfig = {
       },
     ],
   },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push(
+        'resend',
+        'html-to-text',
+        'parseley',
+        'selderee',
+        '@react-email/render'
+      )
+    }
+    return config
+  },
 }
 
 export default nextConfig

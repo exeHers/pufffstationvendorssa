@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server'
-import { Resend } from 'resend'
 
 export const runtime = 'nodejs' // important for Resend
-
-const resend = new Resend(process.env.RESEND_API_KEY)
 
 function isEmail(s: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)
@@ -11,6 +8,9 @@ function isEmail(s: string) {
 
 export async function POST(req: Request) {
   try {
+    const { Resend } = await import('resend')
+    const resend = new Resend(process.env.RESEND_API_KEY)
+
     const body = await req.json()
 
     const name = String(body?.name ?? '').trim()
@@ -82,9 +82,9 @@ export async function POST(req: Request) {
       admin: { id: adminSend.data?.id },
       customer: { id: customerSend.data?.id },
     })
-  } catch (e: any) {
+  } catch (e: unknown) {
     return NextResponse.json(
-      { error: e?.message ?? 'Unknown error' },
+      { error: (e as Error).message ?? 'Unknown error' },
       { status: 500 }
     )
   }

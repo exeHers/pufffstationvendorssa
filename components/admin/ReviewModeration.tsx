@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabaseBrowser } from '@/lib/supabase/browser'
+import { Tables } from '@/lib/types/database'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function ReviewModeration() {
-  const [reviews, setReviews] = useState<any[]>([])
+  const [reviews, setReviews] = useState<Tables<'reviews'>[]>([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
 
@@ -92,7 +93,7 @@ export default function ReviewModeration() {
                     </div>
                     <p className="text-xs text-slate-300 italic leading-relaxed">"{r.text || 'No comment provided.'}"</p>
                     <p className="mt-2 text-[8px] font-bold text-slate-600 uppercase tracking-widest">
-                      {new Date(r.created_at).toLocaleDateString()} • {r.user_id ? 'Authenticated' : 'Guest'}
+                      {r.created_at && new Date(r.created_at).toLocaleDateString()}
                     </p>
                   </div>
 

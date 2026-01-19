@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     return NextResponse.json({ success: true })
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'Unknown error' }, { status: 500 })
+  } catch (e: unknown) {
+    return NextResponse.json({ error: (e as Error).message ?? 'Unknown error' }, { status: 500 })
   }
 }

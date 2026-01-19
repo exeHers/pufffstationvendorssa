@@ -12,10 +12,6 @@ export default function FeaturedDropsPage() {
   const [busy, setBusy] = useState(false)
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
 
-  useEffect(() => {
-    refreshData()
-  }, [])
-
   async function refreshData() {
     setLoading(true)
     const { data } = await supabase
@@ -24,10 +20,14 @@ export default function FeaturedDropsPage() {
       .eq('is_deleted', false)
       .order('name')
     
-    setProducts((data || []) as any)
-    setFeaturedProducts((data || []).filter((p: any) => p.is_featured) as any)
+    setProducts((data || []))
+    setFeaturedProducts((data || []).filter((p) => p.is_featured))
     setLoading(false)
   }
+
+  useEffect(() => {
+    refreshData()
+  }, [])
 
   async function toggleFeatured(p: Product) {
     setBusy(true)
@@ -60,7 +60,7 @@ export default function FeaturedDropsPage() {
         <section className="space-y-6">
           <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Inventory Stream</h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            {products.map((p: any) => (
+            {products.map((p) => (
               <button
                 key={p.id}
                 onClick={() => toggleFeatured(p)}
@@ -107,7 +107,7 @@ export default function FeaturedDropsPage() {
                           </div>
                           <div>
                              <h3 className="font-black text-xl text-white uppercase tracking-tighter">{p.name}</h3>
-                             <p className="text-xs text-slate-500 mt-1 line-clamp-2 italic">"{p.description || 'No description provided.'}"</p>
+                             <p className="text-xs text-slate-500 mt-1 line-clamp-2 italic">{p.description || 'No description provided.'}</p>
                              <div className="mt-4 inline-block px-4 py-1.5 bg-violet-600 text-[10px] font-black uppercase tracking-widest text-white rounded-full">
                                R {Number(p.price).toFixed(2)}
                              </div>

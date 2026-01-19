@@ -61,8 +61,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ redirectUrl })
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'Unknown error' }, { status: 500 })
+  } catch (e: unknown) {
+    return NextResponse.json({ error: (e as Error).message ?? 'Unknown error' }, { status: 500 })
   }
 }
 

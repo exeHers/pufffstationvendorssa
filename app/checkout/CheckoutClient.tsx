@@ -14,7 +14,7 @@ export default function CheckoutClient() {
   const { items, clearCart } = useCart()
 
   const subtotal = useMemo(() => {
-    return items.reduce((total: number, item: any) => {
+    return items.reduce((total: number, item) => {
       const p = item.price !== null && item.price !== undefined ? Number(item.price) : 0
       const q = item.quantity !== null && item.quantity !== undefined ? Number(item.quantity) : 0
       if (Number.isNaN(p) || Number.isNaN(q)) return total
@@ -81,7 +81,7 @@ export default function CheckoutClient() {
       }
 
       // 1) Create order (pending payment)
-      const orderPayload: any = {
+      const orderPayload = {
         user_id: user.id,
         status: 'pending_payment',
         total_amount: subtotal,
@@ -95,9 +95,9 @@ export default function CheckoutClient() {
       }
 
       if (mode === 'door') {
-        orderPayload.delivery_address = doorAddress.trim()
+        ;(orderPayload as any).delivery_address = doorAddress.trim()
       } else {
-        orderPayload.delivery_location = `Courier Guy / PUDO\n${pudoLocation.trim()}`
+        ;(orderPayload as any).delivery_location = `Courier Guy / PUDO\n${pudoLocation.trim()}`
       }
 
       const { data: created, error: orderErr } = await supabase
@@ -110,7 +110,7 @@ export default function CheckoutClient() {
       const orderId = created.id as string
 
       // 2) Insert order items
-      const itemRows = items.map((it: any) => ({
+      const itemRows = items.map((it) => ({
         order_id: orderId,
         product_id: it.id,
         name: it.name,
@@ -138,8 +138,8 @@ export default function CheckoutClient() {
       // Clear local cart before redirect (so user doesn't double-order)
       clearCart()
       window.location.href = body.redirectUrl
-    } catch (e: any) {
-      setError(e?.message ?? 'Something went wrong. Please try again.')
+    } catch (e: unknown) {
+      setError((e as Error).message ?? 'Something went wrong. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -323,7 +323,7 @@ export default function CheckoutClient() {
                 Cart items
               </p>
               <div className="mt-2 space-y-1 text-xs text-slate-300">
-                {items.map((it: any) => (
+                {items.map((it) => (
                   <div key={it.id} className="flex items-center justify-between">
                     <span className="truncate">{it.name}</span>
                     <span className="text-slate-400">x{Number(it.quantity ?? 1)}</span>
@@ -356,7 +356,7 @@ export default function CheckoutClient() {
               type="button"
               disabled={loading || !canCheckout}
               onClick={createOrderAndPay}
-              className="mt-2 w-full rounded-full bg-violet-600 px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white transition hover:bg-violet-500 active:scale-95 disabled:opacity-60 transition"
+              className="mt-2 w-full rounded-full bg-violet-600 px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white transition hover:bg-violet-500 active:scale-95 disabled:opacity-60"
             >
               {loading ? 'Starting payment…' : 'Pay with Ozow'}
             </button>

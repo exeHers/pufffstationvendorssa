@@ -52,8 +52,8 @@ export async function GET(req: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
     return NextResponse.json({ ok: true, orders: data ?? [] })
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'Server error' }, { status: 401 })
+  } catch (e: unknown) {
+    return NextResponse.json({ error: (e as Error).message ?? 'Server error' }, { status: 401 })
   }
 }
 
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
     return NextResponse.json({ ok: true, order: data })
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'Server error' }, { status: 401 })
+  } catch (e: unknown) {
+    return NextResponse.json({ error: (e as Error).message ?? 'Server error' }, { status: 401 })
   }
 }

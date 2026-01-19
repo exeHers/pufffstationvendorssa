@@ -195,7 +195,7 @@ export async function POST(req: NextRequest) {
     if (upd.error) return NextResponse.json({ error: upd.error.message }, { status: 400 })
 
     return NextResponse.json({ product: upd.data })
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'Server error' }, { status: 500 })
+  } catch (e: unknown) {
+    return NextResponse.json({ error: (e as Error).message ?? 'Server error' }, { status: 500 })
   }
 }

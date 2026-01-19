@@ -22,4 +22,5 @@ export type Product = {
 
   is_deleted?: boolean | null
   deleted_at?: string | null
+  is_featured?: boolean | null
 }

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Tables } from '@/lib/types/database'
 import { supabase } from '@/lib/supabaseClient'
 
 function parseAdminEmails(value?: string) {
@@ -12,15 +13,7 @@ function parseAdminEmails(value?: string) {
     .filter(Boolean)
 }
 
-type Ticket = {
-  id: string
-  user_id: string
-  subject?: string | null
-  message?: string | null
-  status?: string | null
-  created_at?: string | null
-  customer_email?: string | null
-}
+type Ticket = Tables<'support_messages'>
 
 export default function AdminSupportPage() {
   const router = useRouter()
@@ -100,8 +93,8 @@ export default function AdminSupportPage() {
           setActiveId(list[0]?.id ?? null)
         }
       }
-    } catch (e: any) {
-      setError(e?.message ?? 'Failed to load tickets.')
+    } catch (e: unknown) {
+      setError((e as Error).message ?? 'Failed to load tickets.')
     } finally {
       setLoadingTickets(false)
     }
@@ -126,8 +119,8 @@ export default function AdminSupportPage() {
 
       setTickets((prev) => prev.map((t) => (t.id === ticketId ? { ...t, status } : t)))
       setOk(`Status updated → ${status.toUpperCase()}`)
-    } catch (e: any) {
-      setError(e?.message ?? 'Failed to update status.')
+    } catch (e: unknown) {
+      setError((e as Error).message ?? 'Failed to update status.')
     }
   }
 
@@ -165,8 +158,8 @@ export default function AdminSupportPage() {
       setOk('Reply sent ✅')
       setReply('')
       setCloseAfter(false)
-    } catch (e: any) {
-      setError(e?.message ?? 'Failed to send reply.')
+    } catch (e: unknown) {
+      setError((e as Error).message ?? 'Failed to send reply.')
     } finally {
       setSending(false)
     }
@@ -277,7 +270,7 @@ export default function AdminSupportPage() {
                           {t.subject ?? 'Support request'}
                         </p>
                         <p className="mt-1 truncate text-[11px] text-slate-400">
-                          {t.customer_email ?? 'email unknown'} •{' '}
+                          {t.email ?? 'email unknown'} •{' '}
                           {t.created_at ? new Date(t.created_at).toLocaleString() : '—'}
                         </p>
                       </div>
@@ -300,14 +293,14 @@ export default function AdminSupportPage() {
                     <div>
                       <h2 className="text-xl font-extrabold text-white">{active.subject ?? 'Support request'}</h2>
                       <p className="mt-1 text-xs text-slate-400">
-                        From: <span className="text-slate-200">{active.customer_email ?? '—'}</span> •{' '}
+                        From: <span className="text-slate-200">{active.email ?? '—'}</span> •{' '}
                         {active.created_at ? new Date(active.created_at).toLocaleString() : '—'}
                       </p>
                     </div>
 
                     <select
                       value={(active.status ?? 'open').toLowerCase()}
-                      onChange={(e) => setStatus(active.id, e.target.value as any)}
+                      onChange={(e) => setStatus(active.id, e.target.value as 'open' | 'replied' | 'closed')}
                       className="w-full rounded-full border border-slate-700 bg-black/40 px-3 py-2 text-sm text-slate-100 sm:w-auto"
                     >
                       <option value="open">Open</option>

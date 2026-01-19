@@ -268,8 +268,8 @@ export async function POST(req: NextRequest) {
     if (ins.error) return NextResponse.json({ error: ins.error.message }, { status: 400 })
 
     return NextResponse.json({ product: ins.data })
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'Server error' }, { status: 500 })
+  } catch (e: unknown) {
+    return NextResponse.json({ error: (e as Error).message ?? 'Server error' }, { status: 500 })
   }
 }
 
@@ -334,7 +334,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     return NextResponse.json({ error: 'Unknown action.' }, { status: 400 })
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'Server error' }, { status: 500 })
+  } catch (e: unknown) {
+    return NextResponse.json({ error: (e as Error).message ?? 'Server error' }, { status: 500 })
   }
 }

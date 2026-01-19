@@ -3,23 +3,21 @@
 import { useEffect, useMemo, useState, useRef } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Tables } from '@/lib/types/database'
 import { supabase } from '@/lib/supabaseClient'
 import type { Product } from '@/lib/types'
 import ProductCard from '@/components/products/ProductCard'
 
-type Category = {
-  id: string
-  name: string
-}
+type Category = Tables<'categories'>
 
 type Profile = { id: string; role: string | null }
 
-function safeNum(v: any) {
+function safeNum(v: unknown) {
   const n = Number(v)
   return Number.isFinite(n) ? n : 0
 }
 
-function money(v: any) {
+function money(v: unknown) {
   const n = safeNum(v)
   return `R${n.toFixed(2)}`
 }
@@ -172,7 +170,7 @@ export default function AdminProductsPage() {
       setErr(error.message)
       return
     }
-    setProducts((data ?? []) as any)
+    setProducts(data ?? [])
   }
 
   async function refreshCategories() {
@@ -182,7 +180,7 @@ export default function AdminProductsPage() {
       .order('name', { ascending: true })
 
     if (error) return
-    setCategories((data ?? []) as any)
+    setCategories(data ?? [])
   }
 
   function openDrawer(p: Product) {
@@ -191,7 +189,7 @@ export default function AdminProductsPage() {
     setOk(null)
     setErr(null)
 
-    const pp: any = p
+    const pp = p
 
     setEName(p.name ?? '')
     setECategory(pp.category ?? '')
@@ -223,7 +221,7 @@ export default function AdminProductsPage() {
   }
 
   const filtered = useMemo(() => {
-    let list = [...products] as any[]
+    let list = [...products]
 
     if (!showRemoved) list = list.filter((p) => !p.is_deleted)
 
@@ -265,7 +263,7 @@ export default function AdminProductsPage() {
       smoke_hex_scroll: smokeHexScroll,
       smoke_hex_preview: smokeHexPreview,
       is_featured: isFeatured,
-    } as any as Product
+    } as Product
   }, [name, category, price, description, image, inStock, accentHex, smokeHexScroll, smokeHexPreview, isFeatured])
 
   // Cleanup blob URL
@@ -299,13 +297,13 @@ export default function AdminProductsPage() {
     }
 
     const bp = bulkPrice.trim() ? Number(bulkPrice) : null
-    if (bulkPrice.trim() && !Number.isFinite(bp as any)) {
+    if (bulkPrice.trim() && !Number.isFinite(bp)) {
       setErr('Bulk price must be a valid number.')
       return
     }
 
     const bm = bulkMin.trim() ? Number(bulkMin) : null
-    if (bulkMin.trim() && !Number.isFinite(bm as any)) {
+    if (bulkMin.trim() && !Number.isFinite(bm)) {
       setErr('Bulk min must be a valid number.')
       return
     }
@@ -399,13 +397,13 @@ export default function AdminProductsPage() {
     }
 
     const bp = eBulkPrice.trim() ? Number(eBulkPrice) : null
-    if (eBulkPrice.trim() && !Number.isFinite(bp as any)) {
+    if (eBulkPrice.trim() && !Number.isFinite(bp)) {
       setErr('Bulk price must be a valid number.')
       return
     }
 
     const bm = eBulkMin.trim() ? Number(eBulkMin) : null
-    if (eBulkMin.trim() && !Number.isFinite(bm as any)) {
+    if (eBulkMin.trim() && !Number.isFinite(bm)) {
       setErr('Bulk min must be a valid number.')
       return
     }
@@ -453,7 +451,12 @@ export default function AdminProductsPage() {
       await refreshProducts()
 
       const updated = products.find((p) => p.id === selected.id)
-      if (updated) openDrawer(updated)
+      const refreshedProducts = await supabase.from('products').select('*').order('created_at', { ascending: false })
+      if (refreshedProducts.data) {
+        setProducts(refreshedProducts.data)
+        const updated = refreshedProducts.data.find((p) => p.id === selected.id)
+        if (updated) openDrawer(updated as Product)
+      }
     } catch (e: any) {
       setErr(e?.message ?? 'Failed to save.')
     } finally {
@@ -929,7 +932,7 @@ export default function AdminProductsPage() {
 
               <select
                 value={filterStock}
-                onChange={(e) => setFilterStock(e.target.value as any)}
+                onChange={(e) => setFilterStock(e.target.value as 'all' | 'in' | 'out')}
                 className="rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm"
               >
                 <option value="all">All stock</option>
@@ -953,7 +956,7 @@ export default function AdminProductsPage() {
             {filtered.length === 0 && <p className="text-sm text-slate-400">No products found.</p>}
 
             {filtered.slice(0, 40).map((p) => {
-              const pp: any = p
+              const pp = p
               const removed = Boolean(pp.is_deleted)
               const accent = pp.accent_hex && isValidHex(pp.accent_hex) ? pp.accent_hex : '#334155'
               const cat = clampCategoryLabel(pp.category || '')
@@ -1028,7 +1031,7 @@ export default function AdminProductsPage() {
                     ID: <span className="font-mono">{selected.id}</span>
                   </p>
 
-                  {(selected as any).is_deleted ? (
+                  {selected.is_deleted ? (
                     <p className="mt-2 text-xs text-red-300 font-semibold">
                       This product is currently removed from the shop.
                     </p>
@@ -1074,7 +1077,7 @@ export default function AdminProductsPage() {
                             smoke_hex_scroll: eSmokeHexScroll,
                             smoke_hex_preview: eSmokeHexPreview,
                             image_url: eImageUrl,
-                          } as any
+                          } as Product
                         }
                       />
                     </div>
@@ -1241,7 +1244,7 @@ export default function AdminProductsPage() {
                     <div className="mt-2 rounded-2xl border border-red-500/10 bg-red-500/[0.02] p-3">
                       <p className="mb-3 text-center text-[10px] font-black uppercase tracking-widest text-red-400/60">Danger Zone</p>
                       <div className="grid grid-cols-2 gap-3">
-                        {(selected as any).is_deleted ? (
+                        {selected.is_deleted ? (
                           <>
                             <button
                               onClick={() => onRestore(selected)}

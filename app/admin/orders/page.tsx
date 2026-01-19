@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { Tables } from '@/lib/types/database'
 import { supabase } from '@/lib/supabaseClient'
 
 function parseAdminEmails(value?: string) {
@@ -11,7 +12,7 @@ function parseAdminEmails(value?: string) {
     .filter(Boolean)
 }
 
-type OrderRow = Record<string, any>
+type OrderRow = Tables<'orders'>
 
 const STATUSES = ['pending_payment', 'paid', 'shipped', 'delivered'] as const
 
@@ -185,7 +186,7 @@ export default function AdminOrdersPage() {
                 className="w-full text-left rounded-2xl border border-white/[0.05] bg-slate-950/40 p-4 hover:border-violet-500/40 transition"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <p className="truncate font-semibold">{o.full_name ?? o.email ?? o.id}</p>
+                  <p className="truncate font-semibold">{o.full_name ?? o.email ?? ''}</p>
                   <span className="text-xs text-slate-400">{o.status}</span>
                 </div>
                 <p className="mt-1 text-xs text-slate-400">
@@ -206,7 +207,7 @@ export default function AdminOrdersPage() {
               <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
                 <p className="text-sm font-semibold">{selected.full_name ?? selected.email}</p>
                 <p className="mt-1 break-words text-xs text-slate-400">
-                  {selected.address_line_1 ?? ''} {selected.suburb ?? ''} {selected.city ?? ''} {selected.province ?? ''} {selected.postal_code ?? ''}
+                  {selected.address_line1 ?? ''} {selected.suburb ?? ''} {selected.city ?? ''} {selected.province ?? ''} {selected.postal_code ?? ''}
                 </p>
                 <p className="mt-1 text-xs text-slate-400">
                   Delivery: {selected.delivery_type ?? ''} • PUDO: {selected.pudo_location ?? '—'}

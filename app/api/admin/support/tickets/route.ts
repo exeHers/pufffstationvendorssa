@@ -53,12 +53,12 @@ export async function GET(request: Request) {
 
     // attach customer email using auth admin API
     const enriched = await Promise.all(
-      (tickets ?? []).map(async (t: any) => {
+      (tickets ?? []).map(async (t) => {
         let customer_email: string | null = null
         try {
           if (t.user_id) {
             const { data } = await db.auth.admin.getUserById(t.user_id)
-            customer_email = (data.user?.email ?? null) as any
+            customer_email = data.user?.email ?? null
           }
         } catch {
           customer_email = null
@@ -68,7 +68,7 @@ export async function GET(request: Request) {
     )
 
     return NextResponse.json({ success: true, tickets: enriched })
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'Unknown error' }, { status: 500 })
+  } catch (e: unknown) {
+    return NextResponse.json({ error: (e as Error).message ?? 'Unknown error' }, { status: 500 })
   }
 }

@@ -53,7 +53,7 @@ export default function CartPage() {
           <div className="mt-5 flex justify-center gap-3">
             <Link
               href="/shop"
-              className="rounded-full bg-violet-600 px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.2em] text-white transition hover:bg-violet-500 active:scale-95 transition"
+              className="rounded-full bg-violet-600 px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.2em] text-white transition hover:bg-violet-500 active:scale-95"
             >
               Browse the Stash
             </Link>
