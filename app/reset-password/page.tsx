@@ -4,7 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 
 export default function ResetPasswordPage() {
-  const supabase = useMemo(() => supabaseBrowser(), []);
+  const supabase = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    return supabaseBrowser();
+  }, []);
   const [ready, setReady] = useState(false);
 
   const [password, setPassword] = useState("");
@@ -15,6 +18,7 @@ export default function ResetPasswordPage() {
   const [msg, setMsg] = useState("");
 
   useEffect(() => {
+    if (!supabase) return;
     // When user clicks the reset link, Supabase creates a recovery session automatically in-browser
     // We just need to ensure the session exists.
     (async () => {
@@ -22,9 +26,10 @@ export default function ResetPasswordPage() {
       setReady(Boolean(data.session));
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [supabase]);
 
   async function updatePassword() {
+    if (!supabase) return;
     setErr("");
     setMsg("");
 
