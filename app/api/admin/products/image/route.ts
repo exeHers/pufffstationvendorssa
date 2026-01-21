@@ -2,8 +2,6 @@ export const runtime = 'edge';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-// TODO: Replace Node module for Edge
-import sharp from 'sharp'
 
 function parseAdminEmails(value?: string) {
   return (value ?? '')
@@ -38,29 +36,6 @@ function makeAnonClient() {
   })
 }
 
-// TODO: Replace Node module for Edge
-async function applyRembg(input: Buffer) {
-  const url = process.env.REMBG_URL
-  if (!url) return input
-
-  try {
-    const body = new FormData()
-    body.append('image', new Blob([new Uint8Array(input)], { type: 'image/png' }), 'upload.png')
-
-    const res = await fetch(url, {
-      method: 'POST',
-      body,
-      headers: { accept: 'image/png' },
-    })
-
-    if (!res.ok) return input
-    const buf = Buffer.from(await res.arrayBuffer())
-    return buf.length > 0 ? buf : input
-  } catch {
-    return input
-  }
-}
-
 async function requireAdmin(req: NextRequest) {
   const adminEmails = parseAdminEmails(process.env.NEXT_PUBLIC_ADMIN_EMAILS)
   if (adminEmails.length === 0) {
@@ -90,62 +65,12 @@ function sanitizeFilename(name: string) {
 }
 
 /**
- * PILLAR READY OPTIMIZATION
- * Creates a consistent square canvas and bottom-aligns the vape so it sits on the stage.
+ * NOTE: Image optimization with 'sharp' is removed to allow Cloudflare Pages deployment.
+ * Cloudflare Edge runtime does not support native Node.js modules like 'sharp'.
+ * Please optimize images on the client side before uploading.
  */
-// TODO: Replace Node module for Edge
-async function optimizeToWebpForPillar(imageFile: File) {
-  const raw = Buffer.from(await imageFile.arrayBuffer())
-  const input = await applyRembg(raw)
-
-  const OUT_W = 1200
-  const OUT_H = 1200
-  const PILLAR_RESERVED_PX = 160
-  const targetH = OUT_H - PILLAR_RESERVED_PX
-
-  const out = await sharp(input, { failOnError: false })
-    .rotate()
-    .resize({
-      width: OUT_W,
-      height: targetH,
-      fit: 'inside',
-      withoutEnlargement: true,
-    })
-    .extend({
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: OUT_H - targetH,
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    })
-    .resize({
-      width: OUT_W,
-      height: OUT_H,
-      fit: 'contain',
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-      position: 'south',
-    })
-    .sharpen({
-      sigma: 0.6,
-      m1: 0.4,
-      m2: 0.3,
-      x1: 1.0,
-      y2: 2.0,
-      y3: 20,
-    })
-    .webp({
-      quality: 84,
-      effort: 6,
-      smartSubsample: true,
-      alphaQuality: 90,
-    })
-    .toBuffer()
-
-  if (!out || out.length < 2000) {
-    throw new Error('Image optimization failed (output too small).')
-  }
-
-  return out
+async function processImage(imageFile: File) {
+  return Buffer.from(await imageFile.arrayBuffer())
 }
 
 /**
@@ -174,13 +99,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing image file.' }, { status: 400 })
     }
 
-    const optimized = await optimizeToWebpForPillar(image)
+    const fileBuffer = await processImage(image)
 
     const safeName = sanitizeFilename(name)
     const path = `products/${safeName}-${Date.now()}-${Math.random().toString(16).slice(2)}.webp`
 
-    const up = await supabase.storage.from(bucket).upload(path, optimized, {
-      contentType: 'image/webp',
+    const up = await supabase.storage.from(bucket).upload(path, fileBuffer, {
+      contentType: image.type || 'image/webp',
       upsert: false,
       cacheControl: '31536000',
     })

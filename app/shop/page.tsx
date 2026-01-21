@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+export const runtime = 'edge';
+
 import React from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'

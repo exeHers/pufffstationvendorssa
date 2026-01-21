@@ -2,8 +2,6 @@ export const runtime = 'edge';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-// TODO: Replace Node module for Edge
-import sharp from 'sharp'
 
 function parseAdminEmails(value?: string) {
   return (value ?? '')
@@ -36,29 +34,6 @@ function makeAnonClient() {
   return createClient(url, anon, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
-}
-
-// TODO: Replace Node module for Edge
-async function applyRembg(input: Buffer) {
-  const url = process.env.REMBG_URL
-  if (!url) return input
-
-  try {
-    const body = new FormData()
-    body.append('image', new Blob([new Uint8Array(input)], { type: 'image/png' }), 'upload.png')
-
-    const res = await fetch(url, {
-      method: 'POST',
-      body,
-      headers: { accept: 'image/png' },
-    })
-
-    if (!res.ok) return input
-    const buf = Buffer.from(await res.arrayBuffer())
-    return buf.length > 0 ? buf : input
-  } catch {
-    return input
-  }
 }
 
 async function requireAdmin(req: NextRequest) {
@@ -95,84 +70,12 @@ function isValidHex(hex: string) {
 }
 
 /**
- * ✅ FULL IMAGE OPTIMIZATION PIPELINE:
- * - JPG/PNG/WebP -> RGBA
- * - Removes near-white backgrounds
- * - Removes alpha halo edge blur (THIS fixes thick/bloated look)
- * - Trims transparent edges
- * - Adds padding
- * - Resizes into 900x1200 canvas
- * - Outputs optimized WEBP
+ * NOTE: Image optimization with 'sharp' is removed to allow Cloudflare Pages deployment.
+ * Cloudflare Edge runtime does not support native Node.js modules like 'sharp'.
+ * Please optimize images on the client side before uploading.
  */
-// TODO: Replace Node module for Edge
-async function optimizeToWebpPerfect(imageFile: File) {
-  const input = Buffer.from(await imageFile.arrayBuffer())
-  const OUT_W = 900
-  const OUT_H = 1200
-
-  let img = sharp(input, { failOnError: false }).rotate().ensureAlpha()
-
-  // Convert to raw RGBA for pixel-level cleaning
-  const { data, info } = await img.raw().toBuffer({ resolveWithObject: true })
-
-  const out = Buffer.from(data)
-  const width = info.width
-  const height = info.height
-
-  // 1) Remove near-white background pixels
-  const threshold = 245
-
-  for (let i = 0; i < out.length; i += 4) {
-    const r = out[i]
-    const g = out[i + 1]
-    const b = out[i + 2]
-    const a = out[i + 3]
-
-    // kill near-white pixels completely
-    if (r >= threshold && g >= threshold && b >= threshold) {
-      out[i + 3] = 0
-      continue
-    }
-
-    // 2) ✅ REMOVE ALPHA HALO / SOFT EDGE (this fixes “thick” look)
-    if (a > 0 && a < 60) {
-      out[i + 3] = 0
-    } else if (a >= 60 && a < 160) {
-      out[i + 3] = 220
-    }
-  }
-
-  img = sharp(out, { raw: { width, height, channels: 4 } })
-
-  // Trim + add safe padding
-  img = img
-    .trim()
-    .extend({
-      top: 80,
-      bottom: 140,
-      left: 80,
-      right: 80,
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    })
-
-  // ✅ Force consistent canvas size so every product looks the same scale
-  // contain = keeps aspect ratio, never stretches
-  img = img.resize(OUT_W, OUT_H, {
-    fit: 'contain',
-    background: { r: 0, g: 0, b: 0, alpha: 0 },
-    withoutEnlargement: true,
-  })
-
-  const optimized = await img
-    .sharpen({ sigma: 0.6, m1: 0.4, m2: 0.3 })
-    .webp({ quality: 84, effort: 6, smartSubsample: true, alphaQuality: 90 })
-    .toBuffer()
-
-  if (!optimized || optimized.length < 2000) {
-    throw new Error('Image optimization failed (output too small).')
-  }
-
-  return optimized
+async function processImage(imageFile: File) {
+  return Buffer.from(await imageFile.arrayBuffer())
 }
 
 export async function POST(req: NextRequest) {
@@ -228,15 +131,15 @@ export async function POST(req: NextRequest) {
 
     let image_url: string | null = null
 
-    // ✅ Auto-fix image
+    // ✅ Process image if provided
     if (image && typeof image.arrayBuffer === 'function') {
-      const optimized = await optimizeToWebpPerfect(image)
+      const fileBuffer = await processImage(image)
 
       const safeName = sanitizeFilename(name || 'product')
       const path = `products/${safeName}-${Date.now()}-${Math.random().toString(16).slice(2)}.webp`
 
-      const up = await supabase.storage.from(bucket).upload(path, optimized, {
-        contentType: 'image/webp',
+      const up = await supabase.storage.from(bucket).upload(path, fileBuffer, {
+        contentType: image.type || 'image/webp',
         upsert: false,
         cacheControl: '31536000',
       })
