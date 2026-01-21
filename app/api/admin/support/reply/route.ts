@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
-export const runtime = 'nodejs'
+export const runtime = 'edge'
 
 function parseAdminEmails(value?: string) {
   return (value ?? '')
@@ -107,9 +107,9 @@ export async function POST(request: Request) {
 
 function escapeHtml(input: string) {
   return input
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
+    .replaceAll('&', '&')
+    .replaceAll('<', '<')
+    .replaceAll('>', '>')
+    .replaceAll('"', '"')
     .replaceAll("'", '&#039;')
 }

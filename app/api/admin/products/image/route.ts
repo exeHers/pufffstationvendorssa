@@ -1,5 +1,8 @@
+export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+// TODO: Replace Node module for Edge
 import sharp from 'sharp'
 
 function parseAdminEmails(value?: string) {
@@ -35,6 +38,7 @@ function makeAnonClient() {
   })
 }
 
+// TODO: Replace Node module for Edge
 async function applyRembg(input: Buffer) {
   const url = process.env.REMBG_URL
   if (!url) return input
@@ -89,6 +93,7 @@ function sanitizeFilename(name: string) {
  * PILLAR READY OPTIMIZATION
  * Creates a consistent square canvas and bottom-aligns the vape so it sits on the stage.
  */
+// TODO: Replace Node module for Edge
 async function optimizeToWebpForPillar(imageFile: File) {
   const raw = Buffer.from(await imageFile.arrayBuffer())
   const input = await applyRembg(raw)

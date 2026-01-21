@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/client'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
-export const runtime = 'nodejs'
+export const runtime = 'edge'
 
 function parseAdminEmails(value?: string) {
   return (value ?? '')

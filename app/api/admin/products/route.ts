@@ -1,5 +1,8 @@
+export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+// TODO: Replace Node module for Edge
 import sharp from 'sharp'
 
 function parseAdminEmails(value?: string) {
@@ -35,6 +38,7 @@ function makeAnonClient() {
   })
 }
 
+// TODO: Replace Node module for Edge
 async function applyRembg(input: Buffer) {
   const url = process.env.REMBG_URL
   if (!url) return input
@@ -100,6 +104,7 @@ function isValidHex(hex: string) {
  * - Resizes into 900x1200 canvas
  * - Outputs optimized WEBP
  */
+// TODO: Replace Node module for Edge
 async function optimizeToWebpPerfect(imageFile: File) {
   const input = Buffer.from(await imageFile.arrayBuffer())
   const OUT_W = 900

@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { NextResponse } from 'next/server'
 
 // Ozow server-to-server notify webhook.

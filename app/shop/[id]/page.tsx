@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import type { Metadata, ResolvingMetadata } from 'next'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
