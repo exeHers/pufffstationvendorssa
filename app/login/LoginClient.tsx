@@ -148,17 +148,15 @@ export default function LoginClient() {
     
     setLoading(true)
     try {
-      // Security: Check if user exists in profiles first
-      const { data, error: fetchErr } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email.trim().toLowerCase())
-        .maybeSingle()
+      // Security: Check if user exists via server-side verification API (bypasses RLS)
+      const verifyRes = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      })
+      const verifyJson = await verifyRes.json()
       
-      if (fetchErr) throw fetchErr
-      
-      if (!data) {
-        // We don't say "email not found" for privacy usually, but the user requested it musnt say sended if it doesn't exist
+      if (!verifyJson.exists) {
         setError('This email is not registered in our system.')
         setLoading(false)
         return
@@ -181,7 +179,7 @@ export default function LoginClient() {
     <main className="mx-auto max-w-xl px-4 pb-16 pt-10">
       <div className="mb-4 rounded-full bg-fuchsia-600/20 border border-fuchsia-500/30 px-4 py-1 text-center">
         <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-fuchsia-400">
-          Security Patch v1.3 Active
+          Security Patch v1.4 Active
         </p>
       </div>
 

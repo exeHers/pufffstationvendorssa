@@ -17,58 +17,70 @@ function parseAdminEmails(value?: string) {
 }
 
 export async function POST(req: Request) {
-  const auth = req.headers.get('authorization') || ''
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : ''
+  try {
+    const auth = req.headers.get('authorization') || ''
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : ''
 
-  if (!token) {
-    const res = NextResponse.json({ ok: false, error: 'Missing token' }, { status: 401 })
-    res.cookies.set('pufff_is_admin', 'false', {
-      path: '/',
-      httpOnly: false,
-      sameSite: 'lax',
-      maxAge: 0,
+    if (!token) {
+      return NextResponse.json({ ok: false, error: 'Missing token' }, { status: 401 })
+    }
+
+    // 1. Check for Admin Emails env
+    const rawAdminEmails = process.env.ADMIN_EMAILS || process.env.NEXT_PUBLIC_ADMIN_EMAILS || ''
+    const adminEmailsList = parseAdminEmails(rawAdminEmails)
+
+    // 2. Try to init Admin Client
+    let db;
+    try {
+      db = supabaseAdmin()
+    } catch (e) {
+      console.error('[Admin Session] Failed to init supabaseAdmin:', e)
+      return NextResponse.json({ 
+        ok: false, 
+        isAdmin: false, 
+        error: 'Backend configuration error (Admin Key missing). Please check Cloudflare Secrets.' 
+      }, { status: 500 })
+    }
+
+    const { data: userData, error: userError } = await db.auth.getUser(token)
+
+    if (userError || !userData?.user) {
+      return NextResponse.json({ ok: false, isAdmin: false, error: 'Invalid or expired session' }, { status: 401 })
+    }
+
+    const user = userData.user
+    const email = user.email?.toLowerCase() ?? ''
+
+    // 3. Match Email
+    const isEmailAuthorized = adminEmailsList.length > 0 && adminEmailsList.includes(email)
+
+    // 4. Match Database Role
+    let isRoleAuthorized = false
+    const { data: profile, error: profileErr } = await db
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    
+    if (!profileErr && profile?.role === 'admin') {
+      isRoleAuthorized = true
+    }
+
+    const isAdmin = isEmailAuthorized || isRoleAuthorized
+
+    // Debug info (safe because it only goes to the authenticated user's browser during this check)
+    return NextResponse.json({ 
+      ok: true, 
+      isAdmin,
+      debug: {
+        email,
+        isEmailAuthorized,
+        isRoleAuthorized,
+        adminListCount: adminEmailsList.length
+      }
     })
-    return res
+  } catch (err: any) {
+    console.error('[Admin Session] Crash:', err)
+    return NextResponse.json({ ok: false, error: err?.message || 'Internal Server Error' }, { status: 500 })
   }
-
-  const adminEmails = parseAdminEmails(process.env.ADMIN_EMAILS || process.env.NEXT_PUBLIC_ADMIN_EMAILS)
-  const db = supabaseAdmin()
-  const { data: userData, error: userError } = await db.auth.getUser(token)
-
-  if (userError || !userData?.user) {
-    const res = NextResponse.json({ ok: false, error: 'Invalid user' }, { status: 401 })
-    res.cookies.set('pufff_is_admin', 'false', { path: '/', maxAge: 0 })
-    return res
-  }
-
-  const user = userData.user
-  const email = user.email?.toLowerCase() ?? ''
-
-  // 1. Check email list (Primary override)
-  const isEmailAuthorized = adminEmails.length > 0 && adminEmails.includes(email)
-
-  // 2. Check profiles table (Database backup)
-  const { data: profile } = await db
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-  
-  const isRoleAuthorized = profile?.role === 'admin'
-
-  // Grant access if either is true
-  const isAdmin = isEmailAuthorized || isRoleAuthorized
-
-  if (process.env.NODE_ENV === 'development') {
-    console.info('[admin session] user:', email, 'isAdmin:', isAdmin)
-  }
-
-  const res = NextResponse.json({ ok: true, isAdmin })
-  res.cookies.set('pufff_is_admin', isAdmin ? 'true' : 'false', {
-    path: '/',
-    httpOnly: false,
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 30,
-  })
-  return res
 }
