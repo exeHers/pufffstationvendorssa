@@ -51,9 +51,9 @@ export default function HomeSmokeVideo() {
     <div className="relative h-full w-full bg-[#0a0a0c]">
       <video
         ref={videoRef}
-        className="absolute inset-0 h-full w-full object-cover object-center [filter:brightness(0.7)_contrast(1.1)_grayscale(0.1)] sm:[filter:brightness(0.6)_contrast(1.1)_grayscale(0.1)]"
-        muted
-        loop
+
+  const baseClass = "absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-[800ms] ease-in-out [filter:brightness(0.7)_contrast(1.1)_grayscale(0.1)] sm:[filter:brightness(0.6)_contrast(1.1)_grayscale(0.1)]"
+
         playsInline
         preload="auto"
         poster="/hero/neon-smoke.png"

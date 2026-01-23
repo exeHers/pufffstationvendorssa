@@ -10,6 +10,7 @@ import { CartProvider } from '@/components/cart/CartContext'
 import HeaderLinks from '@/components/nav/HeaderLinks'
 import AndroidMotionGate from '@/components/utils/AndroidMotionGate'
 import Footer from '@/components/layout/Footer'
+import WhatsAppSupport from '@/components/support/WhatsAppSupport'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pufffstation.co.za'
 
@@ -68,6 +69,7 @@ export default function RootLayout({
         <AndroidMotionGate />
         <LuxeAtmosphere />
         <AgeGate />
+        <WhatsAppSupport />
 
         <CartProvider>
           <div className="min-h-screen">

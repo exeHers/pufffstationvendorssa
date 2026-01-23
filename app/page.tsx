@@ -11,10 +11,10 @@ import HomeBackgroundVideo from '@/components/home/HomeBackgroundVideo'
 import { fetchActiveFlavours } from '@/lib/flavours'
 
 export const metadata: Metadata = {
-  title: 'AI BUILD - Clean Stock. Premium Drops.',
+  title: 'TEST-BUILD - Clean Stock. Premium Drops.',
   description: 'Fast dispatch, premium checkout, and official PUFFF Station drops. Built for SA vendors who want it smooth and legit.',
   openGraph: {
-    title: 'AI BUILD - Clean Stock. Premium Drops.',
+    title: 'TEST-BUILD - Clean Stock. Premium Drops.',
     description: 'Fast dispatch, premium checkout, and official PUFFF Station drops. Built for SA vendors who want it smooth and legit.',
   },
 }
@@ -56,7 +56,7 @@ export default async function HomePage() {
     <main className="relative w-full text-white overflow-x-hidden min-h-screen bg-transparent">
       {/* VERIFICATION MARKER */}
       <div className="fixed top-0 left-0 z-[99999] bg-red-600 text-white text-[10px] px-2 py-1 font-bold">
-        AI-BUILD ACTIVE
+        TEST-BUILD ACTIVE
       </div>
 
       <HomeBackgroundVideo />
@@ -65,7 +65,7 @@ export default async function HomePage() {
         <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-start justify-center gap-10 px-4 pb-16 pt-16 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-[520px]">
             <p className="hero-fade hero-fade-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-cyan-200/80">
-              PUFFF Station Vendors SA • AI-BUILD
+              PUFFF Station Vendors SA • TEST-BUILD
             </p>
 
             <h1 className="hero-fade hero-fade-2 mt-5 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-[3.4rem]">
