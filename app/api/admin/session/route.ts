@@ -17,70 +17,77 @@ function parseAdminEmails(value?: string) {
 }
 
 export async function POST(req: Request) {
+  const debug: any = {
+    step: 'start',
+    env: {
+      hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      rawAdminEmails: !!(process.env.ADMIN_EMAILS || process.env.NEXT_PUBLIC_ADMIN_EMAILS)
+    }
+  }
+
   try {
     const auth = req.headers.get('authorization') || ''
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : ''
 
     if (!token) {
-      return NextResponse.json({ ok: false, error: 'Missing token' }, { status: 401 })
+      return NextResponse.json({ ok: false, error: 'Missing token', debug }, { status: 401 })
     }
 
-    // 1. Check for Admin Emails env
+    // 1. Admin Emails Check
     const rawAdminEmails = process.env.ADMIN_EMAILS || process.env.NEXT_PUBLIC_ADMIN_EMAILS || ''
     const adminEmailsList = parseAdminEmails(rawAdminEmails)
+    debug.adminListCount = adminEmailsList.length
 
-    // 2. Try to init Admin Client
+    // 2. Init Admin Client
     let db;
     try {
       db = supabaseAdmin()
-    } catch (e) {
-      console.error('[Admin Session] Failed to init supabaseAdmin:', e)
+      debug.step = 'db_init_ok'
+    } catch (e: any) {
       return NextResponse.json({ 
         ok: false, 
         isAdmin: false, 
-        error: 'Backend configuration error (Admin Key missing). Please check Cloudflare Secrets.' 
+        error: `Server Config Error: ${e.message}`,
+        debug
       }, { status: 500 })
     }
 
     const { data: userData, error: userError } = await db.auth.getUser(token)
-
     if (userError || !userData?.user) {
-      return NextResponse.json({ ok: false, isAdmin: false, error: 'Invalid or expired session' }, { status: 401 })
+      debug.userError = userError?.message
+      return NextResponse.json({ ok: false, isAdmin: false, error: 'Session invalid or expired', debug }, { status: 401 })
     }
 
     const user = userData.user
     const email = user.email?.toLowerCase() ?? ''
+    debug.email = email
 
-    // 3. Match Email
-    const isEmailAuthorized = adminEmailsList.length > 0 && adminEmailsList.includes(email)
+    // 3. Authorization Logic
+    const isEmailAuthorized = adminEmailsList.includes(email)
+    debug.isEmailAuthorized = isEmailAuthorized
 
-    // 4. Match Database Role
     let isRoleAuthorized = false
     const { data: profile, error: profileErr } = await db
       .from('profiles')
       .select('role')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
     
-    if (!profileErr && profile?.role === 'admin') {
+    if (profile?.role === 'admin') {
       isRoleAuthorized = true
     }
+    debug.isRoleAuthorized = isRoleAuthorized
+    debug.profileError = profileErr?.message
 
     const isAdmin = isEmailAuthorized || isRoleAuthorized
 
-    // Debug info (safe because it only goes to the authenticated user's browser during this check)
     return NextResponse.json({ 
       ok: true, 
       isAdmin,
-      debug: {
-        email,
-        isEmailAuthorized,
-        isRoleAuthorized,
-        adminListCount: adminEmailsList.length
-      }
+      debug
     })
   } catch (err: any) {
-    console.error('[Admin Session] Crash:', err)
-    return NextResponse.json({ ok: false, error: err?.message || 'Internal Server Error' }, { status: 500 })
+    return NextResponse.json({ ok: false, error: err?.message || 'Internal Server Error', debug }, { status: 500 })
   }
 }
