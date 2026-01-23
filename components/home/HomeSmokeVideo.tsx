@@ -16,8 +16,8 @@ export default function HomeSmokeVideo() {
     const video = videoRef.current
     if (!video) return
 
-    // Duration of the fade in/out effect in seconds
-    const fadeDuration = 2.0 // 2 seconds fade for more drama
+    // Duration of the fade in/out effect in seconds (quicker for more continuous feel)
+    const fadeDuration = 0.8
 
     const handleTimeUpdate = () => {
       const { currentTime, duration } = video
