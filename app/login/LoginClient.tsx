@@ -155,6 +155,12 @@ export default function LoginClient() {
 
   return (
     <main className="mx-auto max-w-xl px-4 pb-16 pt-10">
+      <div className="mb-4 rounded-full bg-fuchsia-600/20 border border-fuchsia-500/30 px-4 py-1 text-center">
+        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-fuchsia-400">
+          Security Patch v1.2 Active
+        </p>
+      </div>
+
       <div className="rounded-3xl border border-slate-800/80 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900/95 p-6 shadow-[0_24px_60px_rgba(0,0,0,0.85)]">
         <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#D946EF]">
           ACCOUNT
@@ -194,15 +200,6 @@ export default function LoginClient() {
                 className="w-full rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-500 pr-10"
                 placeholder="••••••••"
               />
-              {mode === 'login' && (
-                <button
-                  type="button"
-                  onClick={onForgotPassword}
-                  className="absolute -bottom-6 right-0 text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-fuchsia-400"
-                >
-                  Forgot Password?
-                </button>
-              )}
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -236,6 +233,18 @@ export default function LoginClient() {
             {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Sign up'}
           </button>
         </form>
+
+        {mode === 'login' && (
+          <div className="mt-6 border-t border-slate-800/50 pt-4 text-center">
+            <button
+              type="button"
+              onClick={onForgotPassword}
+              className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 transition hover:text-fuchsia-400"
+            >
+              Lost your terminal key? <span className="underline decoration-fuchsia-500/30 underline-offset-4">Reset Password</span>
+            </button>
+          </div>
+        )}
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
           <button
