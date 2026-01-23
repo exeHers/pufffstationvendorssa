@@ -141,6 +141,18 @@ export default function LoginClient() {
     }
   }
 
+  async function onForgotPassword() {
+    if (!email.trim()) {
+      setError('Please enter your email first.')
+      return
+    }
+    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    if (resetErr) setError(resetErr.message)
+    else setInfo('Password reset email sent! Check your inbox.')
+  }
+
   return (
     <main className="mx-auto max-w-xl px-4 pb-16 pt-10">
       <div className="rounded-3xl border border-slate-800/80 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900/95 p-6 shadow-[0_24px_60px_rgba(0,0,0,0.85)]">
@@ -182,6 +194,15 @@ export default function LoginClient() {
                 className="w-full rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-500 pr-10"
                 placeholder="••••••••"
               />
+              {mode === 'login' && (
+                <button
+                  type="button"
+                  onClick={onForgotPassword}
+                  className="absolute -bottom-6 right-0 text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-fuchsia-400"
+                >
+                  Forgot Password?
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
