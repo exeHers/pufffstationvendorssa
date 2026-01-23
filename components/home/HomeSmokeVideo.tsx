@@ -47,13 +47,15 @@ export default function HomeSmokeVideo() {
 
   if (!mounted) return null
 
+  const baseClass = "absolute inset-0 h-full w-full object-cover object-center [filter:brightness(0.7)_contrast(1.1)_grayscale(0.1)] sm:[filter:brightness(0.6)_contrast(1.1)_grayscale(0.1)]"
+
   return (
     <div className="relative h-full w-full bg-[#0a0a0c]">
       <video
         ref={videoRef}
-
-  const baseClass = "absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-[800ms] ease-in-out [filter:brightness(0.7)_contrast(1.1)_grayscale(0.1)] sm:[filter:brightness(0.6)_contrast(1.1)_grayscale(0.1)]"
-
+        className={baseClass}
+        muted
+        loop
         playsInline
         preload="auto"
         poster="/hero/neon-smoke.png"
@@ -61,7 +63,7 @@ export default function HomeSmokeVideo() {
           transform: 'translateZ(0) scale(1.01)', 
           willChange: 'transform, opacity',
           opacity: opacity,
-          transition: 'opacity 150ms ease-out' // Smooth transitions for the opacity changes
+          transition: 'opacity 150ms ease-out' 
         }}
       >
         <source src="/hero/neon-smoke.mp4" type="video/mp4" />
