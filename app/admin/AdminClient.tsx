@@ -10,52 +10,40 @@ import QuickActionsTab from '@/components/admin/QuickActionsTab'
 import QuickAddPanel from '@/components/admin/QuickAddPanel'
 import FeaturedDropsSettings from '@/components/admin/FeaturedDropsSettings'
 
-type Profile = {
-  id: string
-  role: string | null
-}
-
-const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
-
 export default function AdminClient() {
   const router = useRouter()
   const [email, setEmail] = useState('')
-  const [role, setRole] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null) // null = checking
   const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
   const checkingRef = useRef(false)
 
-  const loadAdmin = useCallback(async (userId: string, userEmail: string) => {
+  const verifyAdmin = useCallback(async (token: string, userEmail: string) => {
     if (checkingRef.current) return
     checkingRef.current = true
     
-    setLoading(true)
     setError(null)
-    const emailLower = userEmail.toLowerCase()
-    setEmail(emailLower)
+    setEmail(userEmail)
 
-    const isEmailAuthorized = ADMIN_EMAILS.length > 0 && ADMIN_EMAILS.includes(emailLower)
-
-    const supabase = supabaseBrowser()
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, role')
-      .eq('id', userId)
-      .single<Profile>()
-
-    const isRoleAuthorized = profile?.role === 'admin'
-    const isAdmin = isEmailAuthorized || isRoleAuthorized
-
-    setRole(isAdmin ? 'admin' : (profile?.role ?? 'user'))
-
-    if (!isAdmin) {
-      setError('Access Denied. Your account is not authorized for administrative access.')
-      setLoading(false)
-      return
+    try {
+      const res = await fetch('/api/admin/session', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const json = await res.json()
+      
+      if (json?.isAdmin) {
+        setIsAdmin(true)
+      } else {
+        setIsAdmin(false)
+        setError('Access Denied. Your account is not authorized for administrative access.')
+      }
+    } catch (err) {
+      console.error('Admin verify error:', err)
+      setIsAdmin(false)
+      setError('System error verifying admin status.')
+    } finally {
+      checkingRef.current = false
     }
-
-    setLoading(false)
-    checkingRef.current = false
   }, [])
 
   useEffect(() => {
@@ -66,19 +54,11 @@ export default function AdminClient() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!mounted) return
 
-      if (session?.user) {
-        await loadAdmin(session.user.id, session.user.email ?? '')
+      if (session?.user && session.access_token) {
+        await verifyAdmin(session.access_token, session.user.email ?? '')
       } else {
-        // Double check with getUser as fallback
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!mounted) return
-        
-        if (user) {
-          await loadAdmin(user.id, user.email ?? '')
-        } else {
-          setLoading(false)
-          router.replace('/login?next=/admin')
-        }
+        setIsAdmin(false)
+        router.replace('/login?next=/admin')
       }
     }
 
@@ -86,10 +66,11 @@ export default function AdminClient() {
       if (!mounted) return
       
       if (event === 'SIGNED_OUT') {
+        setIsAdmin(false)
         router.replace('/login?next=/admin')
       } else if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) {
-        if (session?.user) {
-          loadAdmin(session.user.id, session.user.email ?? '')
+        if (session?.user && session.access_token) {
+          verifyAdmin(session.access_token, session.user.email ?? '')
         }
       }
     })
@@ -100,9 +81,7 @@ export default function AdminClient() {
       mounted = false
       sub.subscription.unsubscribe()
     }
-  }, [loadAdmin, router])
-
-  const isAdmin = role === 'admin'
+  }, [verifyAdmin, router])
 
   return (
     <main className="mx-auto max-w-6xl space-y-8 px-4 pb-16 pt-8">
@@ -139,14 +118,14 @@ export default function AdminClient() {
         </div>
       </header>
 
-      {loading && (
+      {isAdmin === null && (
         <section className="rounded-3xl border border-slate-800/80 bg-slate-950/60 p-12 text-center">
            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-800 border-t-violet-500" />
            <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Verifying Credentials...</p>
         </section>
       )}
 
-      {!loading && !isAdmin && (
+      {isAdmin === false && (
         <section className="rounded-3xl border border-red-500/30 bg-red-500/5 p-8 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-xl text-red-500">
              ⚠
@@ -159,7 +138,7 @@ export default function AdminClient() {
         </section>
       )}
 
-      {!loading && isAdmin && (
+      {isAdmin === true && (
         <Suspense fallback={<div>Loading Tabs...</div>}>
           <AdminTabs />
         </Suspense>
@@ -283,4 +262,3 @@ function AdminCard({ title, desc, href, icon }: { title: string; desc: string; h
     </Link>
   )
 }
-

@@ -16,8 +16,10 @@ export default function HomeSmokeVideo() {
     const video = videoRef.current
     if (!video) return
 
-    // Duration of the fade in/out effect in seconds (quicker for more continuous feel)
-    const fadeDuration = 0.8
+    // Slower fade for the home screen to make the loop points less obvious
+    // Fade in over 1.5s, Fade out over 4s for a very smooth transition
+    const fadeInDuration = 1.5
+    const fadeOutDuration = 4.0
 
     const handleTimeUpdate = () => {
       const { currentTime, duration } = video
@@ -25,15 +27,17 @@ export default function HomeSmokeVideo() {
 
       let nextOpacity = 0.8 // Base target opacity
 
-      // 1. Fade In from dark (0s to fadeDuration)
-      if (currentTime < fadeDuration) {
-        nextOpacity = (currentTime / fadeDuration) * 0.8
+      // 1. Fade In from dark
+      if (currentTime < fadeInDuration) {
+        nextOpacity = (currentTime / fadeInDuration) * 0.8
       } 
-      // 2. Fade Out to dark (end-fadeDuration to end)
-      else if (currentTime > duration - fadeDuration) {
-        nextOpacity = ((duration - currentTime) / fadeDuration) * 0.8
+      // 2. Fade Out to dark (start fading out earlier and slower)
+      else if (currentTime > duration - fadeOutDuration) {
+        nextOpacity = ((duration - currentTime) / fadeOutDuration) * 0.8
       }
 
+      // Ensure it never goes below 0
+      nextOpacity = Math.max(0, nextOpacity)
       setOpacity(nextOpacity)
     }
 
@@ -63,7 +67,7 @@ export default function HomeSmokeVideo() {
           transform: 'translateZ(0) scale(1.01)', 
           willChange: 'transform, opacity',
           opacity: opacity,
-          transition: 'opacity 150ms ease-out' 
+          transition: 'opacity 300ms ease-out' // Increased to smooth out the opacity adjustments
         }}
       >
         <source src="/hero/neon-smoke.mp4" type="video/mp4" />

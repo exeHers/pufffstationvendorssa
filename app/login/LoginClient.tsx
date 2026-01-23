@@ -22,21 +22,22 @@ export default function LoginClient() {
   const [info, setInfo] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
 
+  const syncAdminCookie = async (token?: string | null) => {
+    if (!token) return null
+    try {
+      const res = await fetch('/api/admin/session', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      return await res.json()
+    } catch (err) {
+      console.error('Session sync error:', err)
+      return null
+    }
+  }
+
   useEffect(() => {
     let mounting = true
-    const syncAdminCookie = async (token?: string | null) => {
-      if (!token) return null
-      try {
-        const res = await fetch('/api/admin/session', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        return await res.json()
-      } catch (err) {
-        console.error('Session sync error:', err)
-        return null
-      }
-    }
 
     const initAuth = async () => {
       const { data } = await supabase.auth.getSession()
@@ -50,6 +51,7 @@ export default function LoginClient() {
           isAdmin = !!sync?.isAdmin
         }
         
+        // If they are on an admin route but aren't admin, go to shop
         if (nextPath.startsWith('/admin') && !isAdmin) {
           router.replace('/shop')
         } else {
@@ -63,19 +65,17 @@ export default function LoginClient() {
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounting) return
       
-      if (session?.user) {
+      if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
         let isAdmin = false
         if (session.access_token) {
           const sync = await syncAdminCookie(session.access_token)
           isAdmin = !!sync?.isAdmin
         }
         
-        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-          if (nextPath.startsWith('/admin') && !isAdmin) {
-            router.replace('/shop')
-          } else {
-            router.replace(nextPath)
-          }
+        if (nextPath.startsWith('/admin') && !isAdmin) {
+          router.replace('/shop')
+        } else {
+          router.replace(nextPath)
         }
       }
     })
@@ -112,12 +112,8 @@ export default function LoginClient() {
         const { data: sess } = await supabase.auth.getSession()
         let isActuallyAdmin = false
         if (sess.session?.access_token) {
-          const res = await fetch('/api/admin/session', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${sess.session.access_token}` },
-          })
-          const json = await res.json()
-          isActuallyAdmin = !!json?.isAdmin
+          const sync = await syncAdminCookie(sess.session.access_token)
+          isActuallyAdmin = !!sync?.isAdmin
         }
 
         if (nextPath.startsWith('/admin') && !isActuallyAdmin) {
@@ -142,22 +138,50 @@ export default function LoginClient() {
   }
 
   async function onForgotPassword() {
+    setError(null)
+    setInfo(null)
+    
     if (!email.trim()) {
       setError('Please enter your email first.')
       return
     }
-    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`,
-    })
-    if (resetErr) setError(resetErr.message)
-    else setInfo('Password reset email sent! Check your inbox.')
+    
+    setLoading(true)
+    try {
+      // Security: Check if user exists in profiles first
+      const { data, error: fetchErr } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email.trim().toLowerCase())
+        .maybeSingle()
+      
+      if (fetchErr) throw fetchErr
+      
+      if (!data) {
+        // We don't say "email not found" for privacy usually, but the user requested it musnt say sended if it doesn't exist
+        setError('This email is not registered in our system.')
+        setLoading(false)
+        return
+      }
+
+      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+      if (resetErr) throw resetErr
+      
+      setInfo('Password reset email sent! Check your inbox.')
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to send reset email.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <main className="mx-auto max-w-xl px-4 pb-16 pt-10">
       <div className="mb-4 rounded-full bg-fuchsia-600/20 border border-fuchsia-500/30 px-4 py-1 text-center">
         <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-fuchsia-400">
-          Security Patch v1.2 Active
+          Security Patch v1.3 Active
         </p>
       </div>
 
