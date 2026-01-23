@@ -241,7 +241,7 @@ export default function LoginClient() {
               onClick={onForgotPassword}
               className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 transition hover:text-fuchsia-400"
             >
-              Lost your terminal key? <span className="underline decoration-fuchsia-500/30 underline-offset-4">Reset Password</span>
+              <span className="underline decoration-fuchsia-500/30 underline-offset-4">Reset Password</span>
             </button>
           </div>
         )}
