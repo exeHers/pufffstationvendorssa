@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     images: ['/logo.png'],
   },
   icons: {
-    icon: '/favicon.ico',
+    icon: '/logo.png',
     apple: '/logo.png',
   },
 }
