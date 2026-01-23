@@ -17,7 +17,7 @@ export default function HomeSmokeVideo() {
     if (!video) return
 
     // Duration of the fade in/out effect in seconds
-    const fadeDuration = 1.5
+    const fadeDuration = 2.0 // 2 seconds fade for more drama
 
     const handleTimeUpdate = () => {
       const { currentTime, duration } = video
@@ -25,11 +25,11 @@ export default function HomeSmokeVideo() {
 
       let nextOpacity = 0.8 // Base target opacity
 
-      // Fade In at start
+      // 1. Fade In from dark (0s to fadeDuration)
       if (currentTime < fadeDuration) {
         nextOpacity = (currentTime / fadeDuration) * 0.8
       } 
-      // Fade Out at end
+      // 2. Fade Out to dark (end-fadeDuration to end)
       else if (currentTime > duration - fadeDuration) {
         nextOpacity = ((duration - currentTime) / fadeDuration) * 0.8
       }
@@ -48,7 +48,7 @@ export default function HomeSmokeVideo() {
   if (!mounted) return null
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full bg-[#0a0a0c]">
       <video
         ref={videoRef}
         className="absolute inset-0 h-full w-full object-cover object-center [filter:brightness(0.7)_contrast(1.1)_grayscale(0.1)] sm:[filter:brightness(0.6)_contrast(1.1)_grayscale(0.1)]"
@@ -61,7 +61,7 @@ export default function HomeSmokeVideo() {
           transform: 'translateZ(0) scale(1.01)', 
           willChange: 'transform, opacity',
           opacity: opacity,
-          transition: 'opacity 100ms linear' // Smooth out the timeupdate ticks
+          transition: 'opacity 150ms ease-out' // Smooth transitions for the opacity changes
         }}
       >
         <source src="/hero/neon-smoke.mp4" type="video/mp4" />
