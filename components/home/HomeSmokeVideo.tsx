@@ -3,11 +3,9 @@
 import { useEffect, useRef, useState } from 'react'
 
 export default function HomeSmokeVideo() {
-  const aRef = useRef<HTMLVideoElement | null>(null)
-  const bRef = useRef<HTMLVideoElement | null>(null)
-  const [active, setActive] = useState<'a' | 'b'>('a')
+  const videoRef = useRef<HTMLVideoElement | null>(null)
   const [mounted, setMounted] = useState(false)
-  const isTransitioning = useRef(false)
+  const [opacity, setOpacity] = useState(0)
 
   useEffect(() => {
     setMounted(true)
@@ -15,71 +13,56 @@ export default function HomeSmokeVideo() {
 
   useEffect(() => {
     if (!mounted) return
-    
-    const a = aRef.current
-    const b = bRef.current
-    if (!a || !b) return
+    const video = videoRef.current
+    if (!video) return
 
-    // Start the first video
-    a.play().catch(() => {})
+    // Duration of the fade in/out effect in seconds
+    const fadeDuration = 1.5
 
-    const checkTime = () => {
-      const current = active === 'a' ? a : b
-      const next = active === 'a' ? b : a
+    const handleTimeUpdate = () => {
+      const { currentTime, duration } = video
+      if (!duration) return
 
-      if (!current.duration) return
+      let nextOpacity = 0.8 // Base target opacity
 
-      // Trigger crossfade 3 seconds before the video ends
-      // Most smoke videos are 10-20s, so 3s is a nice smooth blend
-      const triggerTime = current.duration - 3
-
-      if (current.currentTime >= triggerTime && !isTransitioning.current) {
-        isTransitioning.current = true
-        
-        // Prepare and play next video
-        next.currentTime = 0
-        next.play().then(() => {
-          setActive(active === 'a' ? 'b' : 'a')
-          
-          // Wait for the fade to complete before allowing another transition
-          setTimeout(() => {
-            current.pause()
-            isTransitioning.current = false
-          }, 3000)
-        }).catch(() => {
-          isTransitioning.current = false
-        })
+      // Fade In at start
+      if (currentTime < fadeDuration) {
+        nextOpacity = (currentTime / fadeDuration) * 0.8
+      } 
+      // Fade Out at end
+      else if (currentTime > duration - fadeDuration) {
+        nextOpacity = ((duration - currentTime) / fadeDuration) * 0.8
       }
+
+      setOpacity(nextOpacity)
     }
 
-    const interval = setInterval(checkTime, 100)
-    return () => clearInterval(interval)
-  }, [mounted, active])
+    video.addEventListener('timeupdate', handleTimeUpdate)
+    video.play().catch(() => {})
+
+    return () => {
+      video.removeEventListener('timeupdate', handleTimeUpdate)
+    }
+  }, [mounted])
 
   if (!mounted) return null
-
-  const baseClass = "absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-[3000ms] ease-in-out [filter:brightness(0.7)_contrast(1.1)_grayscale(0.1)] sm:[filter:brightness(0.6)_contrast(1.1)_grayscale(0.1)]"
 
   return (
     <div className="relative h-full w-full">
       <video
-        ref={aRef}
-        className={`${baseClass} ${active === 'a' ? 'opacity-80' : 'opacity-0'}`}
+        ref={videoRef}
+        className="absolute inset-0 h-full w-full object-cover object-center [filter:brightness(0.7)_contrast(1.1)_grayscale(0.1)] sm:[filter:brightness(0.6)_contrast(1.1)_grayscale(0.1)]"
         muted
+        loop
         playsInline
         preload="auto"
         poster="/hero/neon-smoke.png"
-        style={{ transform: 'translateZ(0) scale(1.01)', willChange: 'transform' }}
-      >
-        <source src="/hero/neon-smoke.mp4" type="video/mp4" />
-      </video>
-      <video
-        ref={bRef}
-        className={`${baseClass} ${active === 'b' ? 'opacity-80' : 'opacity-0'}`}
-        muted
-        playsInline
-        preload="auto"
-        style={{ transform: 'translateZ(0) scale(1.01)', willChange: 'transform' }}
+        style={{ 
+          transform: 'translateZ(0) scale(1.01)', 
+          willChange: 'transform, opacity',
+          opacity: opacity,
+          transition: 'opacity 100ms linear' // Smooth out the timeupdate ticks
+        }}
       >
         <source src="/hero/neon-smoke.mp4" type="video/mp4" />
       </video>
