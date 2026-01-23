@@ -34,29 +34,22 @@ export default function AdminClient() {
     const emailLower = userEmail.toLowerCase()
     setEmail(emailLower)
 
-    if (ADMIN_EMAILS.length > 0 && !ADMIN_EMAILS.includes(emailLower)) {
-       setError('Access Denied. Your email is not authorized for admin access.')
-       setLoading(false)
-       return
-    }
+    const isEmailAuthorized = ADMIN_EMAILS.length > 0 && ADMIN_EMAILS.includes(emailLower)
 
     const supabase = supabaseBrowser()
-    const { data: profile, error: profileErr } = await supabase
+    const { data: profile } = await supabase
       .from('profiles')
       .select('id, role')
       .eq('id', userId)
       .single<Profile>()
 
-    if (profileErr || !profile) {
-      setError('Profile not found. Make sure this user exists in the profiles table.')
-      setLoading(false)
-      return
-    }
+    const isRoleAuthorized = profile?.role === 'admin'
+    const isAdmin = isEmailAuthorized || isRoleAuthorized
 
-    setRole(profile.role ?? 'user')
+    setRole(isAdmin ? 'admin' : (profile?.role ?? 'user'))
 
-    if (profile.role !== 'admin') {
-      setError('Access denied. Your account is not marked as admin in the database.')
+    if (!isAdmin) {
+      setError('Access Denied. Your account is not authorized for administrative access.')
       setLoading(false)
       return
     }

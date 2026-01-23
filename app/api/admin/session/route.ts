@@ -44,19 +44,20 @@ export async function POST(req: Request) {
   const user = userData.user
   const email = user.email?.toLowerCase() ?? ''
 
-  // 1. Check email list if provided
-  let isAdmin = adminEmails.length === 0 || adminEmails.includes(email)
+  // 1. Check email list (Primary override)
+  const isEmailAuthorized = adminEmails.length > 0 && adminEmails.includes(email)
 
-  // 2. Check profiles table (Database truth)
-  if (isAdmin) {
-    const { data: profile } = await db
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-    
-    isAdmin = profile?.role === 'admin'
-  }
+  // 2. Check profiles table (Database backup)
+  const { data: profile } = await db
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  
+  const isRoleAuthorized = profile?.role === 'admin'
+
+  // Grant access if either is true
+  const isAdmin = isEmailAuthorized || isRoleAuthorized
 
   if (process.env.NODE_ENV === 'development') {
     console.info('[admin session] user:', email, 'isAdmin:', isAdmin)

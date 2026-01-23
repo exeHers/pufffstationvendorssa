@@ -1,23 +1,12 @@
 'use client'
 
 import React from 'react'
+import HomeSmokeVideo from './HomeSmokeVideo'
 
 export default function HomeBackgroundVideo() {
   return (
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-      <video
-        className="h-full w-full object-cover object-center opacity-[0.8] [filter:brightness(0.7)_contrast(1.1)_grayscale(0.1)] sm:[filter:brightness(0.6)_contrast(1.1)_grayscale(0.1)]"
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="auto"
-        poster="/hero/neon-smoke.png"
-        aria-hidden="true"
-        style={{ transform: 'translateZ(0) scale(1.01)', willChange: 'transform' }}
-      >
-        <source src="/hero/neon-smoke.mp4" type="video/mp4" />
-      </video>
+      <HomeSmokeVideo />
       
       {/* Dynamic Overlays for depth and contrast */}
       <div className="absolute inset-0 bg-black/40" />

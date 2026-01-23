@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Tables } from '@/lib/types/database'
 import { supabase } from '@/lib/supabaseClient'
+import imageCompression from 'browser-image-compression'
 import type { Product } from '@/lib/types'
 import ProductCard from '@/components/products/ProductCard'
 
@@ -342,10 +343,24 @@ export default function AdminProductsPage() {
       fd.append('smoke_hex_preview', smokeHexPreview.trim())
       if (bp != null) fd.append('bulk_price', String(bp))
       if (bm != null) fd.append('bulk_min', String(bm))
-      if (image) fd.append('image', image)
+
+      if (image) {
+        const options = {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1200,
+          useWebWorker: true,
+          initialQuality: 0.85
+        }
+        try {
+          const compressedFile = await imageCompression(image, options)
+          fd.append('image', compressedFile, 'product.png')
+        } catch (error) {
+          console.error('Compression failed:', error)
+          fd.append('image', image)
+        }
+      }
 
       const res = await fetch('/api/admin/products', {
-        method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: fd,
       })
