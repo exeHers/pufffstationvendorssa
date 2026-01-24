@@ -49,15 +49,17 @@ export default function LoginClient() {
       
       const session = data.session
       if (session?.user) {
-        let isAdmin = false
+        // If heading to admin, we MUST wait for sync
         if (session.access_token) {
           const sync = await syncAdminCookie(session.access_token)
-          isAdmin = !!sync?.isAdmin
-        }
-        
-        if (nextPath.startsWith('/admin') && !isAdmin) {
-          router.replace('/shop')
-        } else {
+          const isAdmin = !!sync?.isAdmin
+          
+          if (nextPath.startsWith('/admin') && !isAdmin) {
+            router.replace('/shop')
+          } else {
+            router.replace(nextPath)
+          }
+        } else if (!nextPath.startsWith('/admin')) {
           router.replace(nextPath)
         }
       }
@@ -68,16 +70,18 @@ export default function LoginClient() {
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounting) return
       
-      if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
-        let isAdmin = false
+      if (session?.user && event === 'SIGNED_IN') {
+        // Wait for sync so the cookie is set before we move
         if (session.access_token) {
           const sync = await syncAdminCookie(session.access_token)
-          isAdmin = !!sync?.isAdmin
-        }
-        
-        if (nextPath.startsWith('/admin') && !isAdmin) {
-          router.replace('/shop')
-        } else {
+          const isAdmin = !!sync?.isAdmin
+          
+          if (nextPath.startsWith('/admin') && !isAdmin) {
+            router.replace('/shop')
+          } else {
+            router.replace(nextPath)
+          }
+        } else if (!nextPath.startsWith('/admin')) {
           router.replace(nextPath)
         }
       }
@@ -115,24 +119,11 @@ export default function LoginClient() {
       if (mode === 'login') {
         const { error: err } = await supabase.auth.signInWithPassword({
           email: email.trim(),
-          password,
-        })
-        if (err) throw err
-
-        const { data: sess } = await supabase.auth.getSession()
-        let isActuallyAdmin = false
-        if (sess.session?.access_token) {
-          const sync = await syncAdminCookie(sess.session.access_token)
-          isActuallyAdmin = !!sync?.isAdmin
-        }
-
-        if (nextPath.startsWith('/admin') && !isActuallyAdmin) {
-          router.replace('/shop')
-          return
-        }
-        router.replace(nextPath)
-        return
-      } else {
+            password,
+          })
+          if (err) throw err
+          // onAuthStateChange will handle the redirect after sync
+        } else {
         // Sign Up
         const { data: signUpData, error: err } = await supabase.auth.signUp({
           email: email.trim(),
