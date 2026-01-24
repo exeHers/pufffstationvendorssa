@@ -1,0 +1,22 @@
+# pufffstationvendorssa cloudflare supabase admin_access debugging
+The project 'pufffstationvendorssa' is currently being deployed to Cloudflare Pages via the 'ai-build' branch.
+Key recent changes:
+1. Fixed Cloudflare Pages build issues by removing 'sharp' and correctly configuring Edge runtime for all routes.
+2. Implemented a more robust admin authorization system that prioritizes an 'ADMIN_EMAILS' list.
+3. Added a 'Forgot Password' flow with a server-side email existence check to prevent information disclosure.
+4. Created a dedicated 'HomeSmokeVideo' component for smooth, fade-in/out video looping on the home screen.
+5. Optimized product image uploads using client-side compression.
+6. Added a floating WhatsApp support button.
+
+Current issues being debugged:
+- Admin panel access still redirects some admin users to the shop.
+- 'Forgot Password' reports registered emails as not found.
+- The root cause is suspected to be a configuration or access issue with the 'SUPABASE_SERVICE_ROLE_KEY' on Cloudflare, despite it being set as a secret.
+- Added detailed 'debug' info to the '/api/admin/session' and '/api/auth/verify-email' endpoints to diagnose the environment variable visibility.
+
+Next steps for the user:
+1. Run 'npm run deploy' in WSL to apply the latest debug changes.
+2. Inspect the Network tab in browser DevTools for the 'verify-email' or 'session' requests.
+3. Provide the content of the 'debug' object from the JSON responses.
+
+

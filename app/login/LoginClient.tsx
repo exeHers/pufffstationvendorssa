@@ -16,6 +16,9 @@ export default function LoginClient() {
   )
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode)
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -29,6 +32,7 @@ export default function LoginClient() {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       })
+      if (!res.ok) return null
       return await res.json()
     } catch (err) {
       console.error('Session sync error:', err)
@@ -51,7 +55,6 @@ export default function LoginClient() {
           isAdmin = !!sync?.isAdmin
         }
         
-        // If they are on an admin route but aren't admin, go to shop
         if (nextPath.startsWith('/admin') && !isAdmin) {
           router.replace('/shop')
         } else {
@@ -100,6 +103,13 @@ export default function LoginClient() {
       return
     }
 
+    if (mode === 'signup') {
+      if (!firstName.trim() || !lastName.trim()) {
+        setError('Please enter your first and last name.')
+        return
+      }
+    }
+
     setLoading(true)
     try {
       if (mode === 'login') {
@@ -123,12 +133,34 @@ export default function LoginClient() {
         router.replace(nextPath)
         return
       } else {
-        const { error: err } = await supabase.auth.signUp({
+        // Sign Up
+        const { data: signUpData, error: err } = await supabase.auth.signUp({
           email: email.trim(),
           password,
+          options: {
+            data: {
+              phone: phone.trim() || null,
+              first_name: firstName.trim(),
+              last_name: lastName.trim(),
+              full_name: `${firstName.trim()} ${lastName.trim()}`,
+            }
+          }
         })
+        
         if (err) throw err
-        setInfo('Account created. If email confirmation is enabled, check your inbox.')
+
+        // Manual profile update for phone if user is auto-confirmed (common in some Supabase configs)
+        if (signUpData.user && phone.trim()) {
+           await supabase
+            .from('profiles')
+            .update({ 
+              phone: phone.trim(),
+              full_name: `${firstName.trim()} ${lastName.trim()}`
+            })
+            .eq('id', signUpData.user.id)
+        }
+
+        setInfo('Transmission complete. Please check your inbox for the verification link to initialize your terminal.')
       }
     } catch (err: any) {
       setError(err?.message ?? 'Something went wrong. Please try again.')
@@ -148,7 +180,6 @@ export default function LoginClient() {
     
     setLoading(true)
     try {
-      // Security: Check if user exists via server-side verification API (bypasses RLS)
       const verifyRes = await fetch('/api/auth/verify-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -167,7 +198,7 @@ export default function LoginClient() {
       })
       if (resetErr) throw resetErr
       
-      setInfo('Password reset email sent! Check your inbox.')
+      setInfo('A recovery link has been dispatched to your inbox. Please check your spam folder if it does not appear within a few minutes.')
     } catch (err: any) {
       setError(err?.message ?? 'Failed to send reset email.')
     } finally {
@@ -179,7 +210,7 @@ export default function LoginClient() {
     <main className="mx-auto max-w-xl px-4 pb-16 pt-10">
       <div className="mb-4 rounded-full bg-fuchsia-600/20 border border-fuchsia-500/30 px-4 py-1 text-center">
         <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-fuchsia-400">
-          Security Patch v1.4 Active
+          Security Patch v1.6 Active
         </p>
       </div>
 
@@ -191,13 +222,40 @@ export default function LoginClient() {
           {mode === 'login' ? 'Login' : 'Create an account'}
         </h1>
         <p className="mt-1 text-xs text-slate-300">
-          Login is required before checkout so orders and payments stay clean.
+          Access the PUFFF terminal to track orders and manage your profile.
         </p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
+          {mode === 'signup' && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">
+                  First Name
+                </span>
+                <input
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-500"
+                  placeholder="First name"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">
+                  Last Name
+                </span>
+                <input
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-500"
+                  placeholder="Last name"
+                />
+              </label>
+            </div>
+          )}
+
           <label className="block">
             <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">
-              Email
+              Email Address
             </span>
             <input
               value={email}
@@ -208,6 +266,21 @@ export default function LoginClient() {
               placeholder="you@example.com"
             />
           </label>
+
+          {mode === 'signup' && (
+            <label className="block">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">
+                Phone Number (Optional)
+              </span>
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                type="tel"
+                className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-500"
+                placeholder="+27..."
+              />
+            </label>
+          )}
 
           <label className="block">
             <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">
@@ -252,7 +325,7 @@ export default function LoginClient() {
             disabled={loading}
             className="w-full rounded-full bg-[#D946EF] px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_24px_rgba(217,70,239,0.8)] hover:brightness-110 active:scale-95 disabled:opacity-60"
           >
-            {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Sign up'}
+            {loading ? 'Processing...' : mode === 'login' ? 'Authorize' : 'Initialize Account'}
           </button>
         </form>
 
@@ -263,12 +336,12 @@ export default function LoginClient() {
               onClick={onForgotPassword}
               className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 transition hover:text-fuchsia-400"
             >
-              <span className="underline decoration-fuchsia-500/30 underline-offset-4">Reset Password</span>
+              <span className="underline decoration-fuchsia-500/30 underline-offset-4">Recover Password</span>
             </button>
           </div>
         )}
 
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-400">
           <button
             type="button"
             onClick={() => {
@@ -278,13 +351,13 @@ export default function LoginClient() {
             }}
             className="underline decoration-slate-600 underline-offset-4 hover:text-slate-200"
           >
-            {mode === 'login' ? 'No account? Sign up' : 'Already have an account? Login'}
+            {mode === 'login' ? 'New here? Register' : 'Existing user? Login'}
           </button>
           <Link
             href="/shop"
             className="underline decoration-slate-600 underline-offset-4 hover:text-slate-200"
           >
-            Back to shop
+            Return to shop
           </Link>
         </div>
       </div>

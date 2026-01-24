@@ -8,6 +8,7 @@ import { useCart } from '@/components/cart/CartContext'
 import { supabase } from '@/lib/supabaseClient'
 
 type DeliveryMode = 'door' | 'pudo'
+type PaymentMethod = 'ozow' | 'whatsapp'
 
 export default function CheckoutClient() {
   const router = useRouter()
@@ -23,7 +24,8 @@ export default function CheckoutClient() {
   }, [items])
 
   const [userEmail, setUserEmail] = useState('')
-  const [mode, setMode] = useState<DeliveryMode>('door')
+  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>('door')
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('ozow')
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
   const [doorAddress, setDoorAddress] = useState('')
@@ -40,64 +42,62 @@ export default function CheckoutClient() {
         return
       }
       setUserEmail(user.email ?? '')
+      
+      // Auto-fill from profile if possible
+      supabase
+        .from('profiles')
+        .select('full_name, phone')
+        .eq('id', user.id)
+        .single()
+        .then(({ data: profile }) => {
+          if (profile) {
+            if (profile.full_name) setFullName(profile.full_name)
+            if (profile.phone) setPhone(profile.phone)
+          }
+        })
     })
   }, [router])
 
   const canCheckout = items.length > 0
 
-  async function createOrderAndPay() {
+  async function handleCheckout() {
     setError(null)
-    if (!canCheckout) {
-      setError('Your cart is empty.')
-      return
-    }
-
+    if (!canCheckout) return setError('Your cart is empty.')
     if (!fullName.trim()) return setError('Please enter your full name.')
     if (!phone.trim()) return setError('Please enter your phone number.')
 
-    if (mode === 'door' && !doorAddress.trim()) {
+    if (deliveryMode === 'door' && !doorAddress.trim()) {
       return setError('Please enter your delivery address.')
     }
-    if (mode === 'pudo' && !pudoLocation.trim()) {
+    if (deliveryMode === 'pudo' && !pudoLocation.trim()) {
       return setError('Please enter the PUDO/locker location details.')
-    }
-
-    // Guard: if Ozow env vars aren't configured, don't pretend we can take payment.
-    const ozowConfigured = Boolean(process.env.NEXT_PUBLIC_OZOW_ENABLED)
-    if (!ozowConfigured) {
-      setError(
-        'Ozow is not configured yet. Add your Ozow keys to .env.local and set NEXT_PUBLIC_OZOW_ENABLED=true to enable payments.'
-      )
-      return
     }
 
     setLoading(true)
     try {
       const { data: sess } = await supabase.auth.getSession()
       const user = sess.session?.user
-      if (!user) {
-        router.replace('/login?next=/checkout')
-        return
-      }
+      if (!user) throw new Error('Session expired. Please login again.')
 
-      // 1) Create order (pending payment)
+      // 1) Create order record
       const orderPayload = {
         user_id: user.id,
-        status: 'pending_payment',
+        status: paymentMethod === 'whatsapp' ? 'pending_whatsapp' : 'pending_payment',
         total_amount: subtotal,
         currency: 'ZAR',
         customer_name: fullName.trim(),
         customer_phone: phone.trim(),
         customer_email: user.email ?? userEmail,
-        delivery_type: mode,
+        delivery_type: deliveryMode,
         courier_name: 'Courier Guy / PUDO',
         notes: notes.trim() || null,
+        payment_provider: paymentMethod
       }
 
-      if (mode === 'door') {
+      if (deliveryMode === 'door') {
         ;(orderPayload as any).delivery_address = doorAddress.trim()
       } else {
-        ;(orderPayload as any).delivery_location = `Courier Guy / PUDO\n${pudoLocation.trim()}`
+        ;(orderPayload as any).delivery_location = `PUDO: ${pudoLocation.trim()}`
       }
 
       const { data: created, error: orderErr } = await supabase
@@ -107,39 +107,52 @@ export default function CheckoutClient() {
         .single()
 
       if (orderErr) throw orderErr
-      const orderId = created.id as string
+      const orderId = created.id
 
-      // 2) Insert order items
+      // 2) Insert items
       const itemRows = items.map((it) => ({
         order_id: orderId,
         product_id: it.id,
         name: it.name,
         price: Number(it.price ?? 0),
         qty: Number(it.quantity ?? 1),
-        image_url: it.image_url ?? null,
       }))
 
       const { error: itemsErr } = await supabase.from('order_items').insert(itemRows)
       if (itemsErr) throw itemsErr
 
-      // 3) Kick off Ozow payment
-      const res = await fetch('/api/ozow/initiate', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ orderId }),
-      })
+      if (paymentMethod === 'ozow') {
+        const res = await fetch('/api/ozow/initiate', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ orderId }),
+        })
+        if (!res.ok) throw new Error('Ozow initiation failed.')
+        const body = await res.json()
+        clearCart()
+        window.location.href = body.redirectUrl
+      } else {
+        // WHATSAPP FLOW
+        const cartText = items.map(it => `• ${it.name} x${it.quantity}`).join('%0A')
+        const addressText = deliveryMode === 'door' ? doorAddress.trim() : `PUDO: ${pudoLocation.trim()}`
+        
+        const message = `Hi PUFFF Station!%0A%0A` +
+          `*Order ID:* ${orderId.slice(0, 8)}%0A` +
+          `*Customer:* ${fullName.trim()}%0A` +
+          `*Email:* ${user.email}%0A%0A` +
+          `*Cart:*%0A${cartText}%0A%0A` +
+          `*Delivery:* ${deliveryMode === 'door' ? 'Door' : 'PUDO'}%0A` +
+          `*Address:* ${addressText}%0A%0A` +
+          `*Total:* R ${subtotal.toFixed(2)}%0A%0A` +
+          `I'd like to complete my payment via WhatsApp. Please send details!`;
 
-      if (!res.ok) {
-        const body = await res.json().catch(() => null)
-        throw new Error(body?.error ?? 'Payment initiation failed.')
+        const waNumber = "27123456789" // Replace with actual business number
+        clearCart()
+        window.open(`https://wa.me/${waNumber}?text=${message}`, '_blank')
+        router.push('/orders')
       }
-
-      const body = (await res.json()) as { redirectUrl: string }
-      // Clear local cart before redirect (so user doesn't double-order)
-      clearCart()
-      window.location.href = body.redirectUrl
-    } catch (e: unknown) {
-      setError((e as Error).message ?? 'Something went wrong. Please try again.')
+    } catch (e: any) {
+      setError(e.message ?? 'Checkout failed.')
     } finally {
       setLoading(false)
     }
@@ -147,225 +160,84 @@ export default function CheckoutClient() {
 
   return (
     <main className="mx-auto max-w-5xl space-y-8 px-4 pb-16 pt-8">
-      <header className="flex flex-col gap-3 border-b border-slate-800/70 pb-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-violet-400">
-            CHECKOUT
-          </p>
-          <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-            Delivery + Payment
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-300">
-            Logged in as <span className="font-semibold text-slate-100">{userEmail || '...'}</span>
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-2 sm:justify-end">
-          <Link
-            href="/cart"
-            className="w-full rounded-full border border-white/[0.08] px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-200 transition hover:border-violet-500/50 hover:text-violet-400 sm:w-auto"
-          >
-            Back to cart
-          </Link>
-          <Link
-            href="/shop"
-            className="w-full rounded-full bg-violet-600 px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-white transition hover:bg-violet-500 active:scale-95 sm:w-auto"
-          >
-            Shop
-          </Link>
-        </div>
+      <header className="border-b border-slate-800/70 pb-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-violet-400">CHECKOUT</p>
+        <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-white uppercase italic">Finalize Transmission</h1>
       </header>
 
-      {!canCheckout && (
-        <section className="rounded-3xl border border-slate-800/80 bg-slate-950/60 p-6">
-          <p className="text-sm font-semibold text-slate-100">Your cart is empty.</p>
-          <p className="mt-1 text-xs text-slate-400">Go add a few items before checkout.</p>
-        </section>
-      )}
-
       {canCheckout && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid gap-6 lg:grid-cols-[2fr,1fr]"
-        >
-          <section className="space-y-4 rounded-3xl border border-slate-800/80 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900/95 p-5 shadow-[0_24px_60px_rgba(0,0,0,0.85)]">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-200">
-              Delivery details
-            </h2>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">
-                  Full name
-                </span>
-                <input
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-500"
-                  placeholder="Your name and surname"
-                />
-              </label>
-
-              <label className="block">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">
-                  Phone
-                </span>
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-500"
-                  placeholder="e.g. 072 123 4567"
-                />
-              </label>
-            </div>
-
-            <div className="rounded-2xl border border-slate-800/80 bg-slate-950/60 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">
-                Delivery method
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setMode('door')}
-                  className={`rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-[0.2em] transition ${
-                    mode === 'door'
-                      ? 'bg-violet-600 text-white'
-                      : 'border border-white/[0.08] bg-slate-950/60 text-slate-200 hover:border-violet-500/50'
-                  }`}
-                >
-                  Door delivery
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode('pudo')}
-                  className={`rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-[0.2em] transition ${
-                    mode === 'pudo'
-                      ? 'bg-violet-600 text-white'
-                      : 'border border-white/[0.08] bg-slate-950/60 text-slate-200 hover:border-violet-500/50'
-                  }`}
-                >
-                  Courier Guy / PUDO
-                </button>
+        <div className="grid gap-6 lg:grid-cols-[2fr,1.2fr]">
+          <div className="space-y-6">
+            <section className="rounded-3xl border border-slate-800/80 bg-slate-950/40 p-6">
+              <h2 className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-6">1. Identify Recipient</h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Full Name" className="w-full rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none focus:border-violet-500" />
+                <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Phone (+27...)" className="w-full rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none focus:border-violet-500" />
               </div>
-              <p className="mt-2 text-xs text-slate-400">
-                Same provider. Choose door delivery for convenience, or PUDO/locker if that suits you.
-              </p>
-            </div>
+            </section>
 
-            {mode === 'door' ? (
-              <label className="block">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">
-                  Door delivery address
-                </span>
-                <textarea
-                  value={doorAddress}
-                  onChange={(e) => setDoorAddress(e.target.value)}
-                  rows={4}
-                  className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-500"
-                  placeholder="Street address, suburb, city, province, postal code"
-                />
-              </label>
-            ) : (
-              <label className="block">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">
-                  PUDO / locker location (text for now)
-                </span>
-                <textarea
-                  value={pudoLocation}
-                  onChange={(e) => setPudoLocation(e.target.value)}
-                  rows={4}
-                  className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-500"
-                  placeholder="Paste the locker/PUDO location address, locker name/code, and any notes"
-                />
-              </label>
-            )}
-
-            <label className="block">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">
-                Notes (optional)
-              </span>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-500"
-                placeholder="Gate code, delivery instructions, etc."
-              />
-            </label>
-          </section>
-
-          <aside className="space-y-4 rounded-3xl border border-slate-800/80 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900/95 p-5 shadow-[0_24px_60px_rgba(0,0,0,0.85)]">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-200">
-              Summary
-            </h2>
-
-            <div className="space-y-2 text-sm text-slate-200">
-              <div className="flex items-center justify-between text-[11px] text-slate-400">
-                <span>Items</span>
-                <span>{items.length}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs text-slate-300">
-                <span>Subtotal</span>
-                <span>R {subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between text-[11px] text-slate-400">
-                <span>Delivery</span>
-                <span>Calculated by the shop</span>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-slate-800/80 bg-slate-950/60 p-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">
-                Cart items
-              </p>
-              <div className="mt-2 space-y-1 text-xs text-slate-300">
-                {items.map((it) => (
-                  <div key={it.id} className="flex items-center justify-between">
-                    <span className="truncate">{it.name}</span>
-                    <span className="text-slate-400">x{Number(it.quantity ?? 1)}</span>
-                  </div>
+            <section className="rounded-3xl border border-slate-800/80 bg-slate-950/40 p-6">
+              <h2 className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-4">2. Logistics Terminal</h2>
+              <div className="flex gap-2 mb-4">
+                {['door', 'pudo'].map(m => (
+                  <button key={m} onClick={() => setDeliveryMode(m as DeliveryMode)} className={`rounded-full px-5 py-2 text-[10px] font-black uppercase tracking-widest transition ${deliveryMode === m ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20' : 'border border-slate-800 text-slate-500 hover:text-white'}`}>
+                    {m === 'door' ? 'Door Delivery' : 'PUDO Locker'}
+                  </button>
                 ))}
               </div>
-            </div>
+              <textarea 
+                value={deliveryMode === 'door' ? doorAddress : pudoLocation} 
+                onChange={e => deliveryMode === 'door' ? setDoorAddress(e.target.value) : setPudoLocation(e.target.value)} 
+                placeholder={deliveryMode === 'door' ? "Street Address, Suburb, City, Code" : "PUDO Locker Name or Address"} 
+                className="w-full rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none focus:border-violet-500 min-h-[100px]" 
+              />
+            </section>
 
-            <div className="mt-2 flex items-center justify-between border-t border-slate-800/80 pt-3">
-              <span className="text-xs font-semibold text-slate-300">Total</span>
-              <span className="text-lg font-extrabold text-white">R {subtotal.toFixed(2)}</span>
-            </div>
+            <section className="rounded-3xl border border-slate-800/80 bg-slate-950/40 p-6">
+              <h2 className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-4">3. Payment Channel</h2>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button onClick={() => setPaymentMethod('ozow')} className={`flex flex-col items-start rounded-2xl border p-4 transition ${paymentMethod === 'ozow' ? 'border-violet-500 bg-violet-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
+                  <span className="text-xs font-bold text-white">Instant EFT (Ozow)</span>
+                  <span className="text-[10px] text-slate-500">Secure digital payment</span>
+                </button>
+                <button onClick={() => setPaymentMethod('whatsapp')} className={`flex flex-col items-start rounded-2xl border p-4 transition ${paymentMethod === 'whatsapp' ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-slate-950/60'}`}>
+                  <span className="text-xs font-bold text-white">Manual via WhatsApp</span>
+                  <span className="text-[10px] text-slate-500">Chat & Pay manually</span>
+                </button>
+              </div>
+            </section>
+          </div>
 
-            <AnimatePresence>
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-200">
-                    {error}
+          <aside className="h-fit sticky top-24 rounded-3xl border border-slate-800/80 bg-gradient-to-b from-slate-950 to-slate-900 p-6">
+             <h2 className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-4">Final Tally</h2>
+             <div className="space-y-3 mb-6">
+                {items.map(it => (
+                  <div key={it.id} className="flex justify-between text-xs">
+                    <span className="text-slate-400">{it.name} <span className="text-slate-600 ml-1">x{it.quantity}</span></span>
+                    <span className="text-white font-bold">R {(Number(it.price || 0) * Number(it.quantity || 1)).toFixed(2)}</span>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                ))}
+             </div>
+             <div className="flex justify-between items-center border-t border-slate-800 pt-4 mb-6">
+               <span className="text-[11px] font-black uppercase text-slate-500 tracking-widest">Total Due</span>
+               <span className="text-2xl font-black text-white italic">R {subtotal.toFixed(2)}</span>
+             </div>
 
-            <button
-              type="button"
-              disabled={loading || !canCheckout}
-              onClick={createOrderAndPay}
-              className="mt-2 w-full rounded-full bg-violet-600 px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white transition hover:bg-violet-500 active:scale-95 disabled:opacity-60"
-            >
-              {loading ? 'Starting payment…' : 'Pay with Ozow'}
-            </button>
+             {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] p-3 rounded-xl mb-4">{error}</div>}
 
-            <p className="text-[11px] text-slate-400">
-              After payment, you'll receive a full invoice email and your order will show under <Link href="/orders" className="text-fuchsia-300 hover:text-fuchsia-200">My orders</Link>.
-            </p>
+             <button 
+               disabled={loading} 
+               onClick={handleCheckout} 
+               className={`w-full py-4 rounded-full text-[11px] font-black uppercase tracking-[0.3em] transition active:scale-95 ${
+                 paymentMethod === 'ozow' 
+                   ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30 hover:bg-violet-500' 
+                   : 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 hover:bg-emerald-500'
+               }`}
+             >
+               {loading ? 'Processing...' : paymentMethod === 'ozow' ? 'Authorize Payment' : 'Initialize WhatsApp'}
+             </button>
           </aside>
-        </motion.div>
+        </div>
       )}
     </main>
   )
