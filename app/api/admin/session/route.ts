@@ -82,11 +82,23 @@ export async function POST(req: Request) {
 
     const isAdmin = isEmailAuthorized || isRoleAuthorized
 
-    return NextResponse.json({ 
+    const response = NextResponse.json({ 
       ok: true, 
       isAdmin,
       debug
     })
+
+    // Set the cookie for the middleware to pick up
+    // We set it to true/false based on the check result
+    response.cookies.set('pufff_is_admin', String(isAdmin), {
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 // 24 hours
+    })
+
+    return response
   } catch (err: any) {
     return NextResponse.json({ ok: false, error: err?.message || 'Internal Server Error', debug }, { status: 500 })
   }
