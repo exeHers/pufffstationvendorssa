@@ -40,8 +40,11 @@ export async function generateMetadata(
 
 function isValidHex(hex?: string | null) {
   if (!hex) return false
-  return /^#[0-9a-fA-F]{6}$/.test(hex.trim())
+  const h = hex.trim()
+  return /^#([0-9a-fA-F]{3}){1,2}$/.test(h)
 }
+
+const GLOBAL_FALLBACK_SMOKE = '#7c3aed'
 
 function hexToRgb(hex?: string | null) {
   if (!isValidHex(hex)) return null
@@ -82,10 +85,14 @@ export default async function ProductDetailPage({ params }: Props) {
 
   const product = data as Product
 
-  const accentHex = isValidHex(product.accent_hex) ? product.accent_hex!.trim() : '#D946EF'
-  const previewSmoke = isValidHex(product.smoke_hex_preview)
-    ? product.smoke_hex_preview!.trim()
-    : accentHex
+  // ✅ UNIFIED COLOR LOGIC
+  const accentHex = isValidHex(product.accent_hex) ? product.accent_hex!.trim() : GLOBAL_FALLBACK_SMOKE
+  
+  const previewSmoke = isValidHex(product.smoke_hex_preview) ? product.smoke_hex_preview!.trim() :
+                       isValidHex(product.smoke_hex) ? product.smoke_hex!.trim() :
+                       isValidHex(product.accent_hex) ? product.accent_hex!.trim() : 
+                       GLOBAL_FALLBACK_SMOKE
+
   const smokeRgb = hexToRgb(previewSmoke) || '217 70 239'
 
   const priceNumber = product.price != null ? Number(product.price) : 0

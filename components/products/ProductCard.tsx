@@ -9,8 +9,13 @@ import { useCart } from '@/components/cart/CartContext'
 import SmokeFilter from '@/components/ui/SmokeFilter'
  
  function isValidHex(hex?: string | null) {
-  return !!hex && /^#[0-9a-fA-F]{6}$/.test(hex.trim())
+  if (!hex) return false
+  const h = hex.trim()
+  // Support both #FFF and #FFFFFF
+  return /^#([0-9a-fA-F]{3}){1,2}$/.test(h)
 }
+
+const GLOBAL_FALLBACK_SMOKE = '#7c3aed' // Consistent Violet/Blue
 
 function formatMoney(n: number) {
   return `R${Number(n).toFixed(2)}`
@@ -44,8 +49,11 @@ export default function ProductCard({ product }: { product: Product }) {
   const imageUrl = p.image_url || '/placeholder.png'
   const inStock = p.in_stock !== false
 
-  // ✅ Smoke hex comes from admin (EXACT)
-  const smokeHex = isValidHex(p.smoke_hex_scroll) ? p.smoke_hex_scroll.trim() : '#7c3aed'
+  // ✅ UNIFIED COLOR LOGIC
+  // Priority: scroll_hex > general_smoke_hex > accent_hex > global_fallback
+  const smokeHex = isValidHex(p.smoke_hex_scroll) ? p.smoke_hex_scroll!.trim() : 
+                   isValidHex(p.smoke_hex) ? p.smoke_hex!.trim() :
+                   isValidHex(p.accent_hex) ? p.accent_hex!.trim() : GLOBAL_FALLBACK_SMOKE
   const accentHex = isValidHex(p.accent_hex) ? p.accent_hex.trim() : smokeHex
 
   const desc = (product.description || '').trim()

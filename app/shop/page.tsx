@@ -33,8 +33,11 @@ type Flavour = {
 
 function isValidHex(hex?: string | null) {
   if (!hex) return false
-  return /^#[0-9a-fA-F]{6}$/.test(hex.trim())
+  const h = hex.trim()
+  return /^#([0-9a-fA-F]{3}){1,2}$/.test(h)
 }
+
+const GLOBAL_FALLBACK_SMOKE = '#7c3aed'
 
 function hexToHue(hex?: string | null) {
   if (!hex) return null
@@ -109,7 +112,12 @@ function FeaturedHero({ product }: { product: Product }) {
   const p: any = product
   const bulkMin = p.bulk_min
   const bulkPrice = p.bulk_price
-  const smokeHex = isValidHex(p.smoke_hex_scroll) ? p.smoke_hex_scroll.trim() : accentHex || '#7c3aed'
+  
+  // ✅ UNIFIED COLOR LOGIC
+  const smokeHex = isValidHex(p.smoke_hex_scroll) ? p.smoke_hex_scroll!.trim() : 
+                   isValidHex(p.smoke_hex) ? p.smoke_hex!.trim() :
+                   isValidHex(p.accent_hex) ? p.accent_hex!.trim() : GLOBAL_FALLBACK_SMOKE
+
   const smokeRgb = hexToRgb(smokeHex) || '124 58 237'
 
   return (
