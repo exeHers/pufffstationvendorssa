@@ -93,7 +93,7 @@ export default async function ProductDetailPage({ params }: Props) {
                        isValidHex(product.accent_hex) ? product.accent_hex!.trim() : 
                        GLOBAL_FALLBACK_SMOKE
 
-  const smokeRgb = hexToRgb(previewSmoke) || '217 70 239'
+  const smokeRgb = hexToRgb(previewSmoke) || '124 58 237'
 
   const priceNumber = product.price != null ? Number(product.price) : 0
   const hasPrice = product.price != null && !Number.isNaN(priceNumber)
@@ -132,8 +132,7 @@ export default async function ProductDetailPage({ params }: Props) {
               style={{
                 transform: 'translateZ(0) scale(1.25)',
                 objectPosition: '50% 22%',
-                opacity: 0.95,
-                filter: `url(#smoke-filter-${product.id}) contrast(1.2) brightness(1.05)`,
+                filter: `url(#smoke-filter-${product.id})`,
               }}
               src="/preview.mp4"
               poster="/preview.jpg"

@@ -17,6 +17,7 @@ export type Product = {
   accent_hex?: string | null
 
   // ✅ Smoke colours chosen by admin
+  smoke_hex?: string | null
   smoke_hex_scroll?: string | null
   smoke_hex_preview?: string | null
 

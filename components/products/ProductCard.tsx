@@ -116,8 +116,8 @@ export default function ProductCard({ product }: { product: Product }) {
           className="absolute inset-0 opacity-[0.05]"
           style={{
             background:
-              `radial-gradient(520px 220px at 18% 18%, var(--accent), transparent 70%),` +
-              `radial-gradient(520px 220px at 85% 92%, var(--accent), transparent 75%)`,
+              `radial-gradient(520px 220px at 18% 18%, black, transparent 70%),` +
+              `radial-gradient(520px 220px at 85% 92%, black, transparent 75%)`,
           }}
         />
       </div>
@@ -196,7 +196,7 @@ export default function ProductCard({ product }: { product: Product }) {
           {/* Pedestal */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20">
             <div
-              className="absolute left-1/2 top-7 h-10 w-[75%] -translate-x-1/2 rounded-full blur-2xl opacity-30"
+              className="absolute left-1/2 top-7 h-10 w-[75%] -translate-x-1/2 rounded-full blur-2xl opacity-10"
               style={{ background: 'var(--accent)' }}
             />
             <div className="absolute left-1/2 top-10 h-8 w-[72%] -translate-x-1/2 rounded-full bg-slate-950/70 blur-xl" />

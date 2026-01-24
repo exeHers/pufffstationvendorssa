@@ -3,19 +3,19 @@
 import React from 'react'
 
 /**
- * Provides SVG filters to map grayscale video to exact hex colors.
+ * Natural Smoke Filter
+ * Maps grayscale video to a darker, natural version of the target hex.
  */
 export default function SmokeFilter({ id, hex }: { id: string; hex: string }) {
-  // Convert hex to normalized RGB
   const r = parseInt(hex.slice(1, 3), 16) / 255
   const g = parseInt(hex.slice(3, 5), 16) / 255
   const b = parseInt(hex.slice(5, 7), 16) / 255
 
-  // Standard tint matrix: Maps grayscale luminance to the target color
+  // Darkened tint matrix (multiplied by 0.6 for a deeper, non-neon look)
   const matrix = `
-    ${r} ${r} ${r} 0 0
-    ${g} ${g} ${g} 0 0
-    ${b} ${b} ${b} 0 0
+    ${r * 0.6} ${r * 0.6} ${r * 0.6} 0 0
+    ${g * 0.6} ${g * 0.6} ${g * 0.6} 0 0
+    ${b * 0.6} ${b * 0.6} ${b * 0.6} 0 0
     0 0 0 1 0
   `.trim().replace(/\s+/g, ' ')
 
