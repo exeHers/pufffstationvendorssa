@@ -92,7 +92,7 @@ export default function ProductCard({ product }: { product: Product }) {
     <Link
       ref={ref as any}
       href={`/shop/${product.id}`}
-      className="group relative block overflow-hidden rounded-[2.1rem] border border-white/[0.03] bg-slate-950/80 shadow-2xl transition hover:-translate-y-0.5 hover:border-white/[0.08]"
+      className="group relative block overflow-hidden rounded-[1.8rem] sm:rounded-[2.1rem] border border-white/[0.03] bg-slate-950/80 shadow-2xl transition hover:-translate-y-0.5 hover:border-white/[0.08]"
       style={{
         ...cssVars,
         transform: 'translateZ(0)',
@@ -134,7 +134,7 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/* Stage */}
-        <div className="relative mt-4 overflow-hidden rounded-[1.9rem] border border-white/[0.04] bg-slate-900/40 p-4">
+        <div className="relative mt-4 overflow-hidden rounded-[1.6rem] sm:rounded-[1.9rem] border border-white/[0.04] bg-slate-900/40 p-3 sm:p-4">
           {/* ✅ Smoke layer (isolated + masked + neon) */}
           <div
             className="pointer-events-none absolute inset-0 z-0"
@@ -186,7 +186,7 @@ export default function ProductCard({ product }: { product: Product }) {
                 <div
                   className="absolute inset-0 opacity-40"
                   style={{
-                    boxShadow: `inset 0 0 120px var(--smoke)`,
+                    boxShadow: `inset 0 0 80px var(--smoke)`,
                     filter: 'blur(14px)',
                   }}
                 />
@@ -224,7 +224,7 @@ export default function ProductCard({ product }: { product: Product }) {
             transition={{ duration: 0.45, ease: 'easeOut' }}
           >
             <motion.div
-              className="relative mx-auto h-[260px] w-full max-w-[220px]"
+              className="relative mx-auto h-[200px] sm:h-[260px] w-full max-w-[180px] sm:max-w-[220px]"
               animate={allowFloat ? { y: [0, -5, 0], rotate: [0, 0.45, 0] } : undefined}
               transition={
                 allowFloat
@@ -243,7 +243,7 @@ export default function ProductCard({ product }: { product: Product }) {
             </motion.div>
           </motion.div>
 
-          <div className="pointer-events-none absolute inset-0 rounded-[1.9rem] ring-1 ring-white/5" />
+          <div className="pointer-events-none absolute inset-0 rounded-[1.6rem] sm:rounded-[1.9rem] ring-1 ring-white/5" />
         </div>
 
         {/* Text */}

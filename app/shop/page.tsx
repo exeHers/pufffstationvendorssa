@@ -267,7 +267,7 @@ function ProductRow({
         {products.map((p) => (
           <div
             key={p.id}
-            className="min-w-[270px] max-w-[270px] sm:min-w-[320px] sm:max-w-[320px]"
+            className="min-w-[220px] max-w-[220px] sm:min-w-[320px] sm:max-w-[320px]"
           >
             <ProductCard product={p} />
           </div>

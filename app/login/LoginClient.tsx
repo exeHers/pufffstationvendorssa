@@ -24,15 +24,19 @@ export default function LoginClient() {
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+  const [isVerifying, setIsVerifying] = useState(true) // Start with verifying state
 
   const syncAdminCookie = async (token?: string | null) => {
     if (!token) return null
     try {
       const res = await fetch('/api/admin/session', {
         method: 'POST',
+        // Ensure we don't use cache for this check
+        cache: 'no-store',
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) return null
+      return await res.json()
       return await res.json()
     } catch (err) {
       console.error('Session sync error:', err)
@@ -47,6 +51,7 @@ export default function LoginClient() {
       const { data } = await supabase.auth.getSession()
       if (!mounting) return
       
+      setIsVerifying(false)
       const session = data.session
       if (session?.user) {
         // If heading to admin, we MUST wait for sync
@@ -55,11 +60,12 @@ export default function LoginClient() {
           const isAdmin = !!sync?.isAdmin
           
           if (nextPath.startsWith('/admin') && !isAdmin) {
-            router.replace('/shop')
           } else {
-            router.replace(nextPath)
+            if (nextPath.startsWith('/admin')) window.location.href = nextPath
+            else router.replace(nextPath)
           }
         } else if (!nextPath.startsWith('/admin')) {
+          router.replace(nextPath)
           router.replace(nextPath)
         }
       }
@@ -70,21 +76,26 @@ export default function LoginClient() {
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounting) return
       
-      if (session?.user && event === 'SIGNED_IN') {
+      if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+        setIsVerifying(true)
         // Wait for sync so the cookie is set before we move
         if (session.access_token) {
           const sync = await syncAdminCookie(session.access_token)
           const isAdmin = !!sync?.isAdmin
           
           if (nextPath.startsWith('/admin') && !isAdmin) {
-            router.replace('/shop')
+             // Wait
           } else {
-            router.replace(nextPath)
+            // Use window.location for admin to ensure cookies are sent
+            if (nextPath.startsWith('/admin')) window.location.href = nextPath
+            else router.replace(nextPath)
           }
         } else if (!nextPath.startsWith('/admin')) {
           router.replace(nextPath)
         }
       }
+      
+      setIsVerifying(false)
     })
 
     return () => {
@@ -313,14 +324,21 @@ export default function LoginClient() {
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full rounded-full bg-[#D946EF] px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_24px_rgba(217,70,239,0.8)] hover:brightness-110 active:scale-95 disabled:opacity-60"
-          >
-            {loading ? 'Processing...' : mode === 'login' ? 'Authorize' : 'Initialize Account'}
-          </button>
-        </form>
+                    disabled={loading}
+                    className="w-full rounded-full bg-[#D946EF] px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_24px_rgba(217,70,239,0.8)] hover:brightness-110 active:scale-95 disabled:opacity-60"
+                  >
+                    {loading ? 'Processing...' : mode === 'login' ? 'Sign In' : 'Create Account'}
+                  </button>
+                </form>
 
-        {mode === 'login' && (
+                {isVerifying && (
+                  <div className="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-3xl bg-slate-950/80 backdrop-blur-sm">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-fuchsia-500 border-t-transparent" />
+                    <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-fuchsia-400">Verifying Terminal...</p>
+                  </div>
+                )}
+
+                {mode === 'login' && (
           <div className="mt-6 border-t border-slate-800/50 pt-4 text-center">
             <button
               type="button"
