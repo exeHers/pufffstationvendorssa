@@ -15,10 +15,9 @@ export const metadata: Metadata = {
 }
 import type { Product } from '@/lib/types'
 import ProductCard from '@/components/products/ProductCard'
-import ShopFilters from '@/components/shop/ShopFilters'
-import SmokeFilter from '@/components/ui/SmokeFilter'
 
 export const dynamic = 'force-dynamic'
+
 
 type Category = {
   id: string
@@ -190,32 +189,8 @@ function FeaturedHero({ product }: { product: Product }) {
             style={{ background: accentHex || `hsl(${hue} 95% 60%)` }}
           />
           <div className="relative overflow-hidden rounded-[2.25rem] border border-white/[0.04] bg-slate-950/40 p-6">
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              {(() => {
-                let h = (smokeHex || '#7c3aed').trim().replace('#', '').toLowerCase()
-                if (h.length === 3) {
-                  h = h.split('').map((c: string) => c + c).join('')
-                }
-                const filterId = `smoke-filter-hero-${product.id}-${h.padEnd(6, '0')}`
-                
-                return (
-                  <>
-                    <SmokeFilter id={`hero-${product.id}`} hex={smokeHex} />
-                    <video
-                      className="pufff-smoke-video absolute inset-0 h-full w-full object-cover scale-[1.35]"
-                      style={{ filter: `url(#${filterId})`, objectPosition: '50% 22%' }}
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                      preload="metadata"
-                    >
-                      <source src="/scroll.mp4" type="video/mp4" />
-                    </video>
-                  </>
-                )
-              })()}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+            <div className="absolute inset-0 opacity-30">
+              <div className="pufff-smoke-pad opacity-70" />
             </div>
 
             <div className="relative flex items-center justify-center">
