@@ -129,32 +129,33 @@ function FeaturedHero({ product }: { product: Product }) {
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-[#0a0a0c]/40" />
 
-        <div className="absolute inset-0 overflow-hidden">
-          <SmokeFilter id={`hero-${product.id}`} hex={smokeHex} />
-          <div className="absolute inset-0 opacity-[0.25]">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute inset-0">
             {(() => {
-              let h = smokeHex.trim().replace('#', '').toLowerCase()
+              let h = (smokeHex || '#7c3aed').trim().replace('#', '').toLowerCase()
               if (h.length === 3) {
                 h = h.split('').map((c: string) => c + c).join('')
               }
               const filterId = `smoke-filter-hero-${product.id}-${h.padEnd(6, '0')}`
+              
               return (
-            <video
-              className="pufff-smoke-video absolute inset-0 h-full w-full object-cover scale-[1.05]"
-              style={{ filter: `url(#${filterId})` }}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              poster="/smoke-poster.jpg"
-            >
-              <source src="/smoke.mp4" type="video/mp4" />
-            </video>
+                <>
+                  <SmokeFilter id={`hero-${product.id}`} hex={smokeHex} />
+                  <video
+                    className="pufff-smoke-video absolute inset-0 h-full w-full object-cover scale-[1.35]"
+                    style={{ filter: `url(#${filterId})`, objectPosition: '50% 22%' }}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                  >
+                    <source src="/scroll.mp4" type="video/mp4" />
+                  </video>
+                </>
               )
             })()}
           </div>
- 
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0c] via-transparent to-[#0a0a0c]/80" />
         </div>
 

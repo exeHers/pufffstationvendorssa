@@ -69,6 +69,13 @@ body {
   100% { opacity: 1; transform: translateY(0px); }
 }
 
+@keyframes smokeLoop {
+  0% { opacity: 0; }
+  15% { opacity: 0.85; }
+  85% { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+
 @keyframes ctaPulse {
   0% { box-shadow: 0 0 0 rgba(34,211,238,0.0); }
   50% { box-shadow: 0 0 24px rgba(34,211,238,0.35); }
@@ -156,6 +163,14 @@ body {
   animation: heroFade 0.8s ease-out both;
   opacity: 0;
   will-change: transform, opacity;
+}
+
+.pufff-smoke-video {
+  animation: smokeLoop 8s ease-in-out infinite;
+  will-change: opacity;
+  /* Ensure we have a black background behind the video to hide the hard cut when opacity is 0 */
+  background: black;
+  pointer-events: none;
 }
 
 .hero-fade-1 { animation-delay: 0.05s; }

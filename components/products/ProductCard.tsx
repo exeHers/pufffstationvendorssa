@@ -170,7 +170,7 @@ export default function ProductCard({ product }: { product: Product }) {
                   
                   return (
                 <video
-                  className="pufff-smoke-video absolute inset-0 h-full w-full object-cover opacity-[0.8]"
+                  className="pufff-smoke-video absolute inset-0 h-full w-full object-cover"
                   style={{
                     transform: 'translateZ(0) scale(1.35)',
                     objectPosition: '50% 22%',

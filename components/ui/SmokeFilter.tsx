@@ -5,9 +5,8 @@ import React, { useMemo } from 'react'
 /**
  * Enhanced Smoke Filter for Mobile & Desktop
  * - Maps grayscale video to a deep, natural version of the target hex.
- * - Handles contrast and brightness inside the SVG for better mobile performance.
+ * - Removed all "neon" contrast boosts for a darker, natural look.
  * - Robust hex parsing and reliable SVG rendering.
- * - Uses a hash of the hex in the ID to force browser re-renders on color change.
  */
 export default function SmokeFilter({ id, hex }: { id: string; hex: string }) {
   const normalizedHex = useMemo(() => {
@@ -23,9 +22,9 @@ export default function SmokeFilter({ id, hex }: { id: string; hex: string }) {
   const b = parseInt(normalizedHex.slice(4, 6), 16) / 255
 
   // Matrix values for the tint
-  // We apply a 0.65 multiplier for a natural, non-neon depth.
+  // Using 0.5 factor for a darker, subtle natural look.
   const matrixValues = useMemo(() => {
-    const factor = 0.65
+    const factor = 0.5
     const rf = r * factor
     const gf = g * factor
     const bf = b * factor
@@ -49,21 +48,14 @@ export default function SmokeFilter({ id, hex }: { id: string; hex: string }) {
         left: -1,
         top: -1,
         zIndex: -1,
-        opacity: 0.01, // Keep it "rendered" but effectively invisible
+        opacity: 0,
       }}
       aria-hidden="true"
     >
       <defs>
         <filter id={`smoke-filter-${id}-${normalizedHex}`} colorInterpolationFilters="sRGB">
-          {/* 1. Tint the grayscale video */}
-          <feColorMatrix type="matrix" values={matrixValues} result="tinted" />
-          
-          {/* 2. Apply Brightness and Contrast manually for mobile stability */}
-          <feComponentTransfer in="tinted">
-            <feFuncR type="linear" slope="1.3" intercept="-0.05" />
-            <feFuncG type="linear" slope="1.3" intercept="-0.05" />
-            <feFuncB type="linear" slope="1.3" intercept="-0.05" />
-          </feComponentTransfer>
+          {/* Tint the grayscale video - no extra contrast/brightness boosting */}
+          <feColorMatrix type="matrix" values={matrixValues} />
         </filter>
       </defs>
     </svg>
