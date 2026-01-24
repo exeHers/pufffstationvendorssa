@@ -125,7 +125,7 @@ function FeaturedHero({ product }: { product: Product }) {
           <SmokeFilter id={`hero-${product.id}`} hex={smokeHex} />
           <div
             className="absolute inset-0 opacity-[0.25]"
-            style={{ filter: `url(#smoke-filter-hero-${product.id}) contrast(1.1) brightness(0.9)` }}
+            style={{ filter: `url(#smoke-filter-hero-${product.id})` }}
           >
             <video
               className="pufff-smoke-video h-full w-full object-cover scale-[1.05]"

@@ -169,27 +169,6 @@ export default function ProductCard({ product }: { product: Product }) {
                 >
                   <source src="/scroll.mp4" type="video/mp4" />
                 </video>
- 
-                {/* ?. Neon core glow - subtle and matte */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      'radial-gradient(65% 55% at 50% 42%, var(--smoke), transparent 75%)',
-                    mixBlendMode: 'screen',
-                    opacity: 0.35,
-                    filter: 'blur(8px)',
-                  }}
-                />
- 
-                {/* ✅ Neon pop - desaturated for matte feel */}
-                <div
-                  className="absolute inset-0 opacity-40"
-                  style={{
-                    boxShadow: `inset 0 0 80px var(--smoke)`,
-                    filter: 'blur(14px)',
-                  }}
-                />
               </>
             ) : null}
 

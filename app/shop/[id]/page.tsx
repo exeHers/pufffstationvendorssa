@@ -131,29 +131,6 @@ export default async function ProductDetailPage({ params }: Props) {
               src="/preview.mp4"
               poster="/preview.jpg"
             />
- 
-            {/* Ambient matte glow */}
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  'radial-gradient(70% 60% at 50% 45%, var(--smoke), transparent 80%)',
-                mixBlendMode: 'screen',
-                opacity: 0.35,
-                filter: 'blur(10px)',
-              }}
-            />
-
-            {/* kill bottom base */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/90" />
-
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  'radial-gradient(60% 55% at 50% 40%, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 78%, rgba(0,0,0,0.78) 100%)',
-              }}
-            />
           </div>
 
           <div className="relative aspect-[16/10] w-full flex items-center justify-center p-6">
