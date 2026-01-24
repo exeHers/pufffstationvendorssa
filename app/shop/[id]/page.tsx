@@ -126,13 +126,11 @@ export default async function ProductDetailPage({ params }: Props) {
             {/* Ambient haze using the same smoke system */}
             <div className="pufff-haze opacity-60" />
             <PreviewSmokeVideo
-              className="pufff-smoke-video absolute inset-0 h-full w-full object-cover"
               id={product.id}
               hex={previewSmoke}
               style={{
                 transform: 'translateZ(0) scale(1.25)',
                 objectPosition: '50% 22%',
-                filter: `url(#smoke-filter-${product.id})`,
               }}
               src="/preview.mp4"
               poster="/preview.jpg"

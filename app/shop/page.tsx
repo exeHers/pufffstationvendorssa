@@ -131,12 +131,14 @@ function FeaturedHero({ product }: { product: Product }) {
 
         <div className="absolute inset-0 overflow-hidden">
           <SmokeFilter id={`hero-${product.id}`} hex={smokeHex} />
-          <div
-            className="absolute inset-0 opacity-[0.25]"
-            style={{ filter: `url(#smoke-filter-hero-${product.id})` }}
-          >
+          <div className="absolute inset-0 opacity-[0.25]">
+            {(() => {
+              const cleanHex = smokeHex.replace('#', '').toLowerCase()
+              const filterId = `smoke-filter-hero-${product.id}-${cleanHex.length === 3 ? cleanHex.split('').map(c => c+c).join('') : cleanHex.padEnd(6, '0')}`
+              return (
             <video
-              className="pufff-smoke-video h-full w-full object-cover scale-[1.05]"
+              className="pufff-smoke-video absolute inset-0 h-full w-full object-cover scale-[1.05]"
+              style={{ filter: `url(#${filterId})` }}
               autoPlay
               muted
               loop
@@ -146,6 +148,8 @@ function FeaturedHero({ product }: { product: Product }) {
             >
               <source src="/smoke.mp4" type="video/mp4" />
             </video>
+              )
+            })()}
           </div>
  
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0c] via-transparent to-[#0a0a0c]/80" />

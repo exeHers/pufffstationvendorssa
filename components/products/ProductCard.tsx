@@ -160,15 +160,21 @@ export default function ProductCard({ product }: { product: Product }) {
                 {/* SVG Filter for exact hex mapping */}
                 <SmokeFilter id={product.id} hex={smokeHex} />
                 
-                {/* Video base */}
+                {/* Clean hex for the filter ID reference */}
+                {(() => {
+                  const cleanHex = smokeHex.replace('#', '').toLowerCase()
+                  const filterId = `smoke-filter-${product.id}-${cleanHex.length === 3 ? cleanHex.split('').map(c => c+c).join('') : cleanHex.padEnd(6, '0')}`
+                  
+                  return (
                 <video
                   className="pufff-smoke-video absolute inset-0 h-full w-full object-cover opacity-[0.8]"
                   style={{
                     transform: 'translateZ(0) scale(1.35)',
                     objectPosition: '50% 22%',
-                    filter: `url(#smoke-filter-${product.id}) contrast(1.2) brightness(1.1)`,
+                    filter: `url(#${filterId})`,
                   }}
                   autoPlay
+                  muted
                   muted
                   loop
                   playsInline
@@ -177,6 +183,8 @@ export default function ProductCard({ product }: { product: Product }) {
                 >
                   <source src="/scroll.mp4" type="video/mp4" />
                 </video>
+                  )
+                })()}
               </>
             ) : null}
 

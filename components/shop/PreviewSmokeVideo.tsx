@@ -86,15 +86,27 @@
     }
   }, [style])
 
-  const { opacity: _opacity, ...restStyle } = style ?? {}
-  const videoStyle = useMemo(() => restStyle, [restStyle])
+  const { opacity: _opacity, filter: _filter, ...restStyle } = style ?? {}
+  
+  // Dynamic filter ID based on hex to force re-render
+  const filterId = useMemo(() => {
+    let h = (hex || '#7c3aed').trim().replace('#', '')
+    if (h.length === 3) h = h.split('').map(char => char + char).join('')
+    const clean = h.padEnd(6, '0').slice(0, 6).toLowerCase()
+    return `smoke-filter-${id}-${clean}`
+  }, [id, hex])
+
+  const videoStyle = useMemo(() => ({
+    ...restStyle,
+    filter: `url(#${filterId})`
+  }), [restStyle, filterId])
 
   return (
     <>
       <SmokeFilter id={id} hex={hex} />
       <video
         ref={aRef}
-        className={className}
+        className={`${className} absolute inset-0 h-full w-full object-cover`}
         style={videoStyle}
         autoPlay
         muted
@@ -107,7 +119,7 @@
       </video>
       <video
         ref={bRef}
-        className={className}
+        className={`${className} absolute inset-0 h-full w-full object-cover`}
         style={videoStyle}
         autoPlay
         muted
