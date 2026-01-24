@@ -216,7 +216,7 @@ function FeaturedHero({ product }: { product: Product }) {
 
         <div className="relative mx-auto w-full max-w-md">
           <div
-            className="absolute -inset-8 rounded-[2.25rem] blur-3xl opacity-35"
+            className="absolute -inset-8 rounded-[2.25rem] blur-3xl opacity-10"
             style={{ background: accentHex || `hsl(${hue} 95% 60%)` }}
           />
           <div className="relative overflow-hidden rounded-[2.25rem] border border-white/[0.04] bg-slate-950/40 p-6">

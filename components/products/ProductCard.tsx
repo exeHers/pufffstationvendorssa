@@ -206,7 +206,7 @@ export default function ProductCard({ product }: { product: Product }) {
           {/* Pedestal */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20">
             <div
-              className="absolute left-1/2 top-7 h-10 w-[75%] -translate-x-1/2 rounded-full blur-2xl opacity-10"
+              className="absolute left-1/2 top-7 h-10 w-[75%] -translate-x-1/2 rounded-full blur-2xl opacity-[0.03]"
               style={{ background: 'var(--accent)' }}
             />
             <div className="absolute left-1/2 top-10 h-8 w-[72%] -translate-x-1/2 rounded-full bg-slate-950/70 blur-xl" />
