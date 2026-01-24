@@ -162,8 +162,11 @@ export default function ProductCard({ product }: { product: Product }) {
                 
                 {/* Clean hex for the filter ID reference */}
                 {(() => {
-                  const cleanHex = smokeHex.replace('#', '').toLowerCase()
-                  const filterId = `smoke-filter-${product.id}-${cleanHex.length === 3 ? cleanHex.split('').map(c => c+c).join('') : cleanHex.padEnd(6, '0')}`
+                  let h = smokeHex.trim().replace('#', '').toLowerCase()
+                  if (h.length === 3) {
+                    h = h.split('').map((c: string) => c + c).join('')
+                  }
+                  const filterId = `smoke-filter-${product.id}-${h.padEnd(6, '0')}`
                   
                   return (
                 <video
@@ -174,7 +177,6 @@ export default function ProductCard({ product }: { product: Product }) {
                     filter: `url(#${filterId})`,
                   }}
                   autoPlay
-                  muted
                   muted
                   loop
                   playsInline

@@ -133,8 +133,11 @@ function FeaturedHero({ product }: { product: Product }) {
           <SmokeFilter id={`hero-${product.id}`} hex={smokeHex} />
           <div className="absolute inset-0 opacity-[0.25]">
             {(() => {
-              const cleanHex = smokeHex.replace('#', '').toLowerCase()
-              const filterId = `smoke-filter-hero-${product.id}-${cleanHex.length === 3 ? cleanHex.split('').map(c => c+c).join('') : cleanHex.padEnd(6, '0')}`
+              let h = smokeHex.trim().replace('#', '').toLowerCase()
+              if (h.length === 3) {
+                h = h.split('').map((c: string) => c + c).join('')
+              }
+              const filterId = `smoke-filter-hero-${product.id}-${h.padEnd(6, '0')}`
               return (
             <video
               className="pufff-smoke-video absolute inset-0 h-full w-full object-cover scale-[1.05]"
