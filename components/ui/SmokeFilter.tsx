@@ -5,8 +5,8 @@ import React, { useMemo } from 'react'
 /**
  * Enhanced Smoke Filter for Mobile & Desktop
  * - Maps grayscale video to a deep, natural version of the target hex.
- * - Removed all "neon" contrast boosts for a darker, natural look.
- * - Robust hex parsing and reliable SVG rendering.
+ * - TOTAL NEON REMOVAL: Using a low factor (0.35) for a matte, natural look.
+ * - No contrast or brightness boosting.
  */
 export default function SmokeFilter({ id, hex }: { id: string; hex: string }) {
   const normalizedHex = useMemo(() => {
@@ -22,9 +22,9 @@ export default function SmokeFilter({ id, hex }: { id: string; hex: string }) {
   const b = parseInt(normalizedHex.slice(4, 6), 16) / 255
 
   // Matrix values for the tint
-  // Using 0.5 factor for a darker, subtle natural look.
+  // Using 0.35 factor for a very dark, natural matte appearance.
   const matrixValues = useMemo(() => {
-    const factor = 0.5
+    const factor = 0.35
     const rf = r * factor
     const gf = g * factor
     const bf = b * factor
@@ -54,7 +54,6 @@ export default function SmokeFilter({ id, hex }: { id: string; hex: string }) {
     >
       <defs>
         <filter id={`smoke-filter-${id}-${normalizedHex}`} colorInterpolationFilters="sRGB">
-          {/* Tint the grayscale video - no extra contrast/brightness boosting */}
           <feColorMatrix type="matrix" values={matrixValues} />
         </filter>
       </defs>

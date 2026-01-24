@@ -71,8 +71,8 @@ body {
 
 @keyframes smokeLoop {
   0% { opacity: 0; }
-  15% { opacity: 0.85; }
-  85% { opacity: 0.85; }
+  10% { opacity: 0.75; }
+  90% { opacity: 0.75; }
   100% { opacity: 0; }
 }
 
@@ -166,7 +166,7 @@ body {
 }
 
 .pufff-smoke-video {
-  animation: smokeLoop 8s ease-in-out infinite;
+  animation: smokeLoop 6s ease-in-out infinite;
   will-change: opacity;
   /* Ensure we have a black background behind the video to hide the hard cut when opacity is 0 */
   background: black;
