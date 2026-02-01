@@ -1,0 +1,1 @@
+var r={},d=(t,n,s)=>(r.__chunk_6172=o=>{"use strict";if(typeof resend>"u"){var e=Error("Cannot find module 'resend'");throw e.code="MODULE_NOT_FOUND",e}o.exports=resend},r);export{d as __getNamedExports};
