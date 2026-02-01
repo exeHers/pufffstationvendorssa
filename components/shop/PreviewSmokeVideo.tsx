@@ -98,7 +98,8 @@
 
   const videoStyle = useMemo(() => ({
     ...restStyle,
-    filter: `url(#${filterId})`
+    filter: `url(#${filterId})`,
+    WebkitFilter: `url(#${filterId})`
   }), [restStyle, filterId])
 
   return (

@@ -20,10 +20,9 @@ export async function POST(req: Request) {
     try {
       db = supabaseAdmin()
     } catch (e: any) {
-      console.error('[Verify Email] Admin key error:', e.message)
-      // If we can't init admin, we can't verify. We'll return exists: true to allow the attempt
-      // but include the error so we can see it in the console/network tab.
-      return NextResponse.json({ exists: true, debug, error: e.message })
+      console.error('[Verify Email] Server Config Error:', e.message)
+      // If server is misconfigured, don't block the user. Allow them to try the reset.
+      return NextResponse.json({ exists: true, error: 'Server configuration issue, proceeding optimistically.' })
     }
 
     // Check profiles table
@@ -35,6 +34,12 @@ export async function POST(req: Request) {
 
     debug.profileFound = !!profile
     debug.profileError = pErr?.message
+
+    if (pErr) {
+      console.error('[Verify Email] Database Error:', pErr.message)
+      // On DB error, assume user might exist to avoid blocking them
+      return NextResponse.json({ exists: true, error: 'Database error, proceeding optimistically.' })
+    }
 
     if (profile) {
       return NextResponse.json({ exists: true, debug })

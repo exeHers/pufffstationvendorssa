@@ -37,7 +37,6 @@ export default function LoginClient() {
       })
       if (!res.ok) return null
       return await res.json()
-      return await res.json()
     } catch (err) {
       console.error('Session sync error:', err)
       return null
@@ -90,7 +89,6 @@ export default function LoginClient() {
             if (nextPath.startsWith('/admin')) window.location.href = nextPath
             else router.replace(nextPath)
           }
-        } else if (!nextPath.startsWith('/admin')) {
           router.replace(nextPath)
         }
       }

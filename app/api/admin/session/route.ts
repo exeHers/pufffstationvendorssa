@@ -82,11 +82,16 @@ export async function POST(req: Request) {
 
     const isAdmin = isEmailAuthorized || isRoleAuthorized
 
-    const response = NextResponse.json({ 
+    const payload: any = { 
       ok: true, 
-      isAdmin,
-      debug
-    })
+      isAdmin
+    }
+    // Only expose debug info in development mode to prevent security leaks
+    if (process.env.NODE_ENV === 'development') {
+      payload.debug = debug
+    }
+
+    const response = NextResponse.json(payload)
 
     // Set the cookie for the middleware to pick up
     // We set it to true/false based on the check result

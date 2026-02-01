@@ -20,6 +20,8 @@ type CartContextValue = {
   clearCart: () => void
   totalQuantity: number
   subtotal: number
+  lastAddedItem: CartItem | null
+  clearLastAdded: () => void
 }
 
 const CartContext = createContext<CartContextValue | null>(null)
@@ -33,6 +35,7 @@ function safeNumber(value: unknown) {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
+  const [lastAddedItem, setLastAddedItem] = useState<CartItem | null>(null)
 
   // Load cart
   useEffect(() => {
@@ -60,6 +63,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = (product: Product, qty: number = 1) => {
     const addQty = Math.max(1, Math.floor(qty))
+    
+    // Set last added item for feedback
+    setLastAddedItem({ ...product, quantity: addQty })
 
     setItems((prev) => {
       const existing = prev.find((x) => x.id === product.id)
@@ -71,6 +77,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return [...prev, { ...product, quantity: addQty }]
     })
   }
+
+  const clearLastAdded = () => setLastAddedItem(null)
 
   const removeFromCart = (id: string) => {
     setItems((prev) => prev.filter((x) => x.id !== id))
@@ -106,6 +114,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     clearCart,
     totalQuantity,
     subtotal,
+    lastAddedItem,
+    clearLastAdded
   }
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>

@@ -7,6 +7,7 @@ import { Tables } from '@/lib/types/database'
 import { supabase } from '@/lib/supabaseClient'
 import imageCompression from 'browser-image-compression'
 import type { Product } from '@/lib/types'
+import { supabaseBrowser } from '@/lib/supabase/browser'
 import ProductCard from '@/components/products/ProductCard'
 
 type Category = Tables<'categories'>
@@ -64,7 +65,6 @@ export default function AdminProductsPage() {
   const [remover, setRemover] = useState(removerOptions[0])
 
   const [email, setEmail] = useState('')
-  const [isAdmin, setIsAdmin] = useState(false)
 
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -120,40 +120,9 @@ export default function AdminProductsPage() {
   useEffect(() => {
     ;(async () => {
       setLoading(true)
-      setErr(null)
-      setOk(null)
-
-      const { data: sess } = await supabase.auth.getSession()
-      const user = sess.session?.user
-
-      if (!user) {
-        setLoading(false)
-        setErr('Not logged in. Please login first.')
-        return
-      }
-
-      setEmail(user.email ?? '')
-
-      const { data: profile, error: profileErr } = await supabase
-        .from('profiles')
-        .select('id, role')
-        .eq('id', user.id)
-        .single<Profile>()
-
-      if (profileErr || !profile) {
-        setLoading(false)
-        setErr('Profile not found. Ensure this user exists in the profiles table.')
-        return
-      }
-
-      const admin = profile.role === 'admin'
-      setIsAdmin(admin)
-
-      if (!admin) {
-        setLoading(false)
-        setErr('Access denied. You are not marked as admin in profiles.role.')
-        return
-      }
+      const sb = supabaseBrowser()
+      const { data: { user } } = await sb.auth.getUser()
+      if (user?.email) setEmail(user.email)
 
       await Promise.all([refreshProducts(), refreshCategories()])
       setLoading(false)
@@ -280,11 +249,6 @@ export default function AdminProductsPage() {
   async function onCreate() {
     setErr(null)
     setOk(null)
-
-    if (!isAdmin) {
-      setErr('Access denied.')
-      return
-    }
 
     if (!name.trim() || !category.trim() || !price.trim()) {
       setErr('Fill in: name, category, price.')
@@ -610,23 +574,6 @@ export default function AdminProductsPage() {
       <main className="mx-auto max-w-6xl px-4 py-10 text-white">
         <div className="rounded-3xl border border-slate-800 bg-black/60 p-6 text-sm text-slate-200">
           Loading…
-        </div>
-      </main>
-    )
-  }
-
-  if (!isAdmin) {
-    return (
-      <main className="mx-auto max-w-5xl px-4 py-10 text-white">
-        <div className="rounded-3xl border border-slate-800 bg-black/60 p-6">
-          <h1 className="text-2xl font-bold">Admin – Products</h1>
-          <p className="mt-2 text-sm text-slate-300">{err || 'Access denied.'}</p>
-          <p className="mt-2 text-xs text-slate-400">Signed in as: {email || '—'}</p>
-          <div className="mt-6">
-            <Link href="/admin" className="underline text-fuchsia-300">
-              Back to dashboard
-            </Link>
-          </div>
         </div>
       </main>
     )

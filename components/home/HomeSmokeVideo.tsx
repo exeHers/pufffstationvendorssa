@@ -2,8 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react'
 
+/**
+ * Enhanced Home Smoke Video with frame-perfect fading logic.
+ * Uses requestAnimationFrame instead of timeupdate to prevent visible jumps/cuts.
+ */
 export default function HomeSmokeVideo() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
+  const requestRef = useRef<number | null>(null)
   const [mounted, setMounted] = useState(false)
   const [opacity, setOpacity] = useState(0)
 
@@ -16,34 +21,44 @@ export default function HomeSmokeVideo() {
     const video = videoRef.current
     if (!video) return
 
-    // Slower, smoother fade for the home screen loop
-    // Fade in over 2s, Fade out over 5s
-    const fadeInDuration = 2.0
-    const fadeOutDuration = 5.0
+    // Fading parameters (in seconds)
+    const fadeInDuration = 1.5
+    const fadeOutDuration = 4.0 // Long fade out for smoothness
+    const targetOpacity = 0.7   // Maximum visibility
 
-    const handleTimeUpdate = () => {
-      const { currentTime, duration } = video
-      if (!duration) return
+    const updateFade = () => {
+      if (!video) return
+      
+      const currentTime = video.currentTime
+      const duration = video.duration
 
-      let nextOpacity = 0.8 // Target max opacity
+      if (duration > 0) {
+        let nextOpacity = targetOpacity
 
-      // 1. Fade In from dark
-      if (currentTime < fadeInDuration) {
-        nextOpacity = (currentTime / fadeInDuration) * 0.8
-      } 
-      // 2. Fade Out to dark (start fading out much earlier)
-      else if (currentTime > duration - fadeOutDuration) {
-        nextOpacity = ((duration - currentTime) / fadeOutDuration) * 0.8
+        // 1. Fade In from the start
+        if (currentTime < fadeInDuration) {
+          nextOpacity = (currentTime / fadeInDuration) * targetOpacity
+        } 
+        // 2. Fade Out towards the end
+        else if (currentTime > duration - fadeOutDuration) {
+          const timeRemaining = duration - currentTime
+          // Ensure it hits 0 exactly at duration
+          nextOpacity = (timeRemaining / fadeOutDuration) * targetOpacity
+        }
+
+        setOpacity(Math.max(0, nextOpacity))
       }
 
-      setOpacity(Math.max(0, nextOpacity))
+      requestRef.current = requestAnimationFrame(updateFade)
     }
 
-    video.addEventListener('timeupdate', handleTimeUpdate)
     video.play().catch(() => {})
+    requestRef.current = requestAnimationFrame(updateFade)
 
     return () => {
-      video.removeEventListener('timeupdate', handleTimeUpdate)
+      if (requestRef.current) {
+        cancelAnimationFrame(requestRef.current)
+      }
     }
   }, [mounted])
 
@@ -53,21 +68,23 @@ export default function HomeSmokeVideo() {
     <div className="relative h-full w-full bg-[#0a0a0c]">
       <video
         ref={videoRef}
-        className="absolute inset-0 h-full w-full object-cover object-center [filter:brightness(0.7)_contrast(1.1)_grayscale(0.1)] sm:[filter:brightness(0.6)_contrast(1.1)_grayscale(0.1)]"
+        className="absolute inset-0 h-full w-full object-cover object-center"
         muted
         loop
         playsInline
         preload="auto"
-        poster="/hero/neon-smoke.png"
         style={{ 
-          transform: 'translateZ(0) scale(1.01)', 
-          willChange: 'transform, opacity',
+          transform: 'translateZ(0) scale(1.05)', // Slightly larger to prevent edge artifacts
+          willChange: 'opacity',
           opacity: opacity,
-          transition: 'opacity 400ms linear' // Linear and slightly longer transition for stability
+          filter: 'brightness(0.6) contrast(1.2) grayscale(0.2)', // Slightly moodier for the home screen
         }}
       >
         <source src="/hero/neon-smoke.mp4" type="video/mp4" />
       </video>
+      
+      {/* Subtle overlay to help blend with background if the cut is still micro-visible */}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0c] via-transparent to-[#0a0a0c] opacity-40 pointer-events-none" />
     </div>
   )
 }

@@ -12,83 +12,32 @@ import FeaturedDropsSettings from '@/components/admin/FeaturedDropsSettings'
 
 export default function AdminClient() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null) // null = checking
-  const [error, setError] = useState<string | null>(null)
-  const checkingRef = useRef(false)
-
-  const verifyAdmin = useCallback(async (token: string, userEmail: string) => {
-    if (checkingRef.current) return
-    checkingRef.current = true
-    
-    setError(null)
-    setEmail(userEmail)
-
-    try {
-      const res = await fetch('/api/admin/session', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      const json = await res.json()
-      
-      if (json?.isAdmin) {
-        setIsAdmin(true)
-      } else {
-        setIsAdmin(false)
-        setError('Access Denied. Your account is not authorized for administrative access.')
-      }
-    } catch (err) {
-      console.error('Admin verify error:', err)
-      setIsAdmin(false)
-      setError('System error verifying admin status.')
-    } finally {
-      checkingRef.current = false
-    }
-  }, [])
+  const [email, setEmail] = useState<string>('...')
 
   useEffect(() => {
     const supabase = supabaseBrowser()
-    let mounted = true
-
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!mounted) return
-
-      if (session?.user && session.access_token) {
-        await verifyAdmin(session.access_token, session.user.email ?? '')
-      } else {
-        setIsAdmin(false)
-        router.replace('/login?next=/admin')
-      }
-    }
-
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!mounted) return
-      
-      if (event === 'SIGNED_OUT') {
-        setIsAdmin(false)
-        router.replace('/login?next=/admin')
-      } else if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) {
-        if (session?.user && session.access_token) {
-          verifyAdmin(session.access_token, session.user.email ?? '')
-        }
-      }
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user?.email) setEmail(data.user.email)
     })
-
-    checkAuth()
-
-    return () => {
-      mounted = false
-      sub.subscription.unsubscribe()
-    }
-  }, [verifyAdmin, router])
+  }, [])
 
   return (
     <main className="mx-auto max-w-6xl space-y-8 px-4 pb-16 pt-8">
       <header className="flex flex-col gap-3 border-b border-slate-800/70 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-             <div className="h-2 w-2 rounded-full bg-violet-500" />
+             <motion.div 
+               animate={{ 
+                 scale: [1, 1.2, 1],
+                 opacity: [0.5, 1, 0.5] 
+               }}
+               transition={{ 
+                 duration: 2, 
+                 repeat: Infinity, 
+                 ease: "easeInOut" 
+               }}
+               className="h-2 w-2 rounded-full bg-violet-500 shadow-[0_0_8px_#8b5cf6]" 
+             />
              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-violet-400">
                PUFFF Admin Panel
              </p>
@@ -118,31 +67,9 @@ export default function AdminClient() {
         </div>
       </header>
 
-      {isAdmin === null && (
-        <section className="rounded-3xl border border-slate-800/80 bg-slate-950/60 p-12 text-center">
-           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-800 border-t-violet-500" />
-           <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Verifying Credentials...</p>
-        </section>
-      )}
-
-      {isAdmin === false && (
-        <section className="rounded-3xl border border-red-500/30 bg-red-500/5 p-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-xl text-red-500">
-             ⚠
-          </div>
-          <h2 className="text-lg font-extrabold text-white mb-2 uppercase">Access Prohibited</h2>
-          <p className="text-xs text-red-200/70 max-w-md mx-auto">{error || 'You do not have administrative privileges.'}</p>
-          <div className="mt-6">
-             <Link href="/" className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-white">Return to surface</Link>
-          </div>
-        </section>
-      )}
-
-      {isAdmin === true && (
-        <Suspense fallback={<div>Loading Tabs...</div>}>
-          <AdminTabs />
-        </Suspense>
-      )}
+      <Suspense fallback={<div>Loading Tabs...</div>}>
+        <AdminTabs />
+      </Suspense>
     </main>
   )
 }

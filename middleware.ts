@@ -8,17 +8,24 @@ export function middleware(req: NextRequest) {
   if (pathname.startsWith('/admin')) {
     // We store this cookie when admin logs in successfully
     const isAdmin = req.cookies.get('pufff_is_admin')?.value === 'true'
-    const hasSession = req.cookies.get('sb-access-token') || req.cookies.get('supabase-auth-token')
+    
+    // Look for any supabase auth related cookies
+    const cookies = req.cookies.getAll()
+    const hasAuthCookie = cookies.some(c => 
+      c.name.includes('supabase-auth-token') || 
+      c.name.includes('sb-') || 
+      c.name.includes('access-token')
+    )
 
-    // Only redirect if we are SURE they aren't an admin
-    // If they have a session but no admin cookie yet, we let the AdminClient handle the check
-    // This prevents the "double login" redirect loop.
-    if (!isAdmin) {
+    // If they have NO auth cookie at all, send to login.
+    // If they HAVE an auth cookie but not the isAdmin cookie, let them through
+    // so the AdminClient.tsx can verify their specific role without a redirect loop.
+    if (!isAdmin && !hasAuthCookie) {
       const url = req.nextUrl.clone()
       url.pathname = '/login'
       const nextTarget = `${req.nextUrl.pathname}${req.nextUrl.search}`
       url.searchParams.set('next', nextTarget)
-      // return NextResponse.redirect(url) // Temporarily disable strict middleware redirect to fix loop
+      return NextResponse.redirect(url)
     }
   }
 

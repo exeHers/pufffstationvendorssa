@@ -11,6 +11,7 @@ import HeaderLinks from '@/components/nav/HeaderLinks'
 import AndroidMotionGate from '@/components/utils/AndroidMotionGate'
 import Footer from '@/components/layout/Footer'
 import WhatsAppSupport from '@/components/support/WhatsAppSupport'
+import AddToCartToast from '@/components/ui/AddToCartToast'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pufffstation.co.za'
 
@@ -66,12 +67,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-slate-950 text-white antialiased">
-        <AndroidMotionGate />
-        <LuxeAtmosphere />
-        <AgeGate />
-        <WhatsAppSupport />
-
         <CartProvider>
+          <AndroidMotionGate />
+          <LuxeAtmosphere />
+          <AgeGate />
+          <WhatsAppSupport />
+          <AddToCartToast />
           <div className="min-h-screen">
             <header className="sticky top-0 z-50 border-b border-white/[0.03] bg-slate-950/60 backdrop-blur-md">
               <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4">

@@ -64,6 +64,7 @@ export default function ProductCard({ product }: { product: Product }) {
   // ✅ Lazy load smoke video when visible (fix slow load)
   const ref = useRef<HTMLAnchorElement | null>(null)
   const [showSmoke, setShowSmoke] = useState(false)
+  const [videoDuration, setVideoDuration] = useState(6)
 
   useEffect(() => {
     if (!ref.current) return
@@ -163,18 +164,26 @@ export default function ProductCard({ product }: { product: Product }) {
                 {/* Clean hex for the filter ID reference */}
                 {(() => {
                   let h = smokeHex.trim().replace('#', '').toLowerCase()
-                  if (h.length === 3) {
-                    h = h.split('').map((c: string) => c + c).join('')
-                  }
-                  const filterId = `smoke-filter-${product.id}-${h.padEnd(6, '0')}`
+                  if (h.length === 3) h = h.split('').map((c: any) => c + c).join('')
+                  const cleanHex = h.padEnd(6, '0').slice(0, 6).toLowerCase()
+                  const filterId = `smoke-filter-${product.id}-${cleanHex}`
                   
                   return (
+                <div className="absolute inset-0" style={{ 
+                  filter: `url(#${filterId})`,
+                  WebkitFilter: `url(#${filterId})` 
+                }}>
                 <video
-                  className="pufff-smoke-video absolute inset-0 h-full w-full object-cover"
+                  key={`${filterId}-${showSmoke}`}
+                  className="absolute inset-0 h-full w-full object-cover"
                   style={{
                     transform: 'translateZ(0) scale(1.35)',
                     objectPosition: '50% 22%',
                     filter: `url(#${filterId})`,
+                    WebkitFilter: `url(#${filterId})`,
+                    animation: `smokeLoop ${videoDuration}s ease-in-out infinite`,
+                    mixBlendMode: 'screen',
+                    willChange: 'opacity',
                   }}
                   autoPlay
                   muted
@@ -182,9 +191,14 @@ export default function ProductCard({ product }: { product: Product }) {
                   playsInline
                   preload="metadata"
                   disablePictureInPicture
+                  onLoadedMetadata={(e) => {
+                    const dur = (e.target as HTMLVideoElement).duration
+                    if (dur && dur > 0) setVideoDuration(dur)
+                  }}
                 >
                   <source src="/scroll.mp4" type="video/mp4" />
                 </video>
+                </div>
                   )
                 })()}
               </>

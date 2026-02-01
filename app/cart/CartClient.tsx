@@ -199,7 +199,7 @@ export default function CartPage() {
               </div>
               <div className="flex items-center justify-between text-[11px] text-slate-400">
                 <span>Delivery</span>
-                <span>Calculated when your cousin confirms the drop-off</span>
+                <span>Calculated at checkout</span>
               </div>
             </div>
 

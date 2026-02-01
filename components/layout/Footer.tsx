@@ -19,13 +19,23 @@ export default function Footer() {
   const isHome = pathname === '/'
 
   useEffect(() => {
-    async function getUser() {
-      const sb = supabaseBrowser()
-      const { data: { user } } = await sb.auth.getUser()
-      setUser(user)
+    const sb = supabaseBrowser()
+    
+    // Initial check
+    sb.auth.getUser().then(({ data }) => {
+      if (data.user) setUser(data.user)
       setLoadingUser(false)
+    })
+
+    // Listen for auth changes to keep Footer in sync
+    const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      setLoadingUser(false)
+    })
+
+    return () => {
+      subscription.unsubscribe()
     }
-    getUser()
   }, [])
 
   async function handleSubmitReview(e: React.FormEvent) {

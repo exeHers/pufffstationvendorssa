@@ -1,11 +1,15 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '@/components/cart/CartContext'
 import { supabase } from '@/lib/supabaseClient'
+import dynamic from 'next/dynamic'
+
+// Dynamic import for Map to avoid SSR errors
+const PudoMap = dynamic(() => import('@/components/checkout/PudoMap'), { ssr: false })
 
 type DeliveryMode = 'door' | 'pudo'
 type PaymentMethod = 'ozow' | 'whatsapp'
@@ -33,6 +37,7 @@ export default function CheckoutClient() {
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [mapOpen, setMapOpen] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -82,22 +87,22 @@ export default function CheckoutClient() {
       // 1) Create order record
       const orderPayload = {
         user_id: user.id,
-        status: paymentMethod === 'whatsapp' ? 'pending_whatsapp' : 'pending_payment',
+        status: 'pending_payment',
         total_amount: subtotal,
         currency: 'ZAR',
-        customer_name: fullName.trim(),
-        customer_phone: phone.trim(),
-        customer_email: user.email ?? userEmail,
+        full_name: fullName.trim(),
+        phone: phone.trim(),
+        email: user.email ?? userEmail,
         delivery_type: deliveryMode,
         courier_name: 'Courier Guy / PUDO',
-        notes: notes.trim() || null,
+        delivery_notes: notes.trim() || null,
         payment_provider: paymentMethod
       }
 
       if (deliveryMode === 'door') {
-        ;(orderPayload as any).delivery_address = doorAddress.trim()
+        ;(orderPayload as any).address_line1 = doorAddress.trim()
       } else {
-        ;(orderPayload as any).delivery_location = `PUDO: ${pudoLocation.trim()}`
+        ;(orderPayload as any).pudo_location = pudoLocation.trim()
       }
 
       const { data: created, error: orderErr } = await supabase
@@ -146,7 +151,7 @@ export default function CheckoutClient() {
           `*Total:* R ${subtotal.toFixed(2)}%0A%0A` +
           `I'd like to complete my payment via WhatsApp. Please send details!`;
 
-        const waNumber = "27123456789" // Replace with actual business number
+        const waNumber = "27712065512" 
         clearCart()
         window.open(`https://wa.me/${waNumber}?text=${message}`, '_blank')
         router.push('/orders')
@@ -178,16 +183,34 @@ export default function CheckoutClient() {
 
             <section className="rounded-3xl border border-slate-800/80 bg-slate-950/40 p-6">
               <h2 className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-4">2. Logistics Terminal</h2>
-              <div className="flex gap-2 mb-4">
-                {['door', 'pudo'].map(m => (
-                  <button key={m} onClick={() => setDeliveryMode(m as DeliveryMode)} className={`rounded-full px-5 py-2 text-[10px] font-black uppercase tracking-widest transition ${deliveryMode === m ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20' : 'border border-slate-800 text-slate-500 hover:text-white'}`}>
-                    {m === 'door' ? 'Door Delivery' : 'PUDO Locker'}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <div className="flex gap-2">
+                  {['door', 'pudo'].map(m => (
+                    <button key={m} onClick={() => setDeliveryMode(m as DeliveryMode)} className={`rounded-full px-5 py-2 text-[10px] font-black uppercase tracking-widest transition ${deliveryMode === m ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20' : 'border border-slate-800 text-slate-500 hover:text-white'}`}>
+                      {m === 'door' ? 'Door Delivery' : 'PUDO Locker'}
+                    </button>
+                  ))}
+                </div>
+                
+                {deliveryMode === 'pudo' && (
+                  <button 
+                    onClick={() => setMapOpen(true)}
+                    className="text-[10px] font-bold uppercase tracking-widest text-violet-400 hover:text-violet-300 transition flex items-center gap-2"
+                  >
+                    <span className="h-1 w-1 rounded-full bg-violet-400 animate-pulse" />
+                    Find a Locker
                   </button>
-                ))}
+                )}
               </div>
               <textarea 
                 value={deliveryMode === 'door' ? doorAddress : pudoLocation} 
-                onChange={e => deliveryMode === 'door' ? setDoorAddress(e.target.value) : setPudoLocation(e.target.value)} 
+                onChange={e => {
+                  if (deliveryMode === 'door') {
+                    setDoorAddress(e.target.value)
+                  } else {
+                    setPudoLocation(e.target.value)
+                  }
+                }} 
                 placeholder={deliveryMode === 'door' ? "Street Address, Suburb, City, Code" : "PUDO Locker Name or Address"} 
                 className="w-full rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 outline-none focus:border-violet-500 min-h-[100px]" 
               />
@@ -238,6 +261,19 @@ export default function CheckoutClient() {
              </button>
           </aside>
         </div>
+      )}
+
+      {/* PUDO Map Modal */}
+      {mapOpen && (
+        <Suspense fallback={null}>
+          <PudoMap 
+            onClose={() => setMapOpen(false)}
+            onSelect={(locker) => {
+              setPudoLocation(`${locker.name} - ${locker.address}`)
+              setMapOpen(false)
+            }}
+          />
+        </Suspense>
       )}
     </main>
   )

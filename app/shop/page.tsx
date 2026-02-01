@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 }
 import type { Product } from '@/lib/types'
 import ProductCard from '@/components/products/ProductCard'
+import ShopFilters from '@/components/shop/ShopFilters'
 
 export const dynamic = 'force-dynamic'
 
