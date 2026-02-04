@@ -138,18 +138,23 @@ export default function CheckoutClient() {
         window.location.href = body.redirectUrl
       } else {
         // WHATSAPP FLOW
-        const cartText = items.map(it => `• ${it.name} x${it.quantity}`).join('%0A')
+        const cartText = items.map(it => {
+           const lineTotal = (Number(it.price || 0) * Number(it.quantity || 1)).toFixed(2)
+           return `- ${it.quantity} x ${it.name} (R${lineTotal})`
+        }).join('%0A')
+        
         const addressText = deliveryMode === 'door' ? doorAddress.trim() : `PUDO: ${pudoLocation.trim()}`
         
-        const message = `Hi PUFFF Station!%0A%0A` +
-          `*Order ID:* ${orderId.slice(0, 8)}%0A` +
+        const message = `*NEW ORDER REQUEST*%0A` +
+          `Ref: ${orderId.slice(0, 8)}%0A%0A` +
           `*Customer:* ${fullName.trim()}%0A` +
+          `*Phone:* ${phone.trim()}%0A` +
           `*Email:* ${user.email}%0A%0A` +
-          `*Cart:*%0A${cartText}%0A%0A` +
-          `*Delivery:* ${deliveryMode === 'door' ? 'Door' : 'PUDO'}%0A` +
-          `*Address:* ${addressText}%0A%0A` +
-          `*Total:* R ${subtotal.toFixed(2)}%0A%0A` +
-          `I'd like to complete my payment via WhatsApp. Please send details!`;
+          `*Order Details:*%0A${cartText}%0A%0A` +
+          `*Delivery Mode:* ${deliveryMode === 'door' ? 'Door' : 'PUDO'}%0A` +
+          `*Location:* ${addressText}%0A%0A` +
+          `*TOTAL: R ${subtotal.toFixed(2)}*%0A%0A` +
+          `Please confirm stock and send banking details to proceed.`;
 
         const waNumber = "27712065512" 
         clearCart()

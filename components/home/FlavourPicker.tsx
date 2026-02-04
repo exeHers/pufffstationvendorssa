@@ -6,40 +6,70 @@ import { motion } from 'framer-motion'
 
 const flavourStyles: Record<string, { color: string; bg: string; border: string }> = {
   sweet: {
-    color: 'text-violet-400',
-    bg: 'bg-violet-500/5',
-    border: 'group-hover:border-violet-500/50',
+    color: 'text-pink-400',
+    bg: 'bg-pink-500/10',
+    border: 'group-hover:border-pink-500/50',
   },
   fruity: {
     color: 'text-orange-400',
-    bg: 'bg-orange-500/5',
+    bg: 'bg-orange-500/10',
     border: 'group-hover:border-orange-500/50',
   },
   'ice-mint': {
     color: 'text-cyan-400',
-    bg: 'bg-cyan-500/5',
+    bg: 'bg-cyan-500/10',
     border: 'group-hover:border-cyan-500/50',
+  },
+  menthol: {
+    color: 'text-emerald-400',
+    bg: 'bg-emerald-500/10',
+    border: 'group-hover:border-emerald-500/50',
   },
   tobacco: {
     color: 'text-amber-600',
-    bg: 'bg-amber-600/5',
+    bg: 'bg-amber-600/10',
     border: 'group-hover:border-amber-600/50',
   },
   soda: {
-    color: 'text-violet-400',
-    bg: 'bg-violet-500/5',
-    border: 'group-hover:border-violet-500/50',
+    color: 'text-blue-400',
+    bg: 'bg-blue-500/10',
+    border: 'group-hover:border-blue-500/50',
   },
   berry: {
-    color: 'text-violet-400',
-    bg: 'bg-violet-500/5',
-    border: 'group-hover:border-violet-500/50',
+    color: 'text-purple-400',
+    bg: 'bg-purple-500/10',
+    border: 'group-hover:border-purple-500/50',
+  },
+  grape: {
+    color: 'text-fuchsia-400',
+    bg: 'bg-fuchsia-500/10',
+    border: 'group-hover:border-fuchsia-500/50',
+  },
+  mango: {
+    color: 'text-yellow-400',
+    bg: 'bg-yellow-500/10',
+    border: 'group-hover:border-yellow-500/50',
+  },
+  watermelon: {
+    color: 'text-rose-400',
+    bg: 'bg-rose-500/10',
+    border: 'group-hover:border-rose-500/50',
+  },
+  energy: {
+    color: 'text-lime-400',
+    bg: 'bg-lime-500/10',
+    border: 'group-hover:border-lime-500/50',
   },
   exotic: {
     color: 'text-indigo-400',
-    bg: 'bg-indigo-500/5',
+    bg: 'bg-indigo-500/10',
     border: 'group-hover:border-indigo-500/50',
   },
+  dessert: {
+    color: 'text-amber-300',
+    bg: 'bg-amber-300/10',
+    border: 'group-hover:border-amber-300/50',
+  }
 }
 
 export default function FlavourPicker({ flavours }: { flavours: Flavour[] }) {
@@ -71,10 +101,30 @@ export default function FlavourPicker({ flavours }: { flavours: Flavour[] }) {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
         {flavours.map((flavour, idx) => {
-          const style = flavourStyles[flavour.slug] || {
-            color: 'text-white',
-            bg: 'bg-white/5',
-            border: 'group-hover:border-white/50',
+          // Try to find a style by slug (e.g. 'mango-ice' -> includes 'mango'?)
+          // Or just exact match first
+          let style = flavourStyles[flavour.slug]
+          
+          // If no exact match, try partial match
+          if (!style) {
+            const slug = flavour.slug.toLowerCase()
+            if (slug.includes('grape')) style = flavourStyles.grape
+            else if (slug.includes('mango')) style = flavourStyles.mango
+            else if (slug.includes('berry')) style = flavourStyles.berry
+            else if (slug.includes('melon')) style = flavourStyles.watermelon
+            else if (slug.includes('energy')) style = flavourStyles.energy
+            else if (slug.includes('ice') || slug.includes('mint')) style = flavourStyles['ice-mint']
+            else if (slug.includes('tobacco')) style = flavourStyles.tobacco
+            else if (slug.includes('dessert') || slug.includes('custard')) style = flavourStyles.dessert
+          }
+
+          // Fallback
+          if (!style) {
+            style = {
+              color: 'text-white',
+              bg: 'bg-white/5',
+              border: 'group-hover:border-white/50',
+            }
           }
 
           return (

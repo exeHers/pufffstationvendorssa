@@ -1,10 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useCart } from '@/components/cart/CartContext'
 
 export default function CartPage() {
   const { items, removeFromCart, clearCart, updateQuantity, subtotal } = useCart()
+  const router = useRouter()
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-10">
@@ -43,7 +45,7 @@ export default function CartPage() {
       {items.length === 0 ? (
         <div className="mt-10 rounded-3xl border border-slate-800/70 bg-slate-950/60 p-8 text-center">
           <p className="text-sm text-slate-300">
-            Cart is empty, my bru. Go grab something lekker.
+            Dry hit! Your cart is empty. Go juice it up.
           </p>
           <div className="mt-4">
             <Link
@@ -153,7 +155,7 @@ export default function CartPage() {
               </div>
               <div className="flex items-center justify-between text-slate-400">
                 <span>Delivery</span>
-                <span>Calculated later</span>
+                <span>Calculated at checkout</span>
               </div>
               <div className="h-px w-full bg-slate-800" />
               <div className="flex items-center justify-between">
@@ -167,13 +169,13 @@ export default function CartPage() {
             <button
               type="button"
               className="mt-5 w-full rounded-full bg-violet-600 px-6 py-3 text-[11px] font-extrabold uppercase tracking-[0.18em] text-white shadow-[0_0_22px_rgba(124,58,237,0.7)] transition hover:brightness-110 active:scale-95"
-              onClick={() => alert("Checkout coming next, my bru. We'll wire payments properly.")}
+              onClick={() => router.push('/checkout')}
             >
               Checkout
             </button>
 
             <p className="mt-3 text-[11px] text-slate-500">
-              Next step: we add auth + orders + payment (Ozow / PayFast / card). Clean and safe.
+              Secure payment via Ozow or WhatsApp.
             </p>
           </aside>
         </div>
