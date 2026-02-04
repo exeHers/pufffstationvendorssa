@@ -103,7 +103,7 @@ export default function AgeGate() {
           </h2>
  
           <p className="mt-3 text-sm leading-relaxed text-slate-300">
-            This website sells nicotine products which are intended for adult smokers only. You must be of legal smoking age in your jurisdiction to enter.
+            We strictly adhere to the Tobacco Products Control Act of South Africa. You must be 18 years or older to view or purchase our products.
           </p>
  
           {allowed === null ? (
@@ -133,6 +133,7 @@ export default function AgeGate() {
  
           <p className="mt-6 text-xs leading-relaxed text-slate-400">
             By clicking "Yes", you confirm you are of legal smoking age.
+            <br /><span className="block mt-2 font-bold text-slate-500">WARNING: These products contain nicotine. Nicotine is an addictive chemical.</span>
           </p>
         </div>
       </div>

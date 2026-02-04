@@ -98,8 +98,29 @@ export default async function ProductDetailPage({ params }: Props) {
   const priceNumber = product.price != null ? Number(product.price) : 0
   const hasPrice = product.price != null && !Number.isNaN(priceNumber)
 
+  // JSON-LD Structured Data for SEO
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    image: product.image_url ? [product.image_url] : [],
+    description: product.description || `Premium disposable: ${product.name}.`,
+    brand: {
+      '@type': 'Brand',
+      name: 'PUFFF Station Vendors SA',
+    },
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'ZAR',
+      price: priceNumber,
+      availability: product.in_stock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      url: `https://pufffstationvendorssa.co.za/shop/${product.id}`,
+    },
+  }
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="mb-6 flex items-center justify-between gap-3">
         <Link
           href="/shop"
@@ -189,6 +210,20 @@ export default async function ProductDetailPage({ params }: Props) {
             <div className="text-lg font-extrabold text-white">
               {hasPrice ? `R ${priceNumber.toFixed(2)}` : 'Price on request'}
             </div>
+            
+            {/* BULK PRICING TIER */}
+            {(product as any).bulk_min && (product as any).bulk_price && (
+              <div className="flex flex-col items-end">
+                <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-right">
+                  <span className="block text-[10px] uppercase tracking-wider text-cyan-200">
+                    Bulk Tier
+                  </span>
+                  <span className="text-xs font-bold text-cyan-100">
+                    Buy {(product as any).bulk_min}+ @ R{Number((product as any).bulk_price).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
 
             <div className={product.in_stock ? '' : 'pointer-events-none opacity-60'}>
               <AddToCartButton product={product} />

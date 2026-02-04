@@ -43,21 +43,28 @@ export default async function HomePage() {
   let featuredSettings = { enabled: true, title: 'Featured Drops', description: 'Our top picks.' }
 
   if (supabaseEnvReady) {
-    const [productsRes, settingsRes] = await Promise.all([
-      supabase.from('products').select('*').eq('is_deleted', false).eq('is_featured', true).order('created_at', { ascending: false }),
-      supabase.from('settings').select('*').eq('key', 'featured_drops').single()
-    ])
+    try {
+      const [productsRes, settingsRes] = await Promise.all([
+        supabase.from('products').select('*').eq('is_deleted', false).eq('is_featured', true).order('created_at', { ascending: false }),
+        supabase.from('settings').select('*').eq('key', 'featured_drops').single()
+      ])
 
-    if (productsRes.data) products.push(...(productsRes.data as Product[]))
-    if (settingsRes.data) featuredSettings = { ...featuredSettings, ...settingsRes.data.value }
+      if (productsRes.data) products.push(...(productsRes.data as Product[]))
+      if (settingsRes.data) featuredSettings = { ...featuredSettings, ...settingsRes.data.value }
+    } catch (error) {
+      console.error('Home Page Data Fetch Error:', error)
+      // Fallback: The page loads without the dynamic featured section, preventing a full crash.
+    }
   }
 
   return (
     <main className="relative w-full text-white overflow-x-hidden min-h-screen bg-transparent">
       {/* VERIFICATION MARKER */}
+      {/*
       <div className="fixed top-0 left-0 z-[99999] bg-red-600 text-white text-[10px] px-2 py-1 font-bold">
         TEST-BUILD ACTIVE
       </div>
+      */}
 
       <HomeBackgroundVideo />
 
@@ -190,7 +197,7 @@ export default async function HomePage() {
                         src={imageUrl}
                         alt={product.name}
                         fill
-                        sizes="(max-width: 768px) 90vw, 320px"
+                        sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         className="object-contain object-center transition duration-300 group-hover:scale-[1.03]"
                       />
                     </div>
