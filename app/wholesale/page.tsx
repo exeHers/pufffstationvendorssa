@@ -39,7 +39,7 @@ export default async function WholesalePage() {
               Vendor Portal
             </p>
             <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white uppercase">
-              Quick Order <span className="text-slate-700">///</span> Grid
+              Quick Order <span className="text-slate-700">{'///'}</span> Grid
             </h1>
             <p className="mt-4 text-slate-400 max-w-xl">
               Rapid-fire ordering for high volume vendors. Input your quantities and add everything to cart in one click.

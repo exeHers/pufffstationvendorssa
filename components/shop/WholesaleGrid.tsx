@@ -9,7 +9,7 @@ import { Plus, Minus, ShoppingCart, AlertCircle } from 'lucide-react'
 
 export default function WholesaleGrid({ products }: { products: Product[] }) {
   const router = useRouter()
-  const { addItem } = useCart()
+  const { addToCart } = useCart()
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [adding, setAdding] = useState(false)
 
@@ -40,14 +40,7 @@ export default function WholesaleGrid({ products }: { products: Product[] }) {
     for (const p of products) {
       const qty = quantities[p.id] || 0
       if (qty > 0) {
-        addItem({
-          id: p.id,
-          name: p.name,
-          price: Number(p.price),
-          image_url: p.image_url,
-          quantity: qty, // Note: cart context usually handles 'add' vs 'set', assuming addItem adds to existing
-          category: (p as any).category
-        })
+        addToCart(p, qty)
       }
     }
     
