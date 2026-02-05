@@ -39,6 +39,14 @@ export default function CheckoutClient() {
   const [error, setError] = useState<string | null>(null)
   const [mapOpen, setMapOpen] = useState(false)
 
+  // Calculate Delivery Fee
+  const deliveryFee = useMemo(() => {
+    if (subtotal >= 1000) return 0 // Free delivery over R1000
+    return deliveryMode === 'pudo' ? 60 : 100 // R60 for Pudo, R100 for Door
+  }, [subtotal, deliveryMode])
+
+  const grandTotal = subtotal + deliveryFee
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       const user = data.session?.user
@@ -88,7 +96,7 @@ export default function CheckoutClient() {
       const orderPayload = {
         user_id: user.id,
         status: 'pending_payment',
-        total_amount: subtotal,
+        total_amount: grandTotal, // Store the final amount including delivery
         currency: 'ZAR',
         full_name: fullName.trim(),
         phone: phone.trim(),
@@ -151,9 +159,10 @@ export default function CheckoutClient() {
           `*Phone:* ${phone.trim()}%0A` +
           `*Email:* ${user.email}%0A%0A` +
           `*Order Details:*%0A${cartText}%0A%0A` +
-          `*Delivery Mode:* ${deliveryMode === 'door' ? 'Door' : 'PUDO'}%0A` +
-          `*Location:* ${addressText}%0A%0A` +
-          `*TOTAL: R ${subtotal.toFixed(2)}*%0A%0A` +
+          `*Subtotal:* R ${subtotal.toFixed(2)}%0A` +
+          `*Delivery (${deliveryMode === 'door' ? 'Door' : 'PUDO'}):* ${deliveryFee === 0 ? 'FREE' : 'R ' + deliveryFee.toFixed(2)}%0A` +
+          `*TOTAL:* R ${grandTotal.toFixed(2)}%0A%0A` +
+          `*Delivery Info:*%0A${addressText}%0A%0A` +
           `Please confirm stock and send banking details to proceed.`;
 
         const waNumber = "27712065512" 
@@ -190,11 +199,18 @@ export default function CheckoutClient() {
               <h2 className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-4">2. Logistics Terminal</h2>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                 <div className="flex gap-2">
-                  {['door', 'pudo'].map(m => (
-                    <button key={m} onClick={() => setDeliveryMode(m as DeliveryMode)} className={`rounded-full px-5 py-2 text-[10px] font-black uppercase tracking-widest transition ${deliveryMode === m ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20' : 'border border-slate-800 text-slate-500 hover:text-white'}`}>
-                      {m === 'door' ? 'Door Delivery' : 'PUDO Locker'}
-                    </button>
-                  ))}
+                  <button 
+                    onClick={() => setDeliveryMode('door')} 
+                    className={`rounded-full px-5 py-2 text-[10px] font-black uppercase tracking-widest transition ${deliveryMode === 'door' ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20' : 'border border-slate-800 text-slate-500 hover:text-white'}`}
+                  >
+                    Door Delivery (R100)
+                  </button>
+                  <button 
+                    onClick={() => setDeliveryMode('pudo')} 
+                    className={`rounded-full px-5 py-2 text-[10px] font-black uppercase tracking-widest transition ${deliveryMode === 'pudo' ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20' : 'border border-slate-800 text-slate-500 hover:text-white'}`}
+                  >
+                    PUDO Locker (R60)
+                  </button>
                 </div>
                 
                 {deliveryMode === 'pudo' && (
@@ -246,10 +262,32 @@ export default function CheckoutClient() {
                   </div>
                 ))}
              </div>
+             
+             {/* Delivery Fee Section */}
+             <div className="flex justify-between items-center border-t border-slate-800 pt-4 mb-2">
+               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Subtotal</span>
+               <span className="text-sm font-bold text-slate-300">R {subtotal.toFixed(2)}</span>
+             </div>
+             <div className="flex justify-between items-center mb-6">
+               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Delivery ({deliveryMode})</span>
+               <span className={`text-sm font-bold ${deliveryFee === 0 ? 'text-emerald-400' : 'text-slate-300'}`}>
+                 {deliveryFee === 0 ? 'FREE' : `R ${deliveryFee.toFixed(2)}`}
+               </span>
+             </div>
+
              <div className="flex justify-between items-center border-t border-slate-800 pt-4 mb-6">
                <span className="text-[11px] font-black uppercase text-slate-500 tracking-widest">Total Due</span>
-               <span className="text-2xl font-black text-white italic">R {subtotal.toFixed(2)}</span>
+               <span className="text-2xl font-black text-white italic">R {grandTotal.toFixed(2)}</span>
              </div>
+
+             {subtotal < 1000 && (
+                <div className="mb-4 text-center">
+                    <p className="text-[10px] text-slate-500">Spend <span className="text-white font-bold">R{(1000 - subtotal).toFixed(0)}</span> more for FREE delivery!</p>
+                    <div className="mt-1 h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-violet-500" style={{ width: `${(subtotal / 1000) * 100}%` }}></div>
+                    </div>
+                </div>
+             )}
 
              {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] p-3 rounded-xl mb-4">{error}</div>}
 
@@ -262,7 +300,7 @@ export default function CheckoutClient() {
                    : 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 hover:bg-emerald-500'
                }`}
              >
-               {loading ? 'Processing...' : paymentMethod === 'ozow' ? 'Authorize Payment' : 'Initialize WhatsApp'}
+               {loading ? 'Processing...' : paymentMethod === 'ozow' ? `Pay R${grandTotal.toFixed(0)}` : 'Initialize WhatsApp'}
              </button>
           </aside>
         </div>
