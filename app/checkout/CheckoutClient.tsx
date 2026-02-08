@@ -311,7 +311,7 @@ export default function CheckoutClient() {
         <Suspense fallback={null}>
           <PudoMap 
             onClose={() => setMapOpen(false)}
-            onSelect={(locker) => {
+            onSelect={(locker: any) => {
               setPudoLocation(`${locker.name} - ${locker.address}`)
               setMapOpen(false)
             }}
