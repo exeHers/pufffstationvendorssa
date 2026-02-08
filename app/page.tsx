@@ -9,6 +9,7 @@ import FlavourPicker from '@/components/home/FlavourPicker'
 import ReviewFeed from '@/components/shop/ReviewFeed'
 import HomeBackgroundVideo from '@/components/home/HomeBackgroundVideo'
 import { fetchActiveFlavours } from '@/lib/flavours'
+import ProductCard from '@/components/products/ProductCard'
 
 export const metadata: Metadata = {
   title: 'TEST-BUILD - Clean Stock. Premium Drops.',
@@ -20,16 +21,6 @@ export const metadata: Metadata = {
 }
 
 export const dynamic = 'force-dynamic'
-
-function formatMoney(n: number) {
-  return `R${Number(n).toFixed(2)}`
-}
-
-function clampText(input: string, max: number) {
-  const s = (input || '').trim()
-  if (!s) return ''
-  return s.length > max ? `${s.slice(0, max)}...` : s
-}
 
 function getCategory(product: Product) {
   const p: any = product
@@ -53,184 +44,112 @@ export default async function HomePage() {
       if (settingsRes.data) featuredSettings = { ...featuredSettings, ...settingsRes.data.value }
     } catch (error) {
       console.error('Home Page Data Fetch Error:', error)
-      // Fallback: The page loads without the dynamic featured section, preventing a full crash.
     }
   }
 
   return (
     <main className="relative w-full text-white overflow-x-hidden min-h-screen bg-transparent">
-      {/* VERIFICATION MARKER */}
-      {/*
-      <div className="fixed top-0 left-0 z-[99999] bg-red-600 text-white text-[10px] px-2 py-1 font-bold">
-        TEST-BUILD ACTIVE
-      </div>
-      */}
-
+      
       <HomeBackgroundVideo />
 
+      {/* --- HERO SECTION --- */}
       <section className="relative overflow-hidden min-h-[85vh] flex items-center z-10">
-        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-start justify-center gap-10 px-4 pb-16 pt-16 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-[520px]">
-            <p className="hero-fade hero-fade-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-cyan-200/80">
-              PUFFF Station Vendors SA • TEST-BUILD
+        <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-start justify-center gap-16 px-6 pb-20 pt-20 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-[600px]">
+            <p className="hero-fade hero-fade-1 text-[11px] font-bold uppercase tracking-[0.4em] text-cyan-200/90 mb-6">
+              PUFFF Station Vendors SA
             </p>
 
-            <h1 className="hero-fade hero-fade-2 mt-5 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-[3.4rem]">
-              <span className="text-white">Clean stock.</span>{' '}
-              <span className="bg-gradient-to-r from-cyan-200 via-violet-200 to-purple-200 bg-clip-text text-transparent">
-                PUFFF Station
-              </span>{' '}
-              only. No Eskom Promises.
+            <h1 className="hero-fade hero-fade-2 text-5xl font-black tracking-tighter text-white sm:text-6xl lg:text-[4.5rem] leading-[0.9]">
+              <span className="block text-white">Clean stock.</span>
+              <span className="block bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+                Premium Drops.
+              </span>
             </h1>
 
-            <p className="hero-fade hero-fade-3 mt-5 max-w-lg text-sm leading-relaxed text-slate-200/85 sm:text-base">
-              Fast dispatch, premium checkout, and official PUFFF Station drops. Built
-              for SA vendors who want it smooth and legit.
+            <p className="hero-fade hero-fade-3 mt-8 max-w-lg text-sm font-medium leading-relaxed text-slate-300/90 sm:text-base tracking-wide">
+              No Eskom Promises. Just verified stock, fast dispatch, and the smoothest checkout in SA.
             </p>
 
-            <div className="hero-fade hero-fade-3 mt-7 flex flex-wrap items-center gap-4">
+            <div className="hero-fade hero-fade-3 mt-10 flex flex-wrap items-center gap-6">
               <Link
                 href="/shop"
-                className="cta-pulse rounded-full bg-cyan-600 px-8 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:brightness-110 active:scale-95"
+                className="group relative overflow-hidden rounded-none bg-white px-10 py-4 text-xs font-black uppercase tracking-[0.25em] text-black transition-transform duration-300 hover:-translate-y-1 active:scale-95"
               >
-                Shop the Drop
+                <span className="relative z-10">Shop Now</span>
+                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-0 bg-cyan-300 transition-transform duration-300 ease-out mix-blend-multiply" />
               </Link>
 
               <Link
-                href="/cart"
-                className="rounded-full border border-white/20 bg-white/5 px-7 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white/90 backdrop-blur-sm transition hover:border-cyan-200/70 hover:text-cyan-50 active:scale-95"
+                href="/wholesale"
+                className="group px-8 py-4 text-xs font-bold uppercase tracking-[0.25em] text-white transition-colors hover:text-cyan-200"
               >
-                View Cart
+                Bulk Order
               </Link>
             </div>
-
-            <p className="hero-fade hero-fade-3 mt-7 text-[11px] text-slate-300/70">
-              Local vendors. Clean pulls. No Eskom Promises.
-            </p>
           </div>
 
-          <div className="w-full max-w-md">
-            <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.04] bg-slate-900/40 p-6 shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-black/60" />
-              <div className="absolute inset-0 opacity-60 [mask-image:radial-gradient(70%_60%_at_50%_35%,black,transparent_75%)] bg-black/40" />
-
-              <div className="relative">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                  Signature Perks
-                </p>
-                <h3 className="mt-3 text-xl font-bold text-white">
-                  Luxury-grade drops, curated for SA.
-                </h3>
-
-                <div className="mt-5 space-y-3 text-sm text-slate-200/85">
-                  <div className="flex items-center gap-3">
-                    <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.6)]" />
-                    Fast dispatch, smooth tracking, zero drama.
+          {/* Hero Image / Stats */}
+          <div className="w-full max-w-md hidden lg:block">
+            <div className="relative p-8 border border-white/10 bg-black/40 backdrop-blur-md">
+               <div className="space-y-6">
+                  <div>
+                    <h3 className="text-4xl font-black text-white">24h</h3>
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 mt-1">Dispatch Time</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="h-2 w-2 rounded-full bg-violet-300 shadow-[0_0_12px_rgba(196, 181, 253, 0.6)]" />
-                    Verified vendors, premium stock only.
+                  <div>
+                    <h3 className="text-4xl font-black text-white">100%</h3>
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 mt-1">Authentic Stock</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="h-2 w-2 rounded-full bg-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.6)]" />
-                    Exclusive drops, no Eskom Promises.
+                  <div>
+                     <h3 className="text-4xl font-black text-white">SA</h3>
+                     <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 mt-1">Local Delivery</p>
                   </div>
-                </div>
-
-                <div className="mt-6 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                  <span>Premium</span>
-                  <span>Fast checkout</span>
-                  <span>SA ready</span>
-                </div>
-              </div>
+               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Spacer to ensure content scrolls properly */}
-      <div className="h-10 relative z-10" />
-
-      <section className="relative z-10 mx-auto w-full max-w-6xl px-4 py-12">
-        <div className="rounded-[4rem] border border-white/[0.04] bg-slate-900/40 backdrop-blur-xl shadow-2xl overflow-hidden">
-          <FlavourPicker flavours={flavours} />
-        </div>
+      {/* --- FLAVOUR PICKER --- */}
+      <section className="relative z-20 mx-auto w-full max-w-7xl px-4 py-16">
+        <FlavourPicker flavours={flavours} />
       </section>
 
+      {/* --- FEATURED DROPS (NASTY LAYOUT) --- */}
       {featuredSettings.enabled && products.length > 0 ? (
-        <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-16">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between rounded-[2rem] bg-slate-900/40 p-8 border border-white/[0.04] backdrop-blur-sm mb-8">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-cyan-500/80">
-                Featured Drops
-              </p>
-              <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl uppercase">
+        <section className="relative z-10 mx-auto w-full max-w-[1400px] px-4 pb-24">
+          
+          {/* Section Header */}
+          <div className="flex flex-col items-center justify-center text-center mb-16 space-y-4">
+             <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-white uppercase">
                 {featuredSettings.title}
-              </h2>
-              <p className="max-w-2xl text-sm text-slate-300 mt-1">
+             </h2>
+             <div className="h-1 w-24 bg-cyan-500" />
+             <p className="text-sm font-medium tracking-[0.2em] uppercase text-slate-400">
                 {featuredSettings.description}
-              </p>
-            </div>
+             </p>
+          </div>
+
+          {/* 
+             NASTY GRID:
+             - grid-cols-2 (mobile) -> grid-cols-4 (desktop)
+             - gap-x-4 (mobile) -> gap-x-12 (desktop)
+             - gap-y-16 (vertical spacing)
+          */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-12 md:gap-x-8 lg:gap-x-12">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+
+          <div className="mt-20 flex justify-center">
             <Link
               href="/shop"
-              className="mt-2 inline-flex text-xs font-bold uppercase tracking-[0.22em] text-cyan-200 transition hover:text-white sm:mt-0 border-b border-cyan-400/30 pb-1"
+              className="group relative px-12 py-4 border border-white/20 hover:border-white transition-colors duration-300"
             >
-              Browse all
+              <span className="text-xs font-bold uppercase tracking-[0.3em] text-white">View All Drops</span>
             </Link>
-          </div>
-
-          <div className="mt-8 grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {products.map((product) => {
-              const p: any = product
-              const imageUrl = p.image_url || '/placeholder.png'
-              return (
-                <Link
-                  key={product.id}
-                  href={`/shop/${product.id}`}
-                  className="group relative overflow-hidden rounded-[1.8rem] border border-white/[0.04] bg-slate-950/60 p-5 backdrop-blur-md shadow-2xl transition hover:-translate-y-1 hover:border-cyan-500/20"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-black/70" />
-
-                  <div className="relative">
-                    <div className="relative h-44 overflow-hidden rounded-[1.4rem] border border-slate-800/60 bg-black/60">
-                      <Image
-                        src={imageUrl}
-                        alt={product.name}
-                        fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        className="object-contain object-center transition duration-300 group-hover:scale-[1.03]"
-                      />
-                    </div>
-
-                    <div className="mt-4 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                      <span>{getCategory(product)}</span>
-                      <span className="text-slate-500">
-                        {p.in_stock === false ? 'Out' : 'In stock'}
-                      </span>
-                    </div>
-
-                    <h3 className="mt-3 text-base font-bold text-white">
-                      {product.name}
-                    </h3>
-                    <p className="mt-2 text-xs text-slate-300">
-                      {clampText(
-                        product.description || 'Smooth pull. Strong flavour. Premium disposable.',
-                        90
-                      )}
-                    </p>
-
-                    <div className="mt-4 flex items-center justify-between">
-                      <span className="text-sm font-extrabold text-white">
-                        {formatMoney(Number(product.price))}
-                      </span>
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan-200/80">
-                        View
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
           </div>
         </section>
       ) : null}
