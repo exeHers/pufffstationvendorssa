@@ -208,14 +208,14 @@ export default function LoginClient() {
 
   return (
     <main className="mx-auto max-w-xl px-4 pb-16 pt-10">
-      <div className="mb-4 rounded-full bg-fuchsia-600/20 border border-fuchsia-500/30 px-4 py-1 text-center">
-        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-fuchsia-400">
+      <div className="mb-4 rounded-full bg-cyan-600/20 border border-cyan-500/30 px-4 py-1 text-center">
+        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-cyan-400">
           Security Patch v1.6 Active
         </p>
       </div>
 
       <div className="rounded-3xl border border-slate-800/80 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900/95 p-6 shadow-[0_24px_60px_rgba(0,0,0,0.85)]">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#D946EF]">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#06b6d4]">
           ACCOUNT
         </p>
         <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-white">
@@ -235,7 +235,7 @@ export default function LoginClient() {
                 <input
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-500"
+                  className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none focus:border-cyan-500"
                   placeholder="First name"
                 />
               </label>
@@ -246,7 +246,7 @@ export default function LoginClient() {
                 <input
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-500"
+                  className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none focus:border-cyan-500"
                   placeholder="Last name"
                 />
               </label>
@@ -262,7 +262,7 @@ export default function LoginClient() {
               onChange={(e) => setEmail(e.target.value)}
               type="email"
               autoComplete="email"
-              className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-500"
+              className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none focus:border-cyan-500"
               placeholder="you@example.com"
             />
           </label>
@@ -276,7 +276,7 @@ export default function LoginClient() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 type="tel"
-                className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-500"
+                className="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none focus:border-cyan-500"
                 placeholder="+27..."
               />
             </label>
@@ -292,8 +292,8 @@ export default function LoginClient() {
                 onChange={(e) => setPassword(e.target.value)}
                 type={showPassword ? 'text' : 'password'}
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                className="w-full rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none focus:border-fuchsia-500 pr-10"
-                placeholder="••••••••"
+                className="w-full rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none focus:border-cyan-500 pr-10"
+                placeholder="********"
               />
               <button
                 type="button"
@@ -323,7 +323,7 @@ export default function LoginClient() {
           <button
             type="submit"
                     disabled={loading}
-                    className="w-full rounded-full bg-[#D946EF] px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_24px_rgba(217,70,239,0.8)] hover:brightness-110 active:scale-95 disabled:opacity-60"
+                    className="w-full rounded-full bg-[#06b6d4] px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_24px_rgba(6,182,212,0.6)] hover:brightness-110 active:scale-95 disabled:opacity-60"
                   >
                     {loading ? 'Processing...' : mode === 'login' ? 'Sign In' : 'Create Account'}
                   </button>
@@ -331,8 +331,8 @@ export default function LoginClient() {
 
                 {isVerifying && (
                   <div className="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-3xl bg-slate-950/80 backdrop-blur-sm">
-                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-fuchsia-500 border-t-transparent" />
-                    <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-fuchsia-400">Verifying Terminal...</p>
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
+                    <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-cyan-400">Verifying Terminal...</p>
                   </div>
                 )}
 
@@ -341,9 +341,9 @@ export default function LoginClient() {
             <button
               type="button"
               onClick={onForgotPassword}
-              className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 transition hover:text-fuchsia-400"
+              className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 transition hover:text-cyan-400"
             >
-              <span className="underline decoration-fuchsia-500/30 underline-offset-4">Recover Password</span>
+              <span className="underline decoration-cyan-500/30 underline-offset-4">Recover Password</span>
             </button>
           </div>
         )}
@@ -371,3 +371,4 @@ export default function LoginClient() {
     </main>
   )
 }
+

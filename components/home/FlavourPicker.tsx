@@ -36,14 +36,14 @@ const flavourStyles: Record<string, { color: string; bg: string; border: string 
     border: 'group-hover:border-blue-500/50',
   },
   berry: {
-    color: 'text-purple-400',
-    bg: 'bg-purple-500/10',
-    border: 'group-hover:border-purple-500/50',
+    color: 'text-cyan-300',
+    bg: 'bg-cyan-500/10',
+    border: 'group-hover:border-cyan-500/50',
   },
   grape: {
-    color: 'text-fuchsia-400',
-    bg: 'bg-fuchsia-500/10',
-    border: 'group-hover:border-fuchsia-500/50',
+    color: 'text-emerald-300',
+    bg: 'bg-emerald-500/10',
+    border: 'group-hover:border-emerald-500/50',
   },
   mango: {
     color: 'text-yellow-400',
@@ -147,7 +147,7 @@ export default function FlavourPicker({ flavours }: { flavours: Flavour[] }) {
                     {flavour.name}
                   </h3>
                   <div className={`text-[8px] font-bold uppercase tracking-[0.2em] opacity-0 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-0 translate-y-2 ${style.color}`}>
-                    View Selection →
+                    {'View Selection ->'}
                   </div>
                 </div>
 

@@ -48,7 +48,7 @@ export default function PrivacyPage() {
           <p>
             Your data is stored securely using industry-standard encryption provided by our 
             infrastructure partners (Supabase & Vercel). We do not store full credit card details 
-            on our servers; all payments are processed through secured third-party gateways (Ozow).
+            on our servers; payments are handled through secure third-party channels, including manual EFT confirmations and upcoming Yoco checkout.
           </p>
         </section>
 
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
           </p>
           <ul className="list-disc pl-6 mt-2 space-y-2">
             <li>Courier services for delivery (e.g., Courier Guy / PUDO).</li>
-            <li>Payment processors (Ozow).</li>
+            <li>Payment providers and transaction channels (manual EFT confirmation, Yoco when enabled).</li>
             <li>Transactional email services (Resend).</li>
           </ul>
         </section>

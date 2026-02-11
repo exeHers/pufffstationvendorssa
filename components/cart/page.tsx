@@ -19,14 +19,14 @@ export default function CartPage() {
             Your stash, ready to move.
           </h1>
           <p className="max-w-2xl text-sm text-slate-300">
-            Check your items, adjust quantities, and remove anything you don’t want. No stress.
+            Check your items, adjust quantities, and remove anything you do not want. No stress.
           </p>
         </div>
 
         <div className="flex gap-3">
           <Link
             href="/shop"
-            className="rounded-full border border-slate-700 px-5 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-200 transition hover:border-violet-500 hover:text-violet-400"
+            className="rounded-full border border-slate-700 px-5 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-200 transition hover:border-cyan-500 hover:text-cyan-300"
           >
             Back to shop
           </Link>
@@ -50,7 +50,7 @@ export default function CartPage() {
           <div className="mt-4">
             <Link
               href="/shop"
-              className="inline-flex rounded-full bg-violet-600 px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white shadow-[0_0_22px_rgba(124,58,237,0.7)] transition hover:brightness-110 active:scale-95"
+              className="inline-flex rounded-full bg-cyan-600 px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white shadow-[0_0_22px_rgba(6,182,212,0.45)] transition hover:brightness-110 active:scale-95"
             >
               Browse shop
             </Link>
@@ -71,7 +71,6 @@ export default function CartPage() {
                   <div className="flex items-center gap-4">
                     <div className="h-16 w-16 overflow-hidden rounded-2xl bg-slate-900/70">
                       {item.image_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={item.image_url}
                           alt={item.name}
@@ -108,7 +107,7 @@ export default function CartPage() {
                         className="h-8 w-8 rounded-full text-slate-200 transition hover:bg-slate-800/60"
                         aria-label="Decrease quantity"
                       >
-                        −
+                        -
                       </button>
                       <span className="min-w-[2ch] text-center text-[12px] font-bold text-white">
                         {item.quantity}
@@ -168,14 +167,14 @@ export default function CartPage() {
 
             <button
               type="button"
-              className="mt-5 w-full rounded-full bg-violet-600 px-6 py-3 text-[11px] font-extrabold uppercase tracking-[0.18em] text-white shadow-[0_0_22px_rgba(124,58,237,0.7)] transition hover:brightness-110 active:scale-95"
+              className="mt-5 w-full rounded-full bg-cyan-600 px-6 py-3 text-[11px] font-extrabold uppercase tracking-[0.18em] text-white shadow-[0_0_22px_rgba(6,182,212,0.45)] transition hover:brightness-110 active:scale-95"
               onClick={() => router.push('/checkout')}
             >
               Checkout
             </button>
 
             <p className="mt-3 text-[11px] text-slate-500">
-              Secure payment via Ozow or WhatsApp.
+              Secure payment via WhatsApp EFT. Yoco card checkout is coming soon.
             </p>
           </aside>
         </div>

@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
-import Script from 'next/script'
 import './globals.css'
 import './smoke.css'
 
@@ -9,10 +8,12 @@ import AgeGate from '@/components/age/AgeGate'
 import LuxeAtmosphere from '@/components/ui/LuxeAtmosphere'
 import { CartProvider } from '@/components/cart/CartContext'
 import HeaderLinks from '@/components/nav/HeaderLinks'
+import BackButton from '@/components/nav/BackButton'
 import AndroidMotionGate from '@/components/utils/AndroidMotionGate'
 import Footer from '@/components/layout/Footer'
 import WhatsAppSupport from '@/components/support/WhatsAppSupport'
 import AddToCartToast from '@/components/ui/AddToCartToast'
+import Marquee from '@/components/ui/Marquee'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pufffstation.co.za'
 
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
     default: 'PUFFF Station Vendors SA | Premium Disposables',
     template: '%s | PUFFF Station Vendors SA',
   },
-  description: 'Experience the pinnacle of luxury vaping with PUFFF Station Vendors SA. Premium disposables, maximum impact, and a neon-infused aesthetic.',
+  description: 'Premium disposable vape storefront for South African vendors. Clean stock, fast dispatch, and reliable support.',
   keywords: ['vaping', 'disposables', 'South Africa', 'luxury vapes', 'neon aesthetic', 'PUFFF Station'],
   authors: [{ name: 'PUFFF Station Vendors SA' }],
   creator: 'PUFFF Station Vendors SA',
@@ -37,7 +38,7 @@ export const metadata: Metadata = {
     locale: 'en_ZA',
     url: siteUrl,
     title: 'PUFFF Station Vendors SA | Premium Disposables',
-    description: 'Experience the pinnacle of luxury vaping with PUFFF Station Vendors SA. Premium disposables, maximum impact, and a neon-infused aesthetic.',
+    description: 'Premium disposable vape storefront for South African vendors. Clean stock, fast dispatch, and reliable support.',
     siteName: 'PUFFF Station Vendors SA',
     images: [
       {
@@ -51,7 +52,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'PUFFF Station Vendors SA | Premium Disposables',
-    description: 'Experience the pinnacle of luxury vaping with PUFFF Station Vendors SA. Premium disposables, maximum impact, and a neon-infused aesthetic.',
+    description: 'Premium disposable vape storefront for South African vendors. Clean stock, fast dispatch, and reliable support.',
     images: ['/logo.png'],
   },
   icons: {
@@ -75,9 +76,12 @@ export default function RootLayout({
           <WhatsAppSupport />
           <AddToCartToast />
           <div className="min-h-screen">
+             <Marquee />
             <header className="sticky top-0 z-50 border-b border-white/[0.03] bg-slate-950/60 backdrop-blur-md">
-              <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4">
-                <Link href="/" className="group flex items-center gap-3">
+              <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4">
+                <div className="flex items-center gap-3">
+                  <BackButton />
+                  <Link href="/" className="group flex items-center gap-3">
                   <div className="relative h-11 w-11 overflow-hidden rounded-full border border-slate-800/60 bg-slate-950/40 sm:h-12 sm:w-12 lg:h-14 lg:w-14">
                     <div className="absolute inset-0 pufff-haze opacity-60" />
                     <div className="absolute inset-0 bg-gradient-to-br from-slate-950/50 via-slate-950/40 to-slate-900/60" />
@@ -98,9 +102,10 @@ export default function RootLayout({
                     <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400 lg:text-xs">
                       Vendors SA
                     </div>
-                    <span className="absolute -bottom-2 left-0 h-[1.5px] w-16 rounded-full bg-gradient-to-r from-cyan-500/40 via-violet-500/40 to-purple-500/40 opacity-50" />
+                    <span className="absolute -bottom-2 left-0 h-[1.5px] w-16 rounded-full bg-gradient-to-r from-cyan-500/50 via-emerald-400/40 to-amber-300/40 opacity-60" />
                   </div>
                 </Link>
+                </div>
 
                 <HeaderLinks />
 

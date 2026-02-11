@@ -62,11 +62,11 @@ export async function POST(req: Request) {
     const customerHtml = `
       <div style="font-family:system-ui;line-height:1.4">
         <p>Hi ${escapeHtml(name)},</p>
-        <p>Thanks for reaching out — we received your message and we’ll reply as soon as possible.</p>
+        <p>Thanks for reaching out - we received your message and we will reply as soon as possible.</p>
         ${orderId ? `<p><b>Your Order ID:</b> ${escapeHtml(orderId)}</p>` : ''}
         <p style="margin-top:16px"><b>What you sent:</b></p>
         <pre style="white-space:pre-wrap">${escapeHtml(message)}</pre>
-        <p style="margin-top:16px">— Puff Station Support</p>
+        <p style="margin-top:16px">- Puff Station Support</p>
       </div>
     `
 
@@ -92,9 +92,9 @@ export async function POST(req: Request) {
 
 function escapeHtml(input: string) {
   return input
-    .replaceAll('&', '&')
-    .replaceAll('<', '<')
-    .replaceAll('>', '>')
-    .replaceAll('"', '"')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;')
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 
 type Category = {
@@ -18,7 +18,7 @@ export default function AdminCategoriesPage() {
 
   const canSubmit = useMemo(() => name.trim().length >= 2, [name])
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     const { data, error } = await supabase
@@ -33,7 +33,7 @@ export default function AdminCategoriesPage() {
       setCategories((data ?? []) as Category[])
     }
     setLoading(false)
-  }
+  }, [])
 
   async function addCategory() {
     setError(null)
@@ -52,7 +52,7 @@ export default function AdminCategoriesPage() {
     }
 
     setName('')
-    setOk('Category added ✅')
+    setOk('Category added ...')
     await load()
   }
 
@@ -70,20 +70,19 @@ export default function AdminCategoriesPage() {
       return
     }
 
-    setOk('Category removed ✅')
+    setOk('Category removed ...')
     await load()
   }
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [load])
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 pb-14 pt-10">
       <div className="mb-6">
         <h1 className="text-2xl font-extrabold tracking-tight text-white">
-          Admin · Categories
+          Admin - Categories
         </h1>
         <p className="mt-1 text-sm text-slate-300">
           Add or remove brand categories for the shop. Keep it clean, keep it lekker.
@@ -100,14 +99,14 @@ export default function AdminCategoriesPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Elfbar, Vapengin, IQOS..."
-              className="mt-2 w-full rounded-2xl border border-white/[0.05] bg-slate-950/50 px-4 py-3 text-sm text-slate-100 outline-none focus:border-violet-500/50"
+              className="mt-2 w-full rounded-2xl border border-white/[0.05] bg-slate-950/50 px-4 py-3 text-sm text-slate-100 outline-none focus:border-cyan-500/50"
             />
           </div>
  
           <button
             onClick={addCategory}
             disabled={!canSubmit}
-            className="rounded-2xl bg-violet-600 px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-2xl bg-cyan-600 px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Add
           </button>
@@ -131,7 +130,7 @@ export default function AdminCategoriesPage() {
           </h2>
 
           {loading ? (
-            <p className="mt-3 text-sm text-slate-400">Loading…</p>
+            <p className="mt-3 text-sm text-slate-400">Loading...</p>
           ) : categories.length === 0 ? (
             <p className="mt-3 text-sm text-slate-400">
               No categories yet. Add the first one, my bru.
@@ -165,3 +164,12 @@ export default function AdminCategoriesPage() {
     </main>
   )
 }
+
+
+
+
+
+
+
+
+

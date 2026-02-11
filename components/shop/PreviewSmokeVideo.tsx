@@ -86,11 +86,16 @@
     }
   }, [style])
 
-  const { opacity: _opacity, filter: _filter, ...restStyle } = style ?? {}
+  const restStyle = useMemo(() => {
+    const s = { ...(style ?? {}) } as React.CSSProperties
+    delete (s as any).opacity
+    delete (s as any).filter
+    return s
+  }, [style])
   
   // Dynamic filter ID based on hex to force re-render
   const filterId = useMemo(() => {
-    let h = (hex || '#7c3aed').trim().replace('#', '')
+    let h = (hex || '#06b6d4').trim().replace('#', '')
     if (h.length === 3) h = h.split('').map(char => char + char).join('')
     const clean = h.padEnd(6, '0').slice(0, 6).toLowerCase()
     return `smoke-filter-${id}-${clean}`

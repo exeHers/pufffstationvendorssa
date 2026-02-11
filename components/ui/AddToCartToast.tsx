@@ -28,12 +28,12 @@ export default function AddToCartToast() {
           className="fixed bottom-8 left-1/2 z-[200] w-[calc(100%-2rem)] max-w-xs overflow-hidden rounded-2xl border border-white/[0.08] bg-slate-900/90 p-4 shadow-2xl backdrop-blur-xl"
         >
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-600/20 text-violet-400">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-cyan-600/20 text-cyan-300">
               <ShoppingBag size={20} />
             </div>
             
             <div className="flex-1 overflow-hidden">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-violet-400 uppercase tracking-widest">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-cyan-300 uppercase tracking-widest">
                 <Check size={12} />
                 Added to Cart
               </div>
@@ -45,7 +45,7 @@ export default function AddToCartToast() {
             <Link
               href="/cart"
               onClick={clearLastAdded}
-              className="rounded-full bg-violet-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-violet-500"
+              className="rounded-full bg-cyan-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-cyan-500"
             >
               View
             </Link>
@@ -56,7 +56,7 @@ export default function AddToCartToast() {
             initial={{ scaleX: 1 }}
             animate={{ scaleX: 0 }}
             transition={{ duration: 4, ease: "linear" }}
-            className="absolute bottom-0 left-0 h-1 w-full bg-violet-500 origin-left"
+            className="absolute bottom-0 left-0 h-1 w-full bg-cyan-500 origin-left"
           />
         </motion.div>
       )}

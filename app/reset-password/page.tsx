@@ -25,7 +25,6 @@ export default function ResetPasswordPage() {
       const { data } = await supabase.auth.getSession();
       setReady(Boolean(data.session));
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase]);
 
   async function updatePassword() {
@@ -51,7 +50,7 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    setMsg("Password updated ✅ You can now sign in.");
+    setMsg("Password updated. You can now sign in.");
     setTimeout(() => (window.location.href = "/login"), 800);
   }
 
@@ -117,7 +116,7 @@ export default function ResetPasswordPage() {
             disabled={loading}
             onClick={updatePassword}
           >
-            {loading ? "Updating…" : "Update password"}
+            {loading ? "Updating..." : "Update password"}
           </button>
         </div>
       </div>

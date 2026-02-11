@@ -3,7 +3,7 @@ import CheckoutClient from './CheckoutClient'
 
 export const metadata: Metadata = {
   title: 'Checkout',
-  description: 'Complete your PUFFF Station order. Secure payment with Ozow.',
+  description: 'Complete your PUFFF Station order. WhatsApp EFT is live and Yoco card checkout is coming soon.',
   robots: {
     index: false,
     follow: false,

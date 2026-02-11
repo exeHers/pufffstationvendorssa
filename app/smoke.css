@@ -1,5 +1,5 @@
 /* app/smoke.css */
-/* Lightweight “smoke / glow” using gradients + blur + animation.
+/* Lightweight "smoke / glow" using gradients + blur + animation.
    Uses CSS variables:
    --smoke-rgb : space-separated RGB (e.g. "217 70 239")
    --smoke-a   : opacity strength (0-1-ish)
@@ -34,7 +34,7 @@
   100% { opacity: 0.25; transform: scale(1); }
 }
 
-/* A reusable “premium glow haze” background */
+/* A reusable "premium glow haze" background */
 .pufff-haze {
   position: absolute;
   inset: -30%;
@@ -46,7 +46,7 @@
   pointer-events: none;
 }
 
-/* Under-image smoke “pad” */
+/* Under-image smoke "pad" */
 .pufff-smoke-pad {
   position: absolute;
   left: 12%;
@@ -71,7 +71,7 @@
   transform: translateY(0) scale(1);
 }
 
-/* A subtle “premium breathe” overlay for tiles */
+/* A subtle "premium breathe" overlay for tiles */
 .pufff-tile-breathe {
   position: absolute;
   inset: 0;

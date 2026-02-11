@@ -37,7 +37,7 @@ function isValidHex(hex?: string | null) {
   return /^#([0-9a-fA-F]{3}){1,2}$/.test(h)
 }
 
-const GLOBAL_FALLBACK_SMOKE = '#7c3aed'
+const GLOBAL_FALLBACK_SMOKE = '#06b6d4'
 
 function hexToHue(hex?: string | null) {
   if (!hex) return null
@@ -118,7 +118,7 @@ function FeaturedHero({ product }: { product: Product }) {
                    isValidHex(p.smoke_hex) ? p.smoke_hex!.trim() :
                    isValidHex(p.accent_hex) ? p.accent_hex!.trim() : GLOBAL_FALLBACK_SMOKE
 
-  const smokeRgb = hexToRgb(smokeHex) || '124 58 237'
+  const smokeRgb = hexToRgb(smokeHex) || '6 182 212'
 
   return (
     <a
@@ -133,7 +133,7 @@ function FeaturedHero({ product }: { product: Product }) {
           className="absolute inset-0 opacity-15"
           style={{
             background:
-              `radial-gradient(900px 380px at 20% 20%, rgba(124,58,237,0.15), transparent 60%),` +
+              `radial-gradient(900px 380px at 20% 20%, rgba(6,182,212,0.16), transparent 60%),` +
               `radial-gradient(900px 380px at 80% 80%, rgba(34,211,238,0.12), transparent 60%)`,
           }}
         />

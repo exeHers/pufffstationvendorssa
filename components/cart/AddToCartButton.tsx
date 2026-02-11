@@ -24,9 +24,9 @@ export default function AddToCartButton({ product }: Props) {
       type="button"
       onClick={handleAdd}
       disabled={isAdding}
-      className="rounded-full bg-violet-600 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_0_18px_rgba(124,58,237,0.55)] transition hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+      className="rounded-full bg-cyan-600 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_0_18px_rgba(6,182,212,0.45)] transition hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
     >
-      {isAdding ? 'Added, sharp…' : 'Add to cart'}
+      {isAdding ? 'Added.' : 'Add to cart'}
     </button>
   )
 }

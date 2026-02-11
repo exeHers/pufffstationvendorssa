@@ -1,18 +1,15 @@
 'use client'
 
-import { useEffect, useMemo, useState, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
 import { Tables } from '@/lib/types/database'
 import { supabase } from '@/lib/supabaseClient'
 import imageCompression from 'browser-image-compression'
 import type { Product } from '@/lib/types'
-import { supabaseBrowser } from '@/lib/supabase/browser'
 import ProductCard from '@/components/products/ProductCard'
 
 type Category = Tables<'categories'>
-
-type Profile = { id: string; role: string | null }
 
 function safeNum(v: unknown) {
   const n = Number(v)
@@ -32,7 +29,7 @@ function isValidHex(hex: string) {
 function clampCategoryLabel(input: string) {
   const s = (input || '').trim()
   if (!s) return 'Other'
-  return s.length > 28 ? `${s.slice(0, 28)}…` : s
+  return s.length > 28 ? `${s.slice(0, 28)}...` : s
 }
 
 export default function AdminProductsPage() {
@@ -64,8 +61,6 @@ export default function AdminProductsPage() {
   ]
   const [remover, setRemover] = useState(removerOptions[0])
 
-  const [email, setEmail] = useState('')
-
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
 
@@ -86,11 +81,11 @@ export default function AdminProductsPage() {
   const [isFeatured, setIsFeatured] = useState(false)
 
   // brand accent (UI glow)
-  const [accentHex, setAccentHex] = useState('#D946EF')
+  const [accentHex, setAccentHex] = useState('#06b6d4')
 
-  // ✅ NEW: smoke colours
+  // NEW: smoke colours
   const [smokeHexScroll, setSmokeHexScroll] = useState('#00FFFF')
-  const [smokeHexPreview, setSmokeHexPreview] = useState('#D946EF')
+  const [smokeHexPreview, setSmokeHexPreview] = useState('#06b6d4')
 
   const [image, setImage] = useState<File | null>(null)
 
@@ -108,29 +103,15 @@ export default function AdminProductsPage() {
   const [eInStock, setEInStock] = useState(true)
   const [eIsFeatured, setEIsFeatured] = useState(false)
 
-  const [eAccentHex, setEAccentHex] = useState('#D946EF')
+  const [eAccentHex, setEAccentHex] = useState('#06b6d4')
 
-  // ✅ NEW: edit smoke
+  // NEW: edit smoke
   const [eSmokeHexScroll, setESmokeHexScroll] = useState('#00FFFF')
-  const [eSmokeHexPreview, setESmokeHexPreview] = useState('#D946EF')
+  const [eSmokeHexPreview, setESmokeHexPreview] = useState('#06b6d4')
 
   const [eImageUrl, setEImageUrl] = useState<string>('')
 
-  // ---- Auth + role check ----
-  useEffect(() => {
-    ;(async () => {
-      setLoading(true)
-      const sb = supabaseBrowser()
-      const { data: { user } } = await sb.auth.getUser()
-      if (user?.email) setEmail(user.email)
-
-      await Promise.all([refreshProducts(), refreshCategories()])
-      setLoading(false)
-    })()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  async function refreshProducts() {
+  const refreshProducts = useCallback(async () => {
     const { data, error } = await supabase
       .from('products')
       .select('*')
@@ -141,9 +122,9 @@ export default function AdminProductsPage() {
       return
     }
     setProducts(data ?? [])
-  }
+  }, [])
 
-  async function refreshCategories() {
+  const refreshCategories = useCallback(async () => {
     const { data, error } = await supabase
       .from('categories')
       .select('*')
@@ -151,7 +132,16 @@ export default function AdminProductsPage() {
 
     if (error) return
     setCategories(data ?? [])
-  }
+  }, [])
+
+  // ---- Auth + role check ----
+  useEffect(() => {
+    ;(async () => {
+      setLoading(true)
+      await Promise.all([refreshProducts(), refreshCategories()])
+      setLoading(false)
+    })()
+  }, [refreshProducts, refreshCategories])
 
   function openDrawer(p: Product) {
     setSelected(p)
@@ -170,14 +160,14 @@ export default function AdminProductsPage() {
     setEInStock(pp.in_stock !== false)
     setEIsFeatured(Boolean(pp.is_featured))
 
-    setEAccentHex(pp.accent_hex && isValidHex(pp.accent_hex) ? pp.accent_hex : '#D946EF')
+    setEAccentHex(pp.accent_hex && isValidHex(pp.accent_hex) ? pp.accent_hex : '#06b6d4')
 
-    // ✅ smoke defaults
+    // ... smoke defaults
     setESmokeHexScroll(
       pp.smoke_hex_scroll && isValidHex(pp.smoke_hex_scroll) ? pp.smoke_hex_scroll : '#00FFFF'
     )
     setESmokeHexPreview(
-      pp.smoke_hex_preview && isValidHex(pp.smoke_hex_preview) ? pp.smoke_hex_preview : '#D946EF'
+      pp.smoke_hex_preview && isValidHex(pp.smoke_hex_preview) ? pp.smoke_hex_preview : '#06b6d4'
     )
 
     setEImageUrl(pp.image_url ?? '')
@@ -274,7 +264,7 @@ export default function AdminProductsPage() {
     }
 
     if (accentHex.trim() && !isValidHex(accentHex)) {
-      setErr('Accent hex must be like #D946EF')
+      setErr('Accent hex must be like #06b6d4')
       return
     }
 
@@ -284,7 +274,7 @@ export default function AdminProductsPage() {
     }
 
     if (smokeHexPreview.trim() && !isValidHex(smokeHexPreview)) {
-      setErr('Preview smoke hex must be like #D946EF')
+      setErr('Preview smoke hex must be like #06b6d4')
       return
     }
 
@@ -332,7 +322,7 @@ export default function AdminProductsPage() {
       const json = await res.json()
       if (!res.ok) throw new Error(json?.error ?? 'Failed to create product.')
 
-      setOk('Product created ✅')
+      setOk('Product created.')
 
       setName('')
       setCategory('')
@@ -343,9 +333,9 @@ export default function AdminProductsPage() {
       setInStock(true)
       setIsFeatured(false)
 
-      setAccentHex('#D946EF')
+      setAccentHex('#06b6d4')
       setSmokeHexScroll('#00FFFF')
-      setSmokeHexPreview('#D946EF')
+      setSmokeHexPreview('#06b6d4')
 
       setImage(null)
 
@@ -388,7 +378,7 @@ export default function AdminProductsPage() {
     }
 
     if (eAccentHex.trim() && !isValidHex(eAccentHex)) {
-      setErr('Accent hex must be like #D946EF')
+      setErr('Accent hex must be like #06b6d4')
       return
     }
 
@@ -398,7 +388,7 @@ export default function AdminProductsPage() {
     }
 
     if (eSmokeHexPreview.trim() && !isValidHex(eSmokeHexPreview)) {
-      setErr('Preview smoke hex must be like #D946EF')
+      setErr('Preview smoke hex must be like #06b6d4')
       return
     }
 
@@ -426,10 +416,9 @@ export default function AdminProductsPage() {
 
       if (error) throw new Error(error.message)
 
-      setOk('Saved ✅')
+      setOk('Saved.')
       await refreshProducts()
 
-      const updated = products.find((p) => p.id === selected.id)
       const refreshedProducts = await supabase.from('products').select('*').order('created_at', { ascending: false })
       if (refreshedProducts.data) {
         setProducts(refreshedProducts.data)
@@ -465,7 +454,7 @@ export default function AdminProductsPage() {
 
   async function onRemove(p: Product) {
     const confirmed = window.confirm(
-      `Remove "${p.name}" from the shop?\n\nSoft delete — you can restore later.`
+      `Remove "${p.name}" from the shop?\n\nSoft delete - you can restore later.`
     )
     if (!confirmed) return
  
@@ -491,7 +480,7 @@ export default function AdminProductsPage() {
       if (!res.ok) throw new Error(json?.error ?? 'Failed to remove product.')
  
       await refreshProducts()
-      setOk('Removed ✅')
+      setOk('Removed.')
       closeDrawer()
     } catch (e: any) {
       setErr(e?.message ?? 'Failed.')
@@ -523,7 +512,7 @@ export default function AdminProductsPage() {
       if (!res.ok) throw new Error(json?.error ?? 'Failed to restore product.')
  
       await refreshProducts()
-      setOk('Restored ✅')
+      setOk('Restored.')
       closeDrawer()
     } catch (e: any) {
       setErr(e?.message ?? 'Failed.')
@@ -534,7 +523,7 @@ export default function AdminProductsPage() {
 
   async function onHardDelete(p: Product) {
     const confirmed = window.confirm(
-      `⚠️ PERMANENT DELETE: "${p.name}"\n\nThis will permanently erase the product and its optimized image from Supabase. This action cannot be reversed.\n\nProceed with hard delete?`
+      `WARNING: PERMANENT DELETE: "${p.name}"\n\nThis will permanently erase the product and its optimized image from Supabase. This action cannot be reversed.\n\nProceed with hard delete?`
     )
     if (!confirmed) return
 
@@ -573,7 +562,7 @@ export default function AdminProductsPage() {
     return (
       <main className="mx-auto max-w-6xl px-4 py-10 text-white">
         <div className="rounded-3xl border border-slate-800 bg-black/60 p-6 text-sm text-slate-200">
-          Loading…
+          Loading...
         </div>
       </main>
     )
@@ -584,12 +573,12 @@ export default function AdminProductsPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-violet-400">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-400">
             Admin
           </p>
           <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Products</h1>
           <p className="mt-1 text-sm text-slate-300">
-            Create, edit, smoke-colour, and manage stock — zero code.
+            Create, edit, smoke-colour, and manage stock - zero code.
           </p>
         </div>
 
@@ -694,7 +683,7 @@ export default function AdminProductsPage() {
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
               >
-                <option value="">Select category…</option>
+                <option value="">Select category...</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.name}>
                     {c.name}
@@ -736,7 +725,7 @@ export default function AdminProductsPage() {
                     type="checkbox"
                     checked={isFeatured}
                     onChange={(e) => setIsFeatured(e.target.checked)}
-                    className="h-4 w-4 accent-violet-500"
+                    className="h-4 w-4 accent-cyan-500"
                   />
                   <span className="text-slate-200">{isFeatured ? 'Yes' : 'No'}</span>
                 </div>
@@ -786,7 +775,7 @@ export default function AdminProductsPage() {
               </div>
             </label>
 
-            {/* ✅ Smoke scroll */}
+            {/* ... Smoke scroll */}
             <label className="grid gap-2">
               <span className="text-xs text-slate-300">Smoke colour (scroll)</span>
               <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3">
@@ -809,7 +798,7 @@ export default function AdminProductsPage() {
               </div>
             </label>
 
-            {/* ✅ Smoke preview */}
+            {/* ... Smoke preview */}
             <label className="grid gap-2">
               <span className="text-xs text-slate-300">Smoke colour (preview)</span>
               <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3">
@@ -851,16 +840,16 @@ export default function AdminProductsPage() {
                 onChange={(e) => setImage(e.target.files?.[0] ?? null)}
               />
               <p className="text-[11px] text-slate-400">
-                Uploads to Supabase Storage → saves public URL. Use transparent PNG cutouts for best results.
+                Uploads to Supabase Storage. Saves public URL. Use transparent PNG cutouts for best results.
               </p>
             </label>
 
             <button
               onClick={onCreate}
               disabled={busy}
-              className="rounded-full bg-violet-600 px-5 py-3 text-sm font-bold transition hover:bg-violet-500 disabled:opacity-60"
+              className="rounded-full bg-cyan-600 px-5 py-3 text-sm font-bold transition hover:bg-cyan-500 disabled:opacity-60"
             >
-              {busy ? 'Creating…' : 'Create product'}
+              {busy ? 'Creating...' : 'Create product'}
             </button>
           </div>
         </div>
@@ -874,7 +863,7 @@ export default function AdminProductsPage() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search name, category, description…"
+              placeholder="Search name, category, description..."
               className="rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm"
             />
 
@@ -907,7 +896,7 @@ export default function AdminProductsPage() {
                   type="checkbox"
                   checked={showRemoved}
                   onChange={(e) => setShowRemoved(e.target.checked)}
-                  className="accent-violet-500"
+                  className="accent-cyan-500"
                 />
                 <span className="text-slate-400">Show removed</span>
               </label>
@@ -926,7 +915,7 @@ export default function AdminProductsPage() {
                 <button
                   key={p.id}
                   onClick={() => openDrawer(p)}
-                  className={`w-full text-left flex flex-col gap-4 rounded-2xl border bg-slate-950/30 p-4 transition hover:border-violet-500/40 sm:flex-row sm:items-center ${
+                  className={`w-full text-left flex flex-col gap-4 rounded-2xl border bg-slate-950/30 p-4 transition hover:border-cyan-500/40 sm:flex-row sm:items-center ${
                     removed ? 'border-red-500/30 opacity-80' : 'border-white/[0.05]'
                   }`}
                 >
@@ -935,8 +924,15 @@ export default function AdminProductsPage() {
                     style={{ boxShadow: `0 0 22px ${accent}33` }}
                   >
                     {pp.image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={pp.image_url} alt={p.name} className="h-full w-full object-cover" />
+                      <Image
+                        src={pp.image_url}
+                        alt={p.name}
+                        width={48}
+                        height={48}
+                        sizes="48px"
+                        className="h-full w-full object-cover"
+                        unoptimized
+                      />
                     ) : (
                       <div className="h-full w-full bg-slate-900/40" />
                     )}
@@ -947,7 +943,7 @@ export default function AdminProductsPage() {
                       {p.name} {removed ? <span className="text-xs text-red-300">(removed)</span> : null}
                     </p>
                     <p className="text-xs text-slate-400">
-                      {cat} • {money(p.price)} • {pp.in_stock === false ? 'Out' : 'In stock'}
+                      {cat} | {money(p.price)} | {pp.in_stock === false ? 'Out' : 'In stock'}
                     </p>
                     {p.updated_at && (
                       <p className="mt-0.5 text-[9px] text-slate-600 uppercase font-black tracking-widest">
@@ -957,16 +953,16 @@ export default function AdminProductsPage() {
 
                     {pp.smoke_hex_scroll || pp.smoke_hex_preview ? (
                       <p className="mt-1 text-[10px] uppercase tracking-[0.22em] text-slate-500">
-                        Smoke set ✅
+                        Smoke set ...
                       </p>
                     ) : (
                       <p className="mt-1 text-[10px] uppercase tracking-[0.22em] text-amber-300/80">
-                        Smoke missing ⚠
+                        Smoke missing !
                       </p>
                     )}
                   </div>
 
-                  <div className="text-[10px] font-black uppercase tracking-widest text-violet-400 sm:ml-auto">Terminal Edit</div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-cyan-400 sm:ml-auto">Terminal Edit</div>
                 </button>
               )
             })}
@@ -983,7 +979,7 @@ export default function AdminProductsPage() {
             <div className="p-5 sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-fuchsia-400">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-400">
                     Edit product
                   </p>
                   <h3 className="mt-2 text-2xl font-extrabold tracking-tight text-white">
@@ -1062,7 +1058,7 @@ export default function AdminProductsPage() {
                     value={eCategory}
                     onChange={(e) => setECategory(e.target.value)}
                   >
-                    <option value="">Select category…</option>
+                    <option value="">Select category...</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.name}>
                         {c.name}
@@ -1102,7 +1098,7 @@ export default function AdminProductsPage() {
                       type="checkbox"
                       checked={eIsFeatured}
                       onChange={(e) => setEIsFeatured(e.target.checked)}
-                      className="h-4 w-4 accent-fuchsia-500"
+                      className="h-4 w-4 accent-cyan-500"
                     />
                     <span className="text-slate-200">{eIsFeatured ? 'Yes' : 'No'}</span>
                   </div>
@@ -1113,7 +1109,7 @@ export default function AdminProductsPage() {
                   <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3">
                     <input
                       type="color"
-                      value={isValidHex(eAccentHex) ? eAccentHex : '#D946EF'}
+                      value={isValidHex(eAccentHex) ? eAccentHex : '#06b6d4'}
                       onChange={(e) => setEAccentHex(e.target.value)}
                       className="h-10 w-14 cursor-pointer rounded-xl border border-slate-700 bg-transparent"
                     />
@@ -1124,12 +1120,12 @@ export default function AdminProductsPage() {
                     />
                     <div
                       className="h-10 w-10 rounded-xl border border-slate-700"
-                      style={{ background: isValidHex(eAccentHex) ? eAccentHex : '#D946EF' }}
+                      style={{ background: isValidHex(eAccentHex) ? eAccentHex : '#06b6d4' }}
                     />
                   </div>
                 </label>
 
-                {/* ✅ Scroll smoke */}
+                {/* ... Scroll smoke */}
                 <label className="grid gap-2">
                   <span className="text-xs text-slate-300">Smoke colour (scroll)</span>
                   <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3">
@@ -1151,13 +1147,13 @@ export default function AdminProductsPage() {
                   </div>
                 </label>
 
-                {/* ✅ Preview smoke */}
+                {/* ... Preview smoke */}
                 <label className="grid gap-2">
                   <span className="text-xs text-slate-300">Smoke colour (preview)</span>
                   <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3">
                     <input
                       type="color"
-                      value={isValidHex(eSmokeHexPreview) ? eSmokeHexPreview : '#D946EF'}
+                      value={isValidHex(eSmokeHexPreview) ? eSmokeHexPreview : '#06b6d4'}
                       onChange={(e) => setESmokeHexPreview(e.target.value)}
                       className="h-10 w-14 cursor-pointer rounded-xl border border-slate-700 bg-transparent"
                     />
@@ -1168,7 +1164,7 @@ export default function AdminProductsPage() {
                     />
                     <div
                       className="h-10 w-10 rounded-xl border border-slate-700"
-                      style={{ background: isValidHex(eSmokeHexPreview) ? eSmokeHexPreview : '#D946EF' }}
+                      style={{ background: isValidHex(eSmokeHexPreview) ? eSmokeHexPreview : '#06b6d4' }}
                     />
                   </div>
                 </label>
@@ -1198,9 +1194,9 @@ export default function AdminProductsPage() {
                     <button
                       onClick={onSaveEdit}
                       disabled={busy}
-                      className="w-full rounded-full bg-violet-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-violet-500 active:scale-[0.98] disabled:opacity-60"
+                      className="w-full rounded-full bg-cyan-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-cyan-500 active:scale-[0.98] disabled:opacity-60"
                     >
-                      {busy ? 'Saving…' : 'Save changes'}
+                      {busy ? 'Saving...' : 'Save changes'}
                     </button>
  
                     <div className="mt-2 rounded-2xl border border-red-500/10 bg-red-500/[0.02] p-3">
@@ -1229,7 +1225,7 @@ export default function AdminProductsPage() {
                             disabled={busy}
                             className="col-span-2 rounded-full border border-red-500/30 bg-red-500/10 px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-red-200 transition hover:bg-red-500/20 disabled:opacity-60"
                           >
-                            {busy ? 'Working…' : 'Soft Delete (Hide from Shop)'}
+                            {busy ? 'Working...' : 'Soft Delete (Hide from Shop)'}
                           </button>
                         )}
                       </div>
@@ -1252,3 +1248,14 @@ export default function AdminProductsPage() {
     </main>
   )
 }
+
+
+
+
+
+
+
+
+
+
+

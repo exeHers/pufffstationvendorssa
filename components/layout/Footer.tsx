@@ -20,41 +20,36 @@ export default function Footer() {
 
   useEffect(() => {
     const sb = supabaseBrowser()
-    
-    // Initial check
     sb.auth.getUser().then(({ data }) => {
       if (data.user) setUser(data.user)
       setLoadingUser(false)
     })
 
-    // Listen for auth changes to keep Footer in sync
-    const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = sb.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
       setLoadingUser(false)
     })
 
-    return () => {
-      subscription.unsubscribe()
-    }
+    return () => subscription.unsubscribe()
   }, [])
 
   async function handleSubmitReview(e: React.FormEvent) {
     e.preventDefault()
     if (!user) {
-      alert('You must be signed in to leave a review, my bru.')
+      alert('You must be signed in to leave a review.')
       return
     }
 
     setBusy(true)
-    const { error } = await supabaseBrowser()
-      .from('reviews')
-      .insert({ 
-        rating, 
-        text, 
-        customer_name: name || user.email?.split('@')[0] || 'Authenticated User', 
-        is_approved: false,
-      })
-    
+    const { error } = await supabaseBrowser().from('reviews').insert({
+      rating,
+      text,
+      customer_name: name || user.email?.split('@')[0] || 'Authenticated User',
+      is_approved: false,
+    })
+
     if (error) {
       alert(error.message)
     } else {
@@ -70,26 +65,22 @@ export default function Footer() {
   }
 
   return (
-    <footer className={`mt-14 border-t border-white/5 relative z-10 ${isHome ? 'bg-slate-950' : 'bg-black/40 backdrop-blur-md'}`}>
+    <footer className={`relative z-10 mt-14 border-t border-white/5 ${isHome ? 'bg-slate-950' : 'bg-black/40 backdrop-blur-md'}`}>
       <div className="mx-auto w-full max-w-6xl px-4 py-12">
         <div className="grid gap-8 md:grid-cols-[1.2fr_0.8fr_0.8fr]">
           <div>
-            <div className="text-sm font-extrabold text-white">
-              PUFFF Station Vendors SA
-            </div>
+            <div className="text-sm font-extrabold text-white">PUFFF Station Vendors SA</div>
             <div className="mt-2 max-w-md text-xs leading-relaxed text-slate-400">
               Premium disposables intended for adults only. 18+ required.
-              <span className="block mt-2 text-slate-500">
-                Support: support@pufffstationsa.co.za
-              </span>
+              <span className="mt-2 block text-slate-500">Support: support@pufffstationsa.co.za</span>
             </div>
             <div className="mt-6">
-              <button 
+              <button
                 onClick={() => setShowReviewForm(true)}
-                className="text-[11px] font-bold uppercase tracking-[0.15em] text-violet-400 hover:text-violet-300 transition flex items-center gap-2"
+                className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.15em] text-cyan-300 transition hover:text-cyan-200"
               >
-                <span className="h-2 w-2 rounded-full bg-violet-500/80" />
-                Give Us a Review
+                <span className="h-2 w-2 rounded-full bg-cyan-400/80" />
+                Leave a Review
               </button>
             </div>
           </div>
@@ -132,8 +123,8 @@ export default function Footer() {
         <div className="mt-10 flex flex-col gap-3 border-t border-slate-800/60 pt-6 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col gap-1 sm:flex-row sm:gap-4">
             <span>© {new Date().getFullYear()} PUFFF Station Vendors SA</span>
-            <span className="hidden sm:inline text-slate-700">|</span>
-            <span className="text-slate-600">DNVN Digital</span>
+            <span className="hidden text-slate-700 sm:inline">|</span>
+            <span className="text-slate-600">PUFFF Station</span>
           </div>
           <span>Adults only. 18+.</span>
         </div>
@@ -142,100 +133,102 @@ export default function Footer() {
       <AnimatePresence>
         {showReviewForm && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowReviewForm(false)}
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="relative w-full max-w-md overflow-hidden rounded-[2.5rem] border border-slate-800 bg-slate-950 p-8 shadow-2xl"
             >
               {loadingUser ? (
-                <div className="py-12 text-center text-slate-400 text-sm italic">Checking session...</div>
+                <div className="py-12 text-center text-sm italic text-slate-400">Checking session...</div>
               ) : !user ? (
                 <div className="py-8 text-center">
-                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rose-500/10 text-3xl text-rose-500">
-                      !
-                   </div>
-                   <h2 className="text-xl font-extrabold text-white">Login Required</h2>
-                   <p className="mt-2 text-sm text-slate-400">You must be signed in to leave a review, my bru.</p>
-                   <div className="mt-8 flex flex-col gap-3">
-                      <Link 
-                        href="/login"
-                        onClick={() => setShowReviewForm(false)}
-                        className="rounded-full bg-white px-6 py-3 text-xs font-black uppercase tracking-widest text-black hover:bg-slate-200 transition"
-                      >
-                        Sign In Now
-                      </Link>
-                      <button 
-                        onClick={() => setShowReviewForm(false)}
-                        className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-white transition"
-                      >
-                        Maybe Later
-                      </button>
-                   </div>
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rose-500/10 text-3xl text-rose-500">
+                    !
+                  </div>
+                  <h2 className="text-xl font-extrabold text-white">Login Required</h2>
+                  <p className="mt-2 text-sm text-slate-400">You must be signed in to leave a review.</p>
+                  <div className="mt-8 flex flex-col gap-3">
+                    <Link
+                      href="/login"
+                      onClick={() => setShowReviewForm(false)}
+                      className="rounded-full bg-white px-6 py-3 text-xs font-black uppercase tracking-widest text-black transition hover:bg-slate-200"
+                    >
+                      Sign In
+                    </Link>
+                    <button
+                      onClick={() => setShowReviewForm(false)}
+                      className="text-[10px] font-bold uppercase tracking-widest text-slate-500 transition hover:text-white"
+                    >
+                      Maybe Later
+                    </button>
+                  </div>
                 </div>
               ) : !sent ? (
                 <>
-                  <h2 className="text-xl font-extrabold text-white mb-2">Drop a Review</h2>
-                  <p className="text-xs text-slate-400 mb-6 italic">Signed in as: <span className="text-violet-400 not-italic font-bold">{user.email}</span></p>
-                  
+                  <h2 className="mb-2 text-xl font-extrabold text-white">Leave a Review</h2>
+                  <p className="mb-6 text-xs italic text-slate-400">
+                    Signed in as: <span className="not-italic font-bold text-cyan-300">{user.email}</span>
+                  </p>
+
                   <form onSubmit={handleSubmitReview} className="space-y-4">
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-2">Rating</span>
-                      <div className="mt-2 flex gap-2 justify-center bg-black/20 p-3 rounded-2xl border border-slate-900">
+                      <span className="ml-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">Rating</span>
+                      <div className="mt-2 flex justify-center gap-2 rounded-2xl border border-slate-900 bg-black/20 p-3">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <button
                             key={star}
                             type="button"
                             onClick={() => setRating(star)}
-                            className={`text-2xl transition ${rating >= star ? 'text-violet-500 grayscale-0' : 'text-slate-700 grayscale'}`}
+                            className={`text-2xl transition ${rating >= star ? 'text-cyan-400 grayscale-0' : 'text-slate-700 grayscale'}`}
                           >
-                            ★
+                            *
                           </button>
                         ))}
                       </div>
                     </div>
- 
+
                     <label className="grid gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-2">Display Name</span>
+                      <span className="ml-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">Display Name</span>
                       <input
                         required
                         value={name}
-                        onChange={e => setName(e.target.value)}
+                        onChange={(e) => setName(e.target.value)}
                         placeholder="Name or handle"
-                        className="rounded-2xl border border-slate-800 bg-slate-900/50 px-5 py-3 text-sm text-white outline-none focus:border-violet-500/50"
+                        className="rounded-2xl border border-slate-800 bg-slate-900/50 px-5 py-3 text-sm text-white outline-none focus:border-cyan-500/50"
                       />
                     </label>
- 
+
                     <label className="grid gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-2">Comment</span>
+                      <span className="ml-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">Comment</span>
                       <textarea
                         value={text}
-                        onChange={e => setText(e.target.value)}
+                        onChange={(e) => setText(e.target.value)}
                         rows={3}
                         placeholder="Optional details..."
-                        className="rounded-2xl border border-slate-800 bg-slate-900/50 px-5 py-3 text-sm text-white outline-none focus:border-violet-500/50"
+                        className="rounded-2xl border border-slate-800 bg-slate-900/50 px-5 py-3 text-sm text-white outline-none focus:border-cyan-500/50"
                       />
                     </label>
 
                     <div className="flex gap-3 pt-2">
-                      <button 
+                      <button
                         type="button"
                         onClick={() => setShowReviewForm(false)}
-                        className="flex-1 rounded-full border border-slate-800 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-400 hover:bg-slate-900 transition"
+                        className="flex-1 rounded-full border border-slate-800 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-400 transition hover:bg-slate-900"
                       >
                         Cancel
                       </button>
-                      <button 
+                      <button
                         type="submit"
                         disabled={busy}
-                        className="flex-[2] rounded-full bg-violet-600 py-3 text-[11px] font-black uppercase tracking-widest text-white transition hover:bg-violet-500 active:scale-95 disabled:opacity-50"
+                        className="flex-[2] rounded-full bg-cyan-600 py-3 text-[11px] font-black uppercase tracking-widest text-white transition hover:bg-cyan-500 active:scale-95 disabled:opacity-50"
                       >
                         {busy ? 'SENDING...' : 'SUBMIT REVIEW'}
                       </button>
@@ -244,11 +237,11 @@ export default function Footer() {
                 </>
               ) : (
                 <div className="py-12 text-center">
-                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-violet-500/10 text-3xl text-violet-500">
-                      ✓
-                   </div>
-                   <h2 className="text-xl font-extrabold text-white">Lekker!</h2>
-                   <p className="mt-2 text-sm text-slate-400">Review sent. Our team will check it out shortly.</p>
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cyan-500/10 text-3xl text-cyan-400">
+                    +
+                  </div>
+                  <h2 className="text-xl font-extrabold text-white">Thank you</h2>
+                  <p className="mt-2 text-sm text-slate-400">Review submitted. Our team will review it shortly.</p>
                 </div>
               )}
             </motion.div>

@@ -8,10 +8,9 @@ import Link from 'next/link'
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const [authorized, setAuthorized] = useState<boolean | null>(null)
-  const [email, setEmail] = useState('')
   const checkingRef = useRef(false)
 
-  const verifyAdmin = useCallback(async (token: string, userEmail: string) => {
+  const verifyAdmin = useCallback(async (token: string) => {
     if (checkingRef.current) return
     checkingRef.current = true
     
@@ -23,7 +22,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const json = await res.json()
       
       if (json?.isAdmin) {
-        setEmail(userEmail)
         setAuthorized(true)
       } else {
         setAuthorized(false)
@@ -45,7 +43,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       if (!mounted) return
 
       if (session?.user && session.access_token) {
-        await verifyAdmin(session.access_token, session.user.email ?? '')
+        await verifyAdmin(session.access_token)
       } else {
         setAuthorized(false)
         router.replace('/login?next=/admin')
@@ -60,7 +58,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         router.replace('/login?next=/admin')
       } else if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) {
         if (session?.user && session.access_token) {
-          verifyAdmin(session.access_token, session.user.email ?? '')
+          verifyAdmin(session.access_token)
         }
       }
     })
@@ -76,7 +74,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (authorized === null) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 p-4">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-800 border-t-violet-500" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-800 border-t-cyan-500" />
         <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">
           Securing Admin Terminal...
         </p>
@@ -88,7 +86,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 p-4 text-center">
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-xl text-red-500">
-           ⚠
+           !
         </div>
         <h2 className="text-lg font-extrabold text-white mb-2 uppercase">Access Prohibited</h2>
         <p className="text-xs text-red-200/70 max-w-md mx-auto mb-6">
@@ -103,3 +101,5 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return <>{children}</>
 }
+
+

@@ -16,7 +16,7 @@ export default async function WholesalePage() {
   if (supabaseEnvReady) {
     try {
       // Fetch all non-deleted products, ordered by name for easy scanning
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('products')
         .select('*')
         .eq('is_deleted', false)

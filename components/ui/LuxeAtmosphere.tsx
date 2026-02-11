@@ -12,7 +12,7 @@ export default function LuxeAtmosphere() {
   return (
     <div className="pointer-events-none fixed inset-0 z-[-1] overflow-hidden">
       {/* Base gradient */}
-      <div className="absolute inset-0 luxe-bg" />
+      <div className="absolute inset-0 luxe-base-bg" />
 
       {/* Bloom lights */}
       <div className="absolute -left-40 top-[-180px] h-[520px] w-[520px] luxe-bloom luxe-bloom-a" />

@@ -110,7 +110,7 @@ export default function AgeGate() {
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <button
                 onClick={handleYes}
-                className="inline-flex w-full items-center justify-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-400/40"
+                className="inline-flex w-full items-center justify-center rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
               >
                 Yes, I am 18+
               </button>
@@ -132,7 +132,7 @@ export default function AgeGate() {
           )}
  
           <p className="mt-6 text-xs leading-relaxed text-slate-400">
-            By clicking "Yes", you confirm you are of legal smoking age.
+            By clicking "Yes", you confirm you are of legal vaping age.
             <br /><span className="block mt-2 font-bold text-slate-500">WARNING: These products contain nicotine. Nicotine is an addictive chemical.</span>
           </p>
         </div>

@@ -19,7 +19,7 @@ export default function HomeBackgroundVideo() {
         style={{
           background:
             'radial-gradient(900px 420px at 15% 20%, rgba(34,211,238,0.2), transparent 70%),' +
-            'radial-gradient(700px 380px at 75% 35%, rgba(217,70,239,0.18), transparent 68%),' +
+            'radial-gradient(700px 380px at 75% 35%, rgba(16,185,129,0.18), transparent 68%),' +
             'radial-gradient(800px 480px at 65% 80%, rgba(59,130,246,0.15), transparent 70%)',
         }}
       />

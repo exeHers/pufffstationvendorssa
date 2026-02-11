@@ -28,9 +28,11 @@ export async function GET(request: Request) {
   const lat = searchParams.get('lat')
   const lng = searchParams.get('lng')
   const refresh = searchParams.get('refresh') // Secret flag to force refresh
+  const all = searchParams.get('all') // Return all lockers without distance filter
 
   const jsonDirectory = path.join(process.cwd(), 'data')
   const filePath = path.join(jsonDirectory, 'pudo_lockers.json')
+  const minLockerCount = 500
 
   try {
     let allLockers = []
@@ -44,8 +46,21 @@ export async function GET(request: Request) {
         fileExists = false;
     }
 
-    // Fetch from API if refresh=true OR file missing
-    if (refresh === 'true' || !fileExists) {
+    // Fetch from API if refresh=true OR file missing OR cached file is too small
+    const shouldRefresh = refresh === 'true' || !fileExists
+    if (!shouldRefresh && fileExists) {
+        try {
+            const fileContents = await fs.readFile(filePath, 'utf8')
+            const parsed = JSON.parse(fileContents)
+            if (Array.isArray(parsed)) {
+                allLockers = parsed
+            }
+        } catch {
+            allLockers = []
+        }
+    }
+
+    if (shouldRefresh || (Array.isArray(allLockers) && allLockers.length < minLockerCount)) {
         console.log('Attempting to fetch fresh lockers list from Pudo API (Browser Mode)...')
         try {
             // URL from Documentation
@@ -84,14 +99,17 @@ export async function GET(request: Request) {
                 allLockers = JSON.parse(fileContents)
             }
         }
-    } else {
-        // Normal mode: Read from file
-         try {
-            const fileContents = await fs.readFile(filePath, 'utf8')
-            allLockers = JSON.parse(fileContents)
-         } catch (e) {
-             allLockers = []
-         }
+    }
+
+    // Return all normalized lockers when requested
+    if (all === 'true' && allLockers.length > 0) {
+        const normalizedAll = allLockers.map((l: any) => ({
+            ...l,
+            lat: parseFloat(l.latitude || l.lat),
+            lng: parseFloat(l.longitude || l.lng || l.lon || l.long),
+        })).filter((l: any) => !isNaN(l.lat) && !isNaN(l.lng))
+
+        return NextResponse.json(normalizedAll)
     }
 
     // Filter by distance if coordinates provided
@@ -100,14 +118,21 @@ export async function GET(request: Request) {
         const userLng = parseFloat(lng)
 
         // Filter out invalid coords in the data
-        const validLockers = allLockers.filter((l: any) => l.latitude && l.longitude || l.lat && l.lng);
+        const validLockers = allLockers.filter((l: any) =>
+            (l.latitude && (l.longitude || l.lon || l.long)) || (l.lat && (l.lng || l.lon || l.long))
+        );
 
         const sorted = validLockers.map((l: any) => ({
             ...l,
             // Normalize keys (API uses latitude/longitude, our mock used lat/lng)
             lat: parseFloat(l.latitude || l.lat),
-            lng: parseFloat(l.longitude || l.lng),
-            distance: getDistanceFromLatLonInKm(userLat, userLng, parseFloat(l.latitude || l.lat), parseFloat(l.longitude || l.lng))
+            lng: parseFloat(l.longitude || l.lng || l.lon || l.long),
+            distance: getDistanceFromLatLonInKm(
+                userLat,
+                userLng,
+                parseFloat(l.latitude || l.lat),
+                parseFloat(l.longitude || l.lng || l.lon || l.long)
+            )
         })).sort((a: any, b: any) => a.distance - b.distance)
 
         // Return closest 50

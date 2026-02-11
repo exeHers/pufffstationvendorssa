@@ -8,8 +8,7 @@
   color-scheme: dark;
   --bg-deep-matte: #0a0a0c;
   --surface-matte: #0f0f12;
-  --matte-purple: #4a2b6b;
-  --matte-purple-light: #6b4a8b;
+  --matte-purple: #0f4c5c;
   --matte-border: rgba(255, 255, 255, 0.04);
 }
 
@@ -149,7 +148,7 @@ body {
 }
 
 .puff-ring {
-  background: conic-gradient(from 180deg, rgba(217,70,239,0.0), rgba(217,70,239,0.45), rgba(59,130,246,0.30), rgba(217,70,239,0.0));
+  background: conic-gradient(from 180deg, rgba(34,211,238,0.0), rgba(34,211,238,0.45), rgba(16,185,129,0.30), rgba(34,211,238,0.0));
   filter: blur(12px);
   transform: scale(1.18);
   animation: ringRotate 6.2s linear infinite;
@@ -182,6 +181,16 @@ body {
 .cta-pulse {
   animation: ctaPulse 3s ease-in-out infinite;
   will-change: box-shadow;
+}
+
+.marquee-track {
+  will-change: transform;
+}
+
+@media (max-width: 640px) {
+  .marquee-track {
+    animation-duration: 48s;
+  }
 }
 
 
@@ -286,4 +295,24 @@ body {
 
 .custom-popup .leaflet-popup-tip {
   background: #0f172a;
+}
+
+.pudo-cluster-icon {
+  background: transparent;
+  border: none;
+}
+
+.pudo-cluster-pill {
+  height: 36px;
+  width: 36px;
+  border-radius: 9999px;
+  background: rgba(8, 145, 178, 0.95);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  border: 2px solid rgba(6, 182, 212, 0.6);
+  box-shadow: 0 6px 16px rgba(6, 182, 212, 0.35);
 }

@@ -34,7 +34,7 @@ export default function QuickActionsTab({ onOpenQuickAdd }: { onOpenQuickAdd: ()
     setBusy(true)
     try {
       const sb = supabaseBrowser()
-      
+
       const { data: outOfStock, error: fetchErr } = await sb
         .from('products')
         .select('id')
@@ -56,7 +56,7 @@ export default function QuickActionsTab({ onOpenQuickAdd }: { onOpenQuickAdd: ()
 
       if (updateErr) throw updateErr
 
-      alert(`Restored stock for ${outOfStock.length} products!`)
+      alert(`Restored stock for ${outOfStock.length} products.`)
       loadStats()
     } catch (e: any) {
       alert(e.message || 'Bulk update failed.')
@@ -72,112 +72,105 @@ export default function QuickActionsTab({ onOpenQuickAdd }: { onOpenQuickAdd: ()
   )
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {/* Quick Stats */}
-      <motion.div 
+    <div className="grid gap-6 lg:grid-cols-[1.1fr,0.9fr]">
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-[2.5rem] border border-slate-800 bg-slate-950/40 p-8 shadow-2xl relative overflow-hidden group"
+        className="rounded-[2.5rem] border border-slate-800 bg-slate-950/40 p-8 shadow-2xl"
       >
-        <div className="absolute -right-4 -top-4 text-7xl opacity-[0.03] group-hover:scale-110 transition-transform duration-500">📊</div>
-        <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] mb-6">Real-time Metrics</h3>
-        <div className="space-y-4 relative">
-           <div className="flex justify-between items-center p-4 rounded-2xl bg-black/40 border border-slate-900 group-hover:border-slate-800 transition-colors">
-              <div className="flex flex-col">
-                <span className="text-[9px] uppercase font-black text-slate-500 tracking-widest">Active Inventory</span>
-                <span className="text-xs font-bold text-slate-300">Skus Online</span>
-              </div>
-              <span className="text-2xl text-violet-500 font-black tracking-tighter">{stats.products}</span>
-           </div>
-           <div className="flex justify-between items-center p-4 rounded-2xl bg-black/40 border border-slate-900 group-hover:border-slate-800 transition-colors">
-              <div className="flex flex-col">
-                <span className="text-[9px] uppercase font-black text-slate-500 tracking-widest">Global Sales</span>
-                <span className="text-xs font-bold text-slate-300">Total Records</span>
-              </div>
-              <span className="text-2xl text-cyan-400 font-black tracking-tighter">{stats.orders}</span>
-           </div>
-           <div className="flex justify-between items-center p-4 rounded-2xl bg-black/40 border border-slate-900 group-hover:border-slate-800 transition-colors">
-              <div className="flex flex-col">
-                <span className="text-[9px] uppercase font-black text-slate-500 tracking-widest">Queue</span>
-                <span className="text-xs font-bold text-slate-300">Pending Pulse</span>
-              </div>
-              <span className={`text-2xl font-black tracking-tighter ${stats.reviews > 0 ? 'text-amber-400' : 'text-slate-700'}`}>{stats.reviews}</span>
-           </div>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-sm font-black text-white uppercase tracking-[0.2em]">Quick Operations</h3>
+            <p className="text-[11px] text-slate-500 uppercase font-bold tracking-tight">High-frequency admin tasks</p>
+          </div>
+          <button
+            onClick={loadStats}
+            className="rounded-full border border-slate-800 px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-white"
+          >
+            Refresh
+          </button>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <button
+            onClick={onOpenQuickAdd}
+            className="rounded-2xl border border-slate-800 bg-black/60 p-4 text-left transition hover:border-white"
+          >
+            <p className="text-[10px] font-black uppercase tracking-widest text-white">Add Product</p>
+            <p className="mt-2 text-[10px] text-slate-500">Quick entry form</p>
+          </button>
+
+          <button
+            onClick={handleBulkStockToggle}
+            disabled={busy}
+            className="rounded-2xl border border-slate-800 bg-black/60 p-4 text-left transition hover:border-cyan-500/50 disabled:opacity-30"
+          >
+            <p className="text-[10px] font-black uppercase tracking-widest text-cyan-400">
+              {busy ? 'Syncing...' : 'Restore Stock'}
+            </p>
+            <p className="mt-2 text-[10px] text-slate-500">Reset all in-stock flags</p>
+          </button>
+
+          <Link
+            href="/admin/orders"
+            className="rounded-2xl border border-slate-800 bg-black/60 p-4 text-left transition hover:border-cyan-500/50"
+          >
+            <p className="text-[10px] font-black uppercase tracking-widest text-white">Open Orders</p>
+            <p className="mt-2 text-[10px] text-slate-500">Update delivery and tracking</p>
+          </Link>
+
+          <Link
+            href="/admin/support"
+            className="rounded-2xl border border-slate-800 bg-black/60 p-4 text-left transition hover:border-cyan-500/50"
+          >
+            <p className="text-[10px] font-black uppercase tracking-widest text-white">Support Inbox</p>
+            <p className="mt-2 text-[10px] text-slate-500">Reply to customers</p>
+          </Link>
         </div>
       </motion.div>
 
-      {/* Operations */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="rounded-[2.5rem] border border-slate-800 bg-slate-950/40 p-8 shadow-2xl flex flex-col justify-between relative overflow-hidden group"
+        className="rounded-[2.5rem] border border-slate-800 bg-slate-950/40 p-8 shadow-2xl"
       >
-        <div className="absolute -right-4 -top-4 text-7xl opacity-[0.03] group-hover:scale-110 transition-transform duration-500">⚙️</div>
-        <div>
-          <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] mb-2">Global Ops</h3>
-          <p className="text-[11px] text-slate-500 uppercase font-bold tracking-tight mb-8">Hardware-level store control</p>
-        </div>
-        <div className="grid gap-4 relative">
-           <button
-             onClick={onOpenQuickAdd}
-             className="group/btn w-full relative overflow-hidden rounded-2xl border border-slate-800 bg-black/60 p-4 transition-all hover:border-white"
-           >
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col text-left">
-                  <span className="text-[10px] font-black uppercase text-white tracking-widest">Direct Injection</span>
-                  <span className="text-[9px] text-slate-500 font-bold uppercase">Rapid Product Entry</span>
-                </div>
-                <span className="text-xl group-hover/btn:translate-x-1 transition-transform">🚀</span>
-              </div>
-           </button>
+        <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] mb-6">Quick Links</h3>
 
-           <button
-             onClick={handleBulkStockToggle}
-             disabled={busy}
-             className="group/btn w-full relative overflow-hidden rounded-2xl border border-slate-800 bg-black/60 p-4 transition-all hover:border-fuchsia-500/50 disabled:opacity-30"
-           >
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col text-left">
-                  <span className="text-[10px] font-black uppercase text-violet-400 tracking-widest">
-                    {busy ? 'SYNCHRONIZING...' : 'Mass Restock'}
-                  </span>
-                  <span className="text-[9px] text-slate-500 font-bold uppercase">Reset all in-stock flags</span>
-                </div>
-                <span className="text-xl group-hover/btn:rotate-12 transition-transform">⚡</span>
-              </div>
-           </button>
+        <div className="grid gap-3">
+          <Link href="/admin/products" className="rounded-2xl border border-slate-800 bg-black/60 px-4 py-3 text-[11px] uppercase tracking-widest text-slate-300 hover:text-white">
+            Products
+          </Link>
+          <Link href="/admin/featured-drops" className="rounded-2xl border border-slate-800 bg-black/60 px-4 py-3 text-[11px] uppercase tracking-widest text-slate-300 hover:text-white">
+            Featured Home Drops
+          </Link>
+          <Link href="/admin/categories" className="rounded-2xl border border-slate-800 bg-black/60 px-4 py-3 text-[11px] uppercase tracking-widest text-slate-300 hover:text-white">
+            Categories
+          </Link>
+          <Link href="/admin/flavours" className="rounded-2xl border border-slate-800 bg-black/60 px-4 py-3 text-[11px] uppercase tracking-widest text-slate-300 hover:text-white">
+            Flavour Tags
+          </Link>
+          <Link href="/admin/pudo" className="rounded-2xl border border-slate-800 bg-black/60 px-4 py-3 text-[11px] uppercase tracking-widest text-slate-300 hover:text-white">
+            PUDO Lockers
+          </Link>
         </div>
-      </motion.div>
 
-      {/* Customer Hub */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="rounded-[2.5rem] border border-slate-800 bg-slate-950/40 p-8 shadow-2xl flex flex-col justify-between relative overflow-hidden group"
-      >
-        <div className="absolute -right-4 -top-4 text-7xl opacity-[0.03] group-hover:scale-110 transition-transform duration-500">📡</div>
-        <div>
-          <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] mb-2">Communication</h3>
-          <p className="text-[11px] text-slate-500 uppercase font-bold tracking-tight mb-8">Interlink with users</p>
-        </div>
-        <div className="grid gap-4 relative">
-           <Link href="/admin/support" className="group/btn w-full relative overflow-hidden rounded-2xl bg-white p-4 transition-all hover:scale-[1.02]">
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col text-left">
-                  <span className="text-[10px] font-black uppercase text-black tracking-widest">Support Terminal</span>
-                  <span className="text-[9px] text-slate-600 font-bold uppercase">Active Tickets</span>
-                </div>
-                <span className="text-xl">✉️</span>
-              </div>
-           </Link>
-           
-           <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
-             <p className="text-[9px] text-slate-500 font-bold uppercase italic">
-               System Health: <span className="text-emerald-500">Nominal</span>
-             </p>
-           </div>
+        <div className="mt-6 rounded-2xl border border-slate-900 bg-black/40 p-4">
+          <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Snapshot</p>
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            <div>
+              <p className="text-[9px] text-slate-500 uppercase">Products</p>
+              <p className="text-sm font-semibold text-white">{stats.products}</p>
+            </div>
+            <div>
+              <p className="text-[9px] text-slate-500 uppercase">Orders</p>
+              <p className="text-sm font-semibold text-white">{stats.orders}</p>
+            </div>
+            <div>
+              <p className="text-[9px] text-slate-500 uppercase">Reviews</p>
+              <p className="text-sm font-semibold text-white">{stats.reviews}</p>
+            </div>
+          </div>
         </div>
       </motion.div>
     </div>

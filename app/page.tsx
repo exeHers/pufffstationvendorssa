@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 export const runtime = 'edge';
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { supabase, supabaseEnvReady } from '@/lib/supabaseClient'
 import type { Product } from '@/lib/types'
@@ -12,21 +11,15 @@ import { fetchActiveFlavours } from '@/lib/flavours'
 import ProductCard from '@/components/products/ProductCard'
 
 export const metadata: Metadata = {
-  title: 'TEST-BUILD - Clean Stock. Premium Drops.',
+  title: 'Clean Stock. Premium Drops.',
   description: 'Fast dispatch, premium checkout, and official PUFFF Station drops. Built for SA vendors who want it smooth and legit.',
   openGraph: {
-    title: 'TEST-BUILD - Clean Stock. Premium Drops.',
+    title: 'Clean Stock. Premium Drops.',
     description: 'Fast dispatch, premium checkout, and official PUFFF Station drops. Built for SA vendors who want it smooth and legit.',
   },
 }
 
 export const dynamic = 'force-dynamic'
-
-function getCategory(product: Product) {
-  const p: any = product
-  const value = (p.category || '').toString().trim()
-  return value || 'Disposable'
-}
 
 export default async function HomePage() {
   const flavours = await fetchActiveFlavours()
@@ -62,7 +55,7 @@ export default async function HomePage() {
 
             <h1 className="hero-fade hero-fade-2 text-5xl font-black tracking-tighter text-white sm:text-6xl lg:text-[4.5rem] leading-[0.9]">
               <span className="block text-white">Clean stock.</span>
-              <span className="block bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+              <span className="block bg-gradient-to-r from-cyan-300 via-emerald-300 to-amber-200 bg-clip-text text-transparent">
                 Premium Drops.
               </span>
             </h1>
@@ -87,6 +80,18 @@ export default async function HomePage() {
                 Bulk Order
               </Link>
             </div>
+
+            <div className="hero-fade hero-fade-3 mt-8 flex flex-wrap gap-2">
+              <span className="rounded-full border border-cyan-400/20 bg-cyan-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-200">
+                18+ Only
+              </span>
+              <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-200">
+                Verified Stock
+              </span>
+              <span className="rounded-full border border-amber-300/20 bg-amber-400/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-100">
+                SA Dispatch Team
+              </span>
+            </div>
           </div>
 
           {/* Hero Image / Stats */}
@@ -107,6 +112,23 @@ export default async function HomePage() {
                   </div>
                </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative z-20 mx-auto w-full max-w-7xl px-4 pb-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="rounded-3xl border border-white/5 bg-slate-950/50 p-5 backdrop-blur-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-300">Trusted Flow</p>
+            <p className="mt-2 text-sm text-slate-200">Simple checkout with WhatsApp EFT confirmation and fast support response.</p>
+          </div>
+          <div className="rounded-3xl border border-white/5 bg-slate-950/50 p-5 backdrop-blur-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-300">Wholesale Ready</p>
+            <p className="mt-2 text-sm text-slate-200">Bulk ordering options and stock-focused product cards built for vendors.</p>
+          </div>
+          <div className="rounded-3xl border border-white/5 bg-slate-950/50 p-5 backdrop-blur-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200">Local Operations</p>
+            <p className="mt-2 text-sm text-slate-200">South African delivery options with door-to-door and PUDO locker support.</p>
           </div>
         </div>
       </section>

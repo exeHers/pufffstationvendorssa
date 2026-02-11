@@ -14,7 +14,7 @@ function isValidHex(hex?: string | null) {
   return /^#([0-9a-fA-F]{3}){1,2}$/.test(h)
 }
 
-const GLOBAL_FALLBACK_SMOKE = '#7c3aed'
+const GLOBAL_FALLBACK_SMOKE = '#06b6d4'
 
 function formatMoney(n: number) {
   return `R${Number(n).toFixed(2)}`
@@ -51,7 +51,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
   const ref = useRef<HTMLAnchorElement | null>(null)
   const [showSmoke, setShowSmoke] = useState(false)
-  const [videoDuration, setVideoDuration] = useState(6)
+  const videoDuration = 6
 
   useEffect(() => {
     if (!ref.current) return

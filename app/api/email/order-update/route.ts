@@ -1,4 +1,4 @@
-export const runtime = 'edge';
+export const runtime = 'edge'
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
@@ -41,8 +41,8 @@ export async function POST(req: Request) {
     const from = process.env.EMAIL_FROM || 'PUFFF Station <noreply@yourdomain.co.za>'
     const subject =
       event === 'shipped'
-        ? `Your PUFFF Station order has been shipped`
-        : `Your PUFFF Station order has been delivered`
+        ? 'Your PUFFF Station order has been shipped'
+        : 'Your PUFFF Station order has been delivered'
 
     const html = renderOrderUpdateEmail({
       event,
@@ -91,7 +91,7 @@ function renderOrderUpdateEmail(args: {
   const trackingBlock =
     args.event === 'shipped'
       ? `<p style="margin:12px 0 0;color:#111">Courier: <b>${escapeHtml(args.courier)}</b></p>
-         <p style="margin:6px 0 0;color:#111">Tracking number: <b>${escapeHtml(args.trackingNumber || '—')}</b></p>
+         <p style="margin:6px 0 0;color:#111">Tracking number: <b>${escapeHtml(args.trackingNumber || '-')}</b></p>
          ${args.trackingUrl ? `<p style="margin:6px 0 0"><a href="${args.trackingUrl}" style="color:#a21caf">Open tracking</a></p>` : ''}`
       : ''
 
@@ -100,7 +100,7 @@ function renderOrderUpdateEmail(args: {
     <div style="max-width:640px; margin:0 auto; background:#fff; border-radius:16px; padding:24px; border:1px solid #eee">
       <p style="margin:0; font-size:12px; letter-spacing:.22em; text-transform:uppercase; color:#a21caf; font-weight:700">PUFFF STATION VENDORS</p>
       <h1 style="margin:10px 0 0; font-size:22px; color:#0b0b0f">${title}</h1>
-      <p style="margin:8px 0 0; color:#444; font-size:14px">Howzit ${escapeHtml(args.customerName)} — ${subtitle}</p>
+      <p style="margin:8px 0 0; color:#444; font-size:14px">Howzit ${escapeHtml(args.customerName)} - ${subtitle}</p>
 
       <div style="margin-top:18px; padding:14px 16px; background:#faf5ff; border:1px solid #f3e8ff; border-radius:12px">
         <p style="margin:0; font-size:13px; color:#111">Order ID</p>
@@ -113,7 +113,7 @@ function renderOrderUpdateEmail(args: {
         You can view your full order history here: <a href="${args.ordersUrl}" style="color:#a21caf">My orders</a>
       </p>
 
-      <p style="margin:18px 0 0; font-size:12px; color:#666">If you didn’t place this order, reply to this email immediately.</p>
+      <p style="margin:18px 0 0; font-size:12px; color:#666">If you did not place this order, reply to this email immediately.</p>
     </div>
   </div>
   `.trim()
@@ -121,9 +121,9 @@ function renderOrderUpdateEmail(args: {
 
 function escapeHtml(s: string) {
   return s
-    .replaceAll('&', '&')
-    .replaceAll('<', '<')
-    .replaceAll('>', '>')
-    .replaceAll('"', '"')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;')
 }

@@ -84,7 +84,7 @@ export default function OrdersClient() {
     <main className="mx-auto max-w-5xl space-y-8 px-4 pb-16 pt-8">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/70 pb-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#D946EF]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#06b6d4]">
             ORDERS
           </p>
           <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
@@ -98,7 +98,7 @@ export default function OrdersClient() {
         <div className="flex gap-2">
           <Link
             href="/shop"
-            className="rounded-full bg-[#D946EF] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-[0_0_20px_rgba(217,70,239,0.7)] hover:brightness-110 active:scale-95 transition"
+            className="rounded-full bg-[#06b6d4] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-[0_0_20px_rgba(6,182,212,0.5)] hover:brightness-110 active:scale-95 transition"
           >
             Shop
           </Link>
@@ -220,7 +220,7 @@ export default function OrdersClient() {
                       href={o.tracking_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-2 inline-flex text-xs font-semibold text-fuchsia-300 hover:text-fuchsia-200"
+                      className="mt-2 inline-flex text-xs font-semibold text-cyan-300 hover:text-cyan-200"
                     >
                       Open tracking →
                     </a>
@@ -234,3 +234,4 @@ export default function OrdersClient() {
     </main>
   )
 }
+

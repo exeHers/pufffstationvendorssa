@@ -73,7 +73,6 @@ export default function HomeSmokeVideo() {
         loop
         playsInline
         preload="auto"
-        poster="/hero/neon-smoke-poster.jpg"
         style={{ 
           transform: 'translateZ(0) scale(1.05)', // Slightly larger to prevent edge artifacts
           willChange: 'opacity',

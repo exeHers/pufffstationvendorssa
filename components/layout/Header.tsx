@@ -37,7 +37,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50">
       {/* Thin purple line on very top */}
-      <div className="h-[3px] w-full bg-gradient-to-r from-purple-500 via-fuchsia-400 to-purple-500" />
+      <div className="h-[3px] w-full bg-gradient-to-r from-purple-500 via-cyan-400 to-purple-500" />
 
       <div className="border-b border-slate-900/80 bg-black/95 shadow-[0_18px_45px_rgba(0,0,0,0.9)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
@@ -45,7 +45,7 @@ export default function Header() {
           <Link href="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
             <div className="flex flex-col leading-none">
               <span className="text-[16px] font-semibold tracking-[0.18em] text-white uppercase sm:text-[19px] sm:tracking-[0.25em]">
-                PUFFF <span className="text-fuchsia-400">STATION</span>
+                PUFFF <span className="text-cyan-400">STATION</span>
               </span>
               <span className="mt-1 text-[10px] tracking-[0.28em] text-slate-400 uppercase sm:text-[11px] sm:tracking-[0.35em]">
                 VENDORS
@@ -80,7 +80,7 @@ export default function Header() {
             >
               Cart
               {cartCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-fuchsia-500 px-1 text-[10px] font-bold text-white shadow-[0_0_18px_rgba(217,70,239,0.9)]">
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-cyan-500 px-1 text-[10px] font-bold text-white shadow-[0_0_18px_rgba(6,182,212,0.6)]">
                   {cartCount}
                 </span>
               )}
@@ -96,7 +96,7 @@ export default function Header() {
             {isAdmin && (
               <Link
                 href="/admin"
-                className="rounded-full border border-fuchsia-500/40 bg-fuchsia-500/10 px-4 py-1.5 text-slate-100 transition hover:bg-fuchsia-500/20 hover:text-white"
+                className="rounded-full border border-cyan-500/40 bg-cyan-500/10 px-4 py-1.5 text-slate-100 transition hover:bg-cyan-500/20 hover:text-white"
               >
                 Admin
               </Link>
@@ -119,7 +119,7 @@ export default function Header() {
             >
               Cart
               {cartCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-fuchsia-500 px-1 text-[10px] font-bold text-white">
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-cyan-500 px-1 text-[10px] font-bold text-white">
                   {cartCount}
                 </span>
               )}
@@ -172,7 +172,7 @@ export default function Header() {
               {isAdmin && (
                 <Link
                   href="/admin"
-                  className="rounded-2xl border border-fuchsia-500/40 bg-fuchsia-500/10 px-4 py-3 text-sm font-semibold text-slate-100"
+                  className="rounded-2xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-sm font-semibold text-slate-100"
                   onClick={() => setOpen(false)}
                 >
                   Admin
@@ -180,7 +180,7 @@ export default function Header() {
               )}
               <Link
                 href="/login"
-                className="rounded-2xl bg-fuchsia-500 px-4 py-3 text-sm font-bold text-white shadow-[0_0_22px_rgba(217,70,239,0.85)]"
+                className="rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-bold text-white shadow-[0_0_22px_rgba(6,182,212,0.6)]"
                 onClick={() => setOpen(false)}
               >
                 Login
@@ -192,3 +192,4 @@ export default function Header() {
     </header>
   )
 }
+

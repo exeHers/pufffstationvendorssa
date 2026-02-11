@@ -75,7 +75,7 @@ export async function POST(request: Request) {
         <p>Reply to your support request:</p>
         <div style="margin:14px 0;padding:12px;border:1px solid #ddd;border-radius:10px;white-space:pre-wrap">${escapeHtml(reply)}</div>
         <p style="color:#666;font-size:12px">Ticket: ${escapeHtml(ticketId)}</p>
-        <p>— Puff Station Support</p>
+        <p>- Puff Station Support</p>
       </div>
     `
 
@@ -107,9 +107,9 @@ export async function POST(request: Request) {
 
 function escapeHtml(input: string) {
   return input
-    .replaceAll('&', '&')
-    .replaceAll('<', '<')
-    .replaceAll('>', '>')
-    .replaceAll('"', '"')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;')
 }

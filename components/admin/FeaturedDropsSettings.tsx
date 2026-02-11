@@ -68,7 +68,7 @@ export default function FeaturedDropsSettings() {
           <input
             value={settings.title}
             onChange={e => setSettings(s => ({ ...s, title: e.target.value }))}
-            className="w-full rounded-2xl border border-white/[0.05] bg-black/40 px-4 py-3 text-sm text-white focus:border-violet-500/50 outline-none"
+            className="w-full rounded-2xl border border-white/[0.05] bg-black/40 px-4 py-3 text-sm text-white focus:border-cyan-500/50 outline-none"
           />
         </div>
         <div className="space-y-1">
@@ -76,7 +76,7 @@ export default function FeaturedDropsSettings() {
           <input
             value={settings.description}
             onChange={e => setSettings(s => ({ ...s, description: e.target.value }))}
-            className="w-full rounded-2xl border border-white/[0.05] bg-black/40 px-4 py-3 text-sm text-white focus:border-violet-500/50 outline-none"
+            className="w-full rounded-2xl border border-white/[0.05] bg-black/40 px-4 py-3 text-sm text-white focus:border-cyan-500/50 outline-none"
           />
         </div>
       </div>
@@ -85,7 +85,7 @@ export default function FeaturedDropsSettings() {
         <button
           disabled={busy}
           onClick={handleSave}
-          className="rounded-full bg-violet-600 px-6 py-2.5 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-violet-500 active:scale-95 disabled:opacity-50"
+          className="rounded-full bg-cyan-600 px-6 py-2.5 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-cyan-500 active:scale-95 disabled:opacity-50"
         >
           {busy ? 'Saving...' : 'Update Settings'}
         </button>
@@ -94,3 +94,4 @@ export default function FeaturedDropsSettings() {
     </section>
   )
 }
+

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 
 type Flavour = {
@@ -33,7 +33,7 @@ export default function AdminFlavoursPage() {
 
   const canSubmit = useMemo(() => name.trim().length >= 2, [name])
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     const { data, error } = await supabase
@@ -48,7 +48,7 @@ export default function AdminFlavoursPage() {
       setFlavours((data ?? []) as Flavour[])
     }
     setLoading(false)
-  }
+  }, [])
 
   async function addFlavour() {
     setError(null)
@@ -146,8 +146,7 @@ export default function AdminFlavoursPage() {
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [load])
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 pb-14 pt-10">
@@ -170,7 +169,7 @@ export default function AdminFlavoursPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Sweet, Ice Mint"
-              className="mt-2 w-full rounded-2xl border border-white/[0.05] bg-slate-950/50 px-4 py-3 text-sm text-slate-100 outline-none focus:border-violet-500/50"
+              className="mt-2 w-full rounded-2xl border border-white/[0.05] bg-slate-950/50 px-4 py-3 text-sm text-slate-100 outline-none focus:border-cyan-500/50"
             />
           </div>
           <div className="flex-1">
@@ -181,7 +180,7 @@ export default function AdminFlavoursPage() {
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
               placeholder="sweet"
-              className="mt-2 w-full rounded-2xl border border-white/[0.05] bg-slate-950/50 px-4 py-3 text-sm text-slate-100 outline-none focus:border-violet-500/50"
+              className="mt-2 w-full rounded-2xl border border-white/[0.05] bg-slate-950/50 px-4 py-3 text-sm text-slate-100 outline-none focus:border-cyan-500/50"
             />
           </div>
           <div className="w-full sm:w-32">
@@ -191,7 +190,7 @@ export default function AdminFlavoursPage() {
             <input
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
-              className="mt-2 w-full rounded-2xl border border-white/[0.05] bg-slate-950/50 px-4 py-3 text-sm text-slate-100 outline-none focus:border-violet-500/50"
+              className="mt-2 w-full rounded-2xl border border-white/[0.05] bg-slate-950/50 px-4 py-3 text-sm text-slate-100 outline-none focus:border-cyan-500/50"
             />
           </div>
           <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
@@ -199,14 +198,14 @@ export default function AdminFlavoursPage() {
               type="checkbox"
               checked={isActive}
               onChange={(e) => setIsActive(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-violet-500"
+              className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-cyan-500"
             />
             Active
           </label>
           <button
             onClick={addFlavour}
             disabled={!canSubmit}
-            className="rounded-2xl bg-violet-600 px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-2xl bg-cyan-600 px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Add
           </button>
@@ -251,7 +250,7 @@ export default function AdminFlavoursPage() {
                             [f.id]: { ...prev[f.id], name: e.target.value },
                           }))
                         }
-                        className="w-full rounded-2xl border border-slate-700/70 bg-slate-950/50 px-3 py-2 text-sm text-slate-100 outline-none focus:border-fuchsia-300/60"
+                        className="w-full rounded-2xl border border-slate-700/70 bg-slate-950/50 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-300/60"
                       />
                       <input
                         value={currentSlug}
@@ -261,7 +260,7 @@ export default function AdminFlavoursPage() {
                             [f.id]: { ...prev[f.id], slug: e.target.value },
                           }))
                         }
-                        className="w-full rounded-2xl border border-slate-700/70 bg-slate-950/50 px-3 py-2 text-sm text-slate-100 outline-none focus:border-fuchsia-300/60"
+                        className="w-full rounded-2xl border border-slate-700/70 bg-slate-950/50 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-300/60"
                       />
                       <input
                         value={String(currentOrder)}
@@ -274,7 +273,7 @@ export default function AdminFlavoursPage() {
                             },
                           }))
                         }
-                        className="w-full rounded-2xl border border-slate-700/70 bg-slate-950/50 px-3 py-2 text-sm text-slate-100 outline-none focus:border-fuchsia-300/60"
+                        className="w-full rounded-2xl border border-slate-700/70 bg-slate-950/50 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-300/60"
                       />
                       <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
                         <input
@@ -289,7 +288,7 @@ export default function AdminFlavoursPage() {
                               },
                             }))
                           }
-                          className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-fuchsia-400"
+                          className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-cyan-400"
                         />
                         Active
                       </label>
@@ -319,3 +318,7 @@ export default function AdminFlavoursPage() {
     </main>
   )
 }
+
+
+
+

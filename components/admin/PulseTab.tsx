@@ -13,7 +13,7 @@ interface Review {
   created_at: string
 }
 
-interface PulseConfig {
+interface ReviewDisplayConfig {
   header_title: string
   header_subtitle: string
   accent_color: string
@@ -24,10 +24,10 @@ export default function PulseTab() {
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [config, setConfig] = useState<PulseConfig>({
-    header_title: 'Wall of PUFFF',
-    header_subtitle: 'Vendor Feedback',
-    accent_color: '#7c3aed',
+  const [config, setConfig] = useState<ReviewDisplayConfig>({
+    header_title: 'Review Display',
+    header_subtitle: 'Customer feedback',
+    accent_color: '#06b6d4',
     card_blur: true
   })
   const [busy, setBusy] = useState(false)
@@ -35,7 +35,7 @@ export default function PulseTab() {
   const refreshData = useCallback(async (isInitial = false) => {
     if (isInitial) setLoading(true)
     else setRefreshing(true)
-    
+
     try {
       const sb = supabaseBrowser()
       const [reviewsRes, configRes] = await Promise.all([
@@ -44,7 +44,7 @@ export default function PulseTab() {
       ])
 
       if (reviewsRes.error) throw reviewsRes.error
-      
+
       setReviews(reviewsRes.data || [])
       if (configRes.data?.value) {
         if (isInitial) {
@@ -52,7 +52,7 @@ export default function PulseTab() {
         }
       }
     } catch (e) {
-      console.error('Pulse: Refresh error:', e)
+      console.error('Review display refresh error:', e)
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -75,7 +75,7 @@ export default function PulseTab() {
     if (error) {
       alert(error.message)
     } else {
-      alert('Pulse Display Config Saved!')
+      alert('Review display settings saved.')
     }
     setBusy(false)
   }
@@ -105,30 +105,29 @@ export default function PulseTab() {
   if (loading) return (
     <div className="flex items-center justify-center p-20">
       <div className="flex flex-col items-center gap-4">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500/20 border-t-violet-500" />
-        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">Initializing Pulse...</span>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-500/20 border-t-cyan-500" />
+        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">Loading reviews...</span>
       </div>
     </div>
   )
 
   return (
     <div className="grid gap-8 lg:grid-cols-[400px,1fr]">
-      {/* Config Panel */}
       <div className="space-y-6">
         <div className="overflow-hidden rounded-[2.5rem] border border-white/[0.04] bg-slate-900/40 shadow-2xl">
           <div className="border-b border-white/[0.05] bg-slate-900/40 px-8 py-6">
-            <h2 className="text-lg font-black uppercase tracking-tight text-white">Pulse Configuration</h2>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Live Appearance Control</p>
+            <h2 className="text-lg font-black uppercase tracking-tight text-white">Review Display Settings</h2>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Homepage display configuration</p>
           </div>
-          
+
           <div className="p-8 space-y-6">
             <div className="space-y-4">
               <label className="block space-y-2">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Main Header</span>
-                <input 
-                  value={config.header_title} 
-                  onChange={e => setConfig({ ...config, header_title: e.target.value })} 
-                  className="w-full rounded-2xl border border-white/[0.05] bg-black/40 px-5 py-3 text-sm text-white outline-none focus:border-violet-500/50 transition-colors"
+                <input
+                  value={config.header_title}
+                  onChange={e => setConfig({ ...config, header_title: e.target.value })}
+                  className="w-full rounded-2xl border border-white/[0.05] bg-black/40 px-5 py-3 text-sm text-white outline-none focus:border-cyan-500/50 transition-colors"
                 />
               </label>
 
@@ -137,74 +136,73 @@ export default function PulseTab() {
                 <input
                   value={config.header_subtitle}
                   onChange={e => setConfig({ ...config, header_subtitle: e.target.value })}
-                  className="w-full rounded-2xl border border-white/[0.05] bg-black/40 px-5 py-3 text-sm text-white outline-none focus:border-violet-500/50 transition-colors"
+                  className="w-full rounded-2xl border border-white/[0.05] bg-black/40 px-5 py-3 text-sm text-white outline-none focus:border-cyan-500/50 transition-colors"
                 />
               </label>
 
               <div className="space-y-2">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Theme Accent</span>
                 <div className="flex gap-3">
-                  <input 
-                    type="color" 
-                    value={config.accent_color} 
-                    onChange={e => setConfig({ ...config, accent_color: e.target.value })} 
+                  <input
+                    type="color"
+                    value={config.accent_color}
+                    onChange={e => setConfig({ ...config, accent_color: e.target.value })}
                     className="h-11 w-20 rounded-xl bg-slate-900 border border-white/[0.05] cursor-pointer p-1"
                   />
                   <input
                     value={config.accent_color}
                     onChange={e => setConfig({ ...config, accent_color: e.target.value })}
-                    className="flex-1 rounded-xl border border-white/[0.05] bg-black/40 px-4 text-xs font-mono text-white outline-none focus:border-violet-500/50"
+                    className="flex-1 rounded-xl border border-white/[0.05] bg-black/40 px-4 text-xs font-mono text-white outline-none focus:border-cyan-500/50"
                   />
                 </div>
               </div>
 
               <label className="flex items-center justify-between p-4 rounded-2xl border border-white/[0.05] bg-black/20 hover:bg-black/40 transition-colors cursor-pointer group">
                  <div className="flex flex-col">
-                   <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">Visual Blur</span>
-                   <span className="text-[9px] text-slate-500 uppercase font-bold tracking-tighter">Toggle Glassmorphism</span>
+                   <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">Card Blur</span>
+                   <span className="text-[9px] text-slate-500 uppercase font-bold tracking-tighter">Toggle glass effect</span>
                  </div>
                  <input
                    type="checkbox"
                    checked={config.card_blur}
                    onChange={e => setConfig({ ...config, card_blur: e.target.checked })}
-                   className="h-5 w-5 accent-violet-500 rounded-lg"
+                   className="h-5 w-5 accent-cyan-500 rounded-lg"
                  />
               </label>
             </div>
 
-            <button 
-              onClick={handleSaveConfig} 
-              disabled={busy} 
-              className="w-full relative group overflow-hidden rounded-full bg-violet-600 py-4 transition-all hover:bg-violet-500 active:scale-[0.98] disabled:opacity-50"
+            <button
+              onClick={handleSaveConfig}
+              disabled={busy}
+              className="w-full relative group overflow-hidden rounded-full bg-cyan-600 py-4 transition-all hover:bg-cyan-500 active:scale-[0.98] disabled:opacity-50"
             >
               <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white">
-                {busy ? 'SYNCHRONIZING...' : 'Deploy Changes'}
+                {busy ? 'Saving...' : 'Save Settings'}
               </span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Reviews List */}
       <div className="space-y-6">
         <div className="flex items-center justify-between px-4">
           <div className="flex items-center gap-4">
-            <h2 className="text-xl font-black text-white uppercase tracking-tighter">Feedback Terminal</h2>
+            <h2 className="text-xl font-black text-white uppercase tracking-tighter">Review Feed</h2>
             {refreshing && (
               <div className="flex items-center gap-2">
-                <div className="h-2 w-2 animate-ping rounded-full bg-violet-500" />
-                <span className="text-[8px] font-black uppercase text-violet-500 tracking-[0.2em]">Live Sync</span>
+                <div className="h-2 w-2 animate-ping rounded-full bg-cyan-500" />
+                <span className="text-[8px] font-black uppercase text-cyan-500 tracking-[0.2em]">Syncing</span>
               </div>
             )}
           </div>
           <div className="rounded-full bg-slate-900 border border-slate-800 px-4 py-1.5">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{reviews.length} Logs Found</span>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{reviews.length} Total</span>
           </div>
         </div>
 
         <div className="grid gap-4 max-h-[700px] overflow-y-auto pr-2 custom-scrollbar">
           {reviews.map((r, i) => (
-            <motion.div 
+            <motion.div
               key={r.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -218,9 +216,9 @@ export default function PulseTab() {
                    </div>
                    <div className="flex flex-col">
                      <span className="text-sm font-black text-white tracking-tight">{r.customer_name}</span>
-                     <div className="flex gap-0.5 mt-0.5">
+                     <div className="flex gap-1 mt-0.5">
                         {[1,2,3,4,5].map(s => (
-                          <span key={s} className={`text-[10px] ${s <= r.rating ? 'text-amber-400' : 'text-slate-800'}`}>★</span>
+                          <span key={s} className={`text-[10px] ${s <= r.rating ? 'text-amber-400' : 'text-slate-800'}`}>*</span>
                         ))}
                      </div>
                    </div>
@@ -241,29 +239,28 @@ export default function PulseTab() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <button 
-                  onClick={() => toggleApproval(r.id, r.is_approved)} 
+                <button
+                  onClick={() => toggleApproval(r.id, r.is_approved)}
                   className={`min-w-[80px] rounded-xl px-4 py-2 text-[9px] font-black uppercase tracking-widest border transition-all ${
-                    r.is_approved 
-                      ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10' 
+                    r.is_approved
+                      ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10'
                       : 'border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/10'
                   }`}
                 >
                   {r.is_approved ? 'Visible' : 'Pending'}
                 </button>
-                <button 
-                  onClick={() => deleteReview(r.id)} 
+                <button
+                  onClick={() => deleteReview(r.id)}
                   className="rounded-xl border border-red-500/10 bg-red-500/5 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-red-500/60 hover:text-red-500 hover:bg-red-500/10 transition-all"
                 >
-                  Erase
+                  Delete
                 </button>
               </div>
             </motion.div>
           ))}
           {reviews.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 rounded-[3rem] border border-dashed border-slate-800 bg-slate-950/20">
-              <span className="text-4xl grayscale opacity-20 mb-4">📭</span>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600">No review logs detected</p>
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600">No reviews found</span>
             </div>
           )}
         </div>

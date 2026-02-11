@@ -17,7 +17,7 @@ export default function ReviewModeration() {
       .from('reviews')
       .select('*')
       .order('created_at', { ascending: false })
-    
+
     if (data) setReviews(data)
     setLoading(false)
   }, [])
@@ -33,7 +33,7 @@ export default function ReviewModeration() {
       .from('reviews')
       .update({ is_approved: approved, updated_at: new Date().toISOString() })
       .eq('id', id)
-    
+
     if (error) alert(error.message)
     await loadReviews()
     setBusy(null)
@@ -55,14 +55,14 @@ export default function ReviewModeration() {
     <section className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-black text-white uppercase tracking-widest">Review Terminal</h3>
+          <h3 className="text-sm font-black text-white uppercase tracking-widest">Review Inbox</h3>
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Moderate customer feedback</p>
         </div>
-        <button 
+        <button
           onClick={loadReviews}
-          className="text-[10px] font-bold uppercase tracking-widest text-violet-400 hover:text-violet-300 transition"
+          className="text-[10px] font-bold uppercase tracking-widest text-cyan-400 hover:text-cyan-300 transition"
         >
-          Refresh Feed
+          Refresh
         </button>
       </div>
 
@@ -81,9 +81,9 @@ export default function ReviewModeration() {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                       <div className="flex gap-0.5 text-[8px]">
+                       <div className="flex gap-1 text-[8px]">
                         {[1, 2, 3, 4, 5].map((s) => (
-                          <span key={s} className={s <= r.rating ? 'text-amber-400' : 'text-slate-700'}>★</span>
+                          <span key={s} className={s <= r.rating ? 'text-amber-400' : 'text-slate-700'}>*</span>
                         ))}
                       </div>
                       <span className="text-[10px] font-black text-white uppercase tracking-tighter truncate">{r.customer_name}</span>
