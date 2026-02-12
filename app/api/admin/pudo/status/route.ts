@@ -3,6 +3,7 @@ import path from 'path'
 import { promises as fs } from 'fs'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-static'
 
 export async function GET() {
   try {

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import path from 'path'
-import { promises as fs } from 'fs'
-import { createClient } from '@supabase/supabase-js'
+// import path from 'path'
+// import { promises as fs } from 'fs'
+// import { createClient } from '@supabase/supabase-js'
 
-export const runtime = 'nodejs'
+export const runtime = 'edge'
+// export const dynamic = 'force-static' // POST cannot be static
 
+/*
 function parseAdminEmails(value?: string) {
   return (value ?? '')
     .split(',')
@@ -45,8 +47,15 @@ async function requireAdmin(req: NextRequest) {
 
   return { ok: true as const, email }
 }
+*/
 
 export async function POST(req: NextRequest) {
+  return NextResponse.json(
+    { error: 'PUDO upload is temporarily disabled on Edge deployment. Please migrate storage to Supabase/R2.' },
+    { status: 501 }
+  )
+
+  /*
   try {
     const gate = await requireAdmin(req)
     if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: 401 })
@@ -88,4 +97,5 @@ export async function POST(req: NextRequest) {
   } catch (e: unknown) {
     return NextResponse.json({ error: (e as Error).message ?? 'Server error' }, { status: 500 })
   }
+  */
 }

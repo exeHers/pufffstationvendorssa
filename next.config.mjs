@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
-const SUPABASE_HOST = 'jtpifraxtevpxqyryacg.supabase.co'
+
+// Your Supabase host for image optimization
+const SUPABASE_HOST = 'jtpifraxtevpxqyryacg.supabase.co';
 
 const nextConfig = {
   images: {
@@ -12,6 +14,7 @@ const nextConfig = {
     ],
   },
   webpack: (config, { isServer }) => {
+    // 1. Handle External Modules that crash on Edge
     if (isServer) {
       config.externals.push(
         'resend',
@@ -19,10 +22,34 @@ const nextConfig = {
         'parseley',
         'selderee',
         '@react-email/render'
-      )
+      );
+
+      // 2. The "Nuclear Option" for Node internals
+      // This forces Webpack to ignore these modules during the server/edge build
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        async_hooks: false,
+        fs: false,
+        net: false,
+        tls: false,
+        child_process: false,
+      };
     }
-    return config
+
+    // 3. Absolute Alias for async_hooks
+    // This catches any imports that try to sneak past the fallback
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'async_hooks': false,
+    };
+
+    return config;
+  },
+  productionBrowserSourceMaps: true,
+  experimental: {
+    // This helps with build stability on your i3-7100
+    webpackBuildWorker: true,
   },
 }
 
-export default nextConfig
+export default nextConfig;

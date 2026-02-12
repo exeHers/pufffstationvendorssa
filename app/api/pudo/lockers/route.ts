@@ -3,6 +3,7 @@ import path from 'path'
 import { promises as fs } from 'fs'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-static'
 
 // Helper to calculate distance
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {

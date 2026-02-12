@@ -22,6 +22,7 @@ export default function AdminSupportPage() {
   const [error, setError] = useState<string | null>(null)
   const [ok, setOk] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadingTickets, setLoadingTickets] = useState(true)
 
   const adminEmails = useMemo(() => parseAdminEmails(process.env.NEXT_PUBLIC_ADMIN_EMAILS), [])
   const isAdmin = adminEmails.length > 0 && adminEmails.includes(adminEmail.toLowerCase())
@@ -29,8 +30,13 @@ export default function AdminSupportPage() {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const activeIdRef = useRef<string | null>(null)
+  const [reply, setReply] = useState('')
+  const [sending, setSending] = useState(false)
+  const [closeAfter, setCloseAfter] = useState(false)
 
   
+  const active = useMemo(() => tickets.find((t) => t.id === activeId), [tickets, activeId])
+
   const fetchTickets = useCallback(async (firstLoad = false) => {
     setError(null)
     setOk(null)

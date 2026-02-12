@@ -18,6 +18,30 @@
         "--access-token",
         "sbp_1ca7aeede56cab6f4163fe9159ce5794e533313d"
       ]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "D:/Site_Backup/pufffstationvendorssa"
+      ],
+      "disabled": true,
+      "alwaysAllow": []
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.38"
+      ]
+    },
+    "cloudflare": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://observability.mcp.cloudflare.com/sse"
+      ]
     }
   }
 }

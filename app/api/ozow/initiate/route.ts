@@ -68,7 +68,17 @@ export async function POST(req: Request) {
   }
 }
 
-function buildOzowRedirectUrl() {
+function buildOzowRedirectUrl(args: {
+  siteCode: string
+  apiKey: string
+  privateKey: string
+  amount: number
+  transactionReference: string
+  successUrl: string
+  cancelUrl: string
+  errorUrl: string
+  notifyUrl: string
+}) {
   // TODO: implement based on Ozow hosted payment page documentation.
   // This MUST include the correct HashCheck signature.
   // Returning null for now prevents fake payments.
