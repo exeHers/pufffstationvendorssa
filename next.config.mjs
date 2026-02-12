@@ -16,14 +16,6 @@ const nextConfig = {
   webpack: (config, { isServer }) => {
     // 1. Handle External Modules that crash on Edge
     if (isServer) {
-      config.externals.push(
-        'resend',
-        'html-to-text',
-        'parseley',
-        'selderee',
-        '@react-email/render'
-      );
-
       // 2. The "Nuclear Option" for Node internals
       // This forces Webpack to ignore these modules during the server/edge build
       config.resolve.fallback = {
