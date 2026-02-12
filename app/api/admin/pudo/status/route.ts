@@ -1,23 +1,18 @@
 import { NextResponse } from 'next/server'
-import path from 'path'
-import { promises as fs } from 'fs'
+import localLockers from '@/data/pudo_lockers.json'
 
-export const runtime = 'nodejs'
+export const runtime = 'edge'
 export const dynamic = 'force-static'
 
 export async function GET() {
   try {
-    const jsonDirectory = path.join(process.cwd(), 'data')
-    const filePath = path.join(jsonDirectory, 'pudo_lockers.json')
-
     let count = 0
-    try {
-      const raw = await fs.readFile(filePath, 'utf8')
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) count = parsed.length
-      else if (Array.isArray(parsed?.data)) count = parsed.data.length
-    } catch {
-      count = 0
+    const lockers = localLockers as any[]
+
+    if (Array.isArray(lockers)) {
+      count = lockers.length
+    } else if (Array.isArray((lockers as any).data)) {
+        count = (lockers as any).data.length
     }
 
     return NextResponse.json({ ok: true, count })

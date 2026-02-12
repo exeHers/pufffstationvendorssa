@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
-import path from 'path'
-import { promises as fs } from 'fs'
+import localLockers from '@/data/pudo_lockers.json'
 
-export const runtime = 'nodejs'
+export const runtime = 'edge'
 export const dynamic = 'force-static'
 
 // Helper to calculate distance
@@ -28,80 +27,13 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const lat = searchParams.get('lat')
   const lng = searchParams.get('lng')
-  const refresh = searchParams.get('refresh') // Secret flag to force refresh
   const all = searchParams.get('all') // Return all lockers without distance filter
-
-  const jsonDirectory = path.join(process.cwd(), 'data')
-  const filePath = path.join(jsonDirectory, 'pudo_lockers.json')
-  const minLockerCount = 500
+  
+  // Use the imported JSON data directly.
+  // We cannot read/write files on Edge runtime.
+  let allLockers = localLockers as any[]
 
   try {
-    let allLockers = []
-
-    // Check if file exists
-    let fileExists = false;
-    try {
-        await fs.access(filePath);
-        fileExists = true;
-    } catch {
-        fileExists = false;
-    }
-
-    // Fetch from API if refresh=true OR file missing OR cached file is too small
-    const shouldRefresh = refresh === 'true' || !fileExists
-    if (!shouldRefresh && fileExists) {
-        try {
-            const fileContents = await fs.readFile(filePath, 'utf8')
-            const parsed = JSON.parse(fileContents)
-            if (Array.isArray(parsed)) {
-                allLockers = parsed
-            }
-        } catch {
-            allLockers = []
-        }
-    }
-
-    if (shouldRefresh || (Array.isArray(allLockers) && allLockers.length < minLockerCount)) {
-        console.log('Attempting to fetch fresh lockers list from Pudo API (Browser Mode)...')
-        try {
-            // URL from Documentation
-            const apiUrl = 'https://api-pudo.co.za/lockers-data'
-            
-            // Mimic a real browser to avoid 403/404 blocks
-            const res = await fetch(apiUrl, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept': 'application/json, text/plain, */*',
-                    'Accept-Language': 'en-US,en;q=0.9',
-                    'Referer': 'https://www.pudo.co.za/'
-                }
-            })
-
-            if (res.ok) {
-                const data = await res.json()
-                console.log(`Fetched ${data.length} lockers from API!`)
-                
-                // Save to file (Cache it permanently)
-                await fs.writeFile(filePath, JSON.stringify(data, null, 2))
-                allLockers = data
-            } else {
-                console.error('Pudo API Failed:', res.status, res.statusText)
-                
-                // Fallback: Read existing file if API fails
-                if (fileExists) {
-                    const fileContents = await fs.readFile(filePath, 'utf8')
-                    allLockers = JSON.parse(fileContents)
-                }
-            }
-        } catch (apiError) {
-            console.error('API Fetch Error:', apiError)
-            if (fileExists) {
-                const fileContents = await fs.readFile(filePath, 'utf8')
-                allLockers = JSON.parse(fileContents)
-            }
-        }
-    }
-
     // Return all normalized lockers when requested
     if (all === 'true' && allLockers.length > 0) {
         const normalizedAll = allLockers.map((l: any) => ({

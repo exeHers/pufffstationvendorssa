@@ -12,8 +12,8 @@ export default function CheckoutClient() {
   const { items, subtotal, clearCart } = useCart()
   const router = useRouter()
   const supabase = useMemo(() => supabaseBrowser(), [])
-  const PudoMap = useMemo(
-    () => dynamic(() => import('@/components/checkout/PudoMap'), { ssr: false }),
+  const PudoSelector = useMemo(
+    () => dynamic(() => import('@/components/checkout/PudoSelector'), { ssr: false }),
     []
   )
 
@@ -450,7 +450,7 @@ export default function CheckoutClient() {
         </div>
       </div>
       {showPudoMap && (
-        <PudoMap
+        <PudoSelector
           onClose={() => setShowPudoMap(false)}
           onSelect={(locker: any) => {
             setPudoLocation(`${locker.name} - ${locker.address}`)
