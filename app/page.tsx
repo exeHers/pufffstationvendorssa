@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-// export const runtime = 'edge';
+export const runtime = 'edge';
 
 import Link from 'next/link'
 import { supabase, supabaseEnvReady } from '@/lib/supabaseClient'
