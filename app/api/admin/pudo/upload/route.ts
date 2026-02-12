@@ -49,7 +49,7 @@ async function requireAdmin(req: NextRequest) {
 }
 */
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   return NextResponse.json(
     { error: 'PUDO upload is temporarily disabled on Edge deployment. Please migrate storage to Supabase/R2.' },
     { status: 501 }

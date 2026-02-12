@@ -31,7 +31,7 @@ export async function GET(request: Request) {
   
   // Use the imported JSON data directly.
   // We cannot read/write files on Edge runtime.
-  let allLockers = localLockers as any[]
+  const allLockers = localLockers as any[]
 
   try {
     // Return all normalized lockers when requested

@@ -68,7 +68,7 @@ export async function POST(req: Request) {
   }
 }
 
-function buildOzowRedirectUrl(args: {
+function buildOzowRedirectUrl(_args: {
   siteCode: string
   apiKey: string
   privateKey: string

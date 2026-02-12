@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Search, Loader2, MapPin, X, Navigation, AlertTriangle } from 'lucide-react'
 
 // Mock fallback
