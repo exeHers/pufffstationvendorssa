@@ -3,7 +3,7 @@ export const runtime = 'edge';
 
 import React from 'react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabaseClient'
+import { supabase, supabaseEnvReady } from '@/lib/supabaseClient'
 
 export const metadata: Metadata = {
   title: 'Shop Premium Disposables',
@@ -271,6 +271,15 @@ export default async function ShopPage({
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const brand = (resolvedSearchParams?.brand || '').toString().trim()
   const flavour = (resolvedSearchParams?.flavour || '').toString().toLowerCase().trim()
+
+  if (!supabaseEnvReady) {
+    return (
+      <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-10 text-white">
+        <h1 className="text-4xl font-extrabold tracking-tight mb-4">Shop Unavailable</h1>
+        <p className="text-slate-400">Please configure Supabase environment variables in Cloudflare Pages settings.</p>
+      </main>
+    )
+  }
 
   const [categoriesResult, flavoursResult] = await Promise.all([
     supabase.from('categories').select('id,name').order('name', { ascending: true }),
