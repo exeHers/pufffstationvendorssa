@@ -16,7 +16,20 @@ import WhatsAppSupport from '@/components/support/WhatsAppSupport'
 import AddToCartToast from '@/components/ui/AddToCartToast'
 import Marquee from '@/components/ui/Marquee'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pufffstation.co.za'
+function getSafeSiteUrl() {
+  const raw = (process.env.NEXT_PUBLIC_SITE_URL || '').trim()
+  if (!raw) return 'https://pufffstation.co.za'
+
+  // Accept bare domains from env (e.g. "example.com") by normalizing to https.
+  const normalized = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`
+  try {
+    return new URL(normalized).toString()
+  } catch {
+    return 'https://pufffstation.co.za'
+  }
+}
+
+const siteUrl = getSafeSiteUrl()
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
