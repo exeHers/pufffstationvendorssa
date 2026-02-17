@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { DEFAULT_SUPPORT_BOT_CONFIG } from '@/lib/support-bot-config'
 
 export const runtime = 'edge'
 
@@ -21,7 +20,10 @@ export async function POST(request: Request) {
 
     const body = await request.json()
     const ticketId = String(body?.ticketId ?? '').trim()
+    const message = String(body?.message ?? '').trim()
+
     if (!ticketId) return NextResponse.json({ error: 'Missing ticketId.' }, { status: 400 })
+    if (!message) return NextResponse.json({ error: 'Message is required.' }, { status: 400 })
 
     const db = supabaseAdmin()
     const { data: ticket, error: ticketError } = await db
@@ -33,57 +35,24 @@ export async function POST(request: Request) {
     if (ticketError || !ticket) return NextResponse.json({ error: 'Ticket not found.' }, { status: 404 })
     if (ticket.user_id !== authData.user.id) return NextResponse.json({ error: 'Forbidden.' }, { status: 403 })
 
-    if ((ticket.status ?? '').toLowerCase() !== 'waiting_agent') {
-      return NextResponse.json({ success: true, skipped: true, reason: 'status_not_waiting' })
-    }
-
-    let queueNotice = DEFAULT_SUPPORT_BOT_CONFIG.busy_message
-    const { data: botConfig } = await db
-      .from('settings')
-      .select('value')
-      .eq('key', 'support_bot_config')
-      .maybeSingle()
-    const configured = String((botConfig?.value as any)?.busy_message ?? '').trim()
-    if (configured) queueNotice = configured
-
-    const ageMs = Date.now() - new Date(ticket.created_at).getTime()
-    if (ageMs < 5 * 60 * 1000) {
-      return NextResponse.json({ success: true, skipped: true, reason: 'too_early' })
-    }
-
-    const { data: existingNotice } = await db
-      .from('support_replies')
-      .select('id')
-      .eq('ticket_id', ticketId)
-      .eq('admin_email', 'system@pufffstation.local')
-      .eq('body', queueNotice)
-      .maybeSingle()
-
-    if (existingNotice?.id) {
-      return NextResponse.json({ success: true, skipped: true, reason: 'already_sent' })
-    }
-
-    const { data: adminReply } = await db
-      .from('support_replies')
-      .select('id')
-      .eq('ticket_id', ticketId)
-      .neq('admin_email', 'system@pufffstation.local')
-      .limit(1)
-      .maybeSingle()
-
-    if (adminReply?.id) {
-      return NextResponse.json({ success: true, skipped: true, reason: 'agent_replied' })
-    }
+    const author = `customer:${(authData.user.email ?? 'unknown').toLowerCase()}`
 
     const { error: insertError } = await db.from('support_replies').insert({
       ticket_id: ticketId,
-      admin_email: 'system@pufffstation.local',
-      body: queueNotice,
+      admin_email: author,
+      body: message,
     })
 
     if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
 
-    return NextResponse.json({ success: true, message: 'queue_notice_sent' })
+    const { error: statusError } = await db
+      .from('support_messages')
+      .update({ status: 'in_progress' })
+      .eq('id', ticketId)
+
+    if (statusError) return NextResponse.json({ error: statusError.message }, { status: 500 })
+
+    return NextResponse.json({ success: true })
   } catch (e: unknown) {
     return NextResponse.json({ error: (e as Error).message ?? 'Unknown error' }, { status: 500 })
   }

@@ -10,6 +10,7 @@ import QuickActionsTab from '@/components/admin/QuickActionsTab'
 import QuickAddPanel from '@/components/admin/QuickAddPanel'
 import RegistrationsTab from '@/components/admin/RegistrationsTab'
 import WhatsAppSettingsTab from '@/components/admin/WhatsAppSettingsTab'
+import SupportBotSettingsTab from '@/components/admin/SupportBotSettingsTab'
 
 export default function AdminClient() {
   const [email, setEmail] = useState<string>('...')
@@ -51,6 +52,13 @@ export default function AdminClient() {
         </div>
 
         <div className="flex flex-wrap gap-2 sm:justify-end">
+          <Link
+            href="/admin/support"
+            className="w-full rounded-full border border-emerald-400/40 bg-emerald-500/10 px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-200 transition hover:border-emerald-300/60 hover:text-emerald-100 sm:w-auto"
+          >
+            Live Support
+          </Link>
+
           <Link
             href="/shop"
             className="w-full rounded-full border border-white/[0.05] px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-slate-300 transition hover:border-cyan-500/50 hover:text-cyan-400 sm:w-auto"
@@ -94,6 +102,7 @@ function AdminTabs() {
           { id: 'dashboard', label: 'Dashboard' },
           { id: 'manage', label: 'Store Settings' },
           { id: 'whatsapp', label: 'WhatsApp Settings' },
+          { id: 'bot', label: 'Bot Editor' },
           { id: 'registrations', label: 'Registrations' },
           { id: 'reviews', label: 'Review Display' },
           { id: 'actions', label: 'Quick Operations' },
@@ -122,6 +131,17 @@ function AdminTabs() {
             className="space-y-6"
           >
             <DashboardOverview />
+          </motion.section>
+        )}
+
+        {activeTab === 'bot' && (
+          <motion.section
+            key="bot"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+          >
+            <SupportBotSettingsTab />
           </motion.section>
         )}
 

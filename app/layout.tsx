@@ -12,7 +12,8 @@ import HeaderLinks from '@/components/nav/HeaderLinks'
 import BackButton from '@/components/nav/BackButton'
 import AndroidMotionGate from '@/components/utils/AndroidMotionGate'
 import Footer from '@/components/layout/Footer'
-import WhatsAppSupport from '@/components/support/WhatsAppSupport'
+import SupportBotWidget from '@/components/support/SupportBotWidget'
+import SiteVisitTracker from '@/components/analytics/SiteVisitTracker'
 import AddToCartToast from '@/components/ui/AddToCartToast'
 import Marquee from '@/components/ui/Marquee'
 
@@ -87,7 +88,8 @@ export default function RootLayout({
           <AndroidMotionGate />
           <LuxeAtmosphere />
           <AgeGate />
-          <WhatsAppSupport />
+          <SiteVisitTracker />
+          <SupportBotWidget />
           <AddToCartToast />
           <div className="min-h-screen">
              <Marquee />
