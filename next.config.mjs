@@ -32,6 +32,7 @@ const nextConfig = {
     // This catches any imports that try to sneak past the fallback
     config.resolve.alias = {
       ...config.resolve.alias,
+      async_hooks: require.resolve('unenv/runtime/node/async_hooks'),
     };
 
     return config;
