@@ -1,7 +1,8 @@
 name = "pufffstationvendorssa"
 pages_build_output_dir = ".vercel/output/static"
-compatibility_date = "2024-01-01"
-compatibility_flags = ["nodejs_compat"]
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat_v2"]
+
 [vars]
 NEXT_PUBLIC_SUPABASE_URL = "https://jtpifraxtevpxqyryacg.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0cGlmcmF4dGV2cHhxeXJ5YWNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2ODAxNTAsImV4cCI6MjA4MzA0MDE1MH0.U1FygpYYnnhXqlNvwb2Wf2AfiVo8Yp-HA15h91fQ0pI"
