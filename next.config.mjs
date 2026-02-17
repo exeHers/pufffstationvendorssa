@@ -1,7 +1,10 @@
 /** @type {import('next').NextConfig} */
 
+import { createRequire } from 'node:module';
+
 // Your Supabase host for image optimization
 const SUPABASE_HOST = 'jtpifraxtevpxqyryacg.supabase.co';
+const require = createRequire(import.meta.url);
 
 const nextConfig = {
   images: {
