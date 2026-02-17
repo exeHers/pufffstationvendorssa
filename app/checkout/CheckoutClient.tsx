@@ -37,6 +37,7 @@ export default function CheckoutClient() {
     email: '',
     phone: '',
     address: '',
+    suburb: '',
     city: '',
     province: '',
     postalCode: '',
@@ -121,6 +122,13 @@ export default function CheckoutClient() {
 
   const applyDoorAddress = useCallback((option: AddressSuggestion) => {
     const addr = option?.address || {}
+    const suburb =
+      addr.suburb ||
+      addr.neighbourhood ||
+      addr.residential ||
+      addr.quarter ||
+      addr.city_district ||
+      ''
     const city =
       addr.city ||
       addr.town ||
@@ -133,18 +141,15 @@ export default function CheckoutClient() {
       ''
     const province = addr.state || addr.province || ''
     const postalCode = addr.postcode || ''
-    const streetFromParts = [addr.house_number, addr.road].filter(Boolean).join(' ').trim()
-    const streetFromLabel = option.label
-      .split(',')
-      .slice(0, 3)
-      .map((part) => part.trim())
-      .filter(Boolean)
-      .join(', ')
-    const street = streetFromParts || streetFromLabel || option.label || ''
+    const houseNumber = String(addr.house_number || '').trim()
+    const road = String(addr.road || addr.pedestrian || '').trim()
+    const streetFromParts = [houseNumber, road].filter(Boolean).join(' ').trim()
+    const street = streetFromParts || option.label || ''
 
     setFormData((prev) => ({
       ...prev,
       address: street || prev.address,
+      suburb: suburb || prev.suburb,
       city: city || prev.city,
       province: province || prev.province,
       postalCode: postalCode || prev.postalCode,
@@ -269,8 +274,8 @@ export default function CheckoutClient() {
       return
     }
 
-    if (deliveryMethod === 'door' && (!formData.address || !formData.city)) {
-      alert('Please enter your full door delivery address, including street and town/city.')
+    if (deliveryMethod === 'door' && (!formData.address || !formData.city || !formData.province || !formData.postalCode)) {
+      alert('Please enter full door delivery details: street address, town/city, province, and postal code.')
       return
     }
 
@@ -294,13 +299,15 @@ export default function CheckoutClient() {
       const lockerProvince = selectedLocker?.province ?? null
       const lockerPostal = selectedLocker?.postalCode ?? null
 
+      const fullDoorAddress = [formData.address, formData.suburb].filter(Boolean).join(', ')
+
       const orderPayload = {
         user_id: user.id,
         total_amount: total,
         status: 'pending_payment',
         delivery_type: deliveryMethod,
         pudo_location: deliveryMethod === 'pudo' ? pudoLocation : null,
-        address_line1: deliveryMethod === 'door' ? formData.address : lockerAddress,
+        address_line1: deliveryMethod === 'door' ? fullDoorAddress : lockerAddress,
         city: deliveryMethod === 'door' ? formData.city : lockerCity,
         province: deliveryMethod === 'door' ? formData.province : lockerProvince,
         postal_code: deliveryMethod === 'door' ? formData.postalCode : lockerPostal,
@@ -356,7 +363,7 @@ export default function CheckoutClient() {
         const deliveryText =
           deliveryMethod === 'pudo'
             ? `PUDO Locker: ${pudoLocation}`
-            : `Delivery Address: ${formData.address}, ${formData.city}, ${formData.province} ${formData.postalCode}`.replace(/\s+,/g, ',').trim()
+            : `Delivery Address: ${[formData.address, formData.suburb, formData.city, formData.province, formData.postalCode].filter(Boolean).join(', ')}`
 
         const template =
           whatsappConfig.checkout_message_template ||
@@ -531,9 +538,10 @@ export default function CheckoutClient() {
                         autoComplete="street-address"
                         value={formData.address}
                         onChange={handleInputChange}
-                        placeholder="Start typing your physical street address"
+                        placeholder="e.g. 12 Rivonia Road"
                         className="w-full rounded-2xl border border-white/10 bg-slate-900/50 px-4 py-3 focus:border-cyan-400 focus:outline-none"
                       />
+                      <p className="text-[11px] text-slate-500">Include house/building number + street name for successful doorstep delivery.</p>
                       {doorAddressLoading && <p className="text-xs text-cyan-300">Finding addresses…</p>}
                       {doorAddressError && <p className="text-xs text-red-400">{doorAddressError}</p>}
                       {!doorAddressLoading && doorAddressOptions.length > 0 && (
@@ -553,7 +561,18 @@ export default function CheckoutClient() {
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <label className="text-xs uppercase tracking-[0.3em] text-slate-500">City</label>
+                        <label className="text-xs uppercase tracking-[0.3em] text-slate-500">Suburb / Area</label>
+                        <input
+                          type="text"
+                          name="suburb"
+                          autoComplete="address-level3"
+                          value={formData.suburb}
+                          onChange={handleInputChange}
+                          className="w-full rounded-2xl border border-white/10 bg-slate-900/50 px-4 py-3 focus:border-cyan-400 focus:outline-none"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs uppercase tracking-[0.3em] text-slate-500">Town / City</label>
                         <input
                           type="text"
                           name="city"
@@ -597,6 +616,14 @@ export default function CheckoutClient() {
                           className="w-full rounded-2xl border border-white/10 bg-slate-900/50 px-4 py-3 focus:border-cyan-400 focus:outline-none"
                         />
                       </div>
+                    </div>
+                    <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/5 px-4 py-3">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-200">Delivery address summary</p>
+                      <p className="mt-1 text-sm text-slate-200">
+                        {[formData.address, formData.suburb, formData.city, formData.province, formData.postalCode]
+                          .filter(Boolean)
+                          .join(', ') || 'Enter address details above'}
+                      </p>
                     </div>
                   </motion.div>
                 ) : (
