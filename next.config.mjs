@@ -21,7 +21,6 @@ const nextConfig = {
       // This forces Webpack to ignore these modules during the server/edge build
       config.resolve.fallback = {
         ...config.resolve.fallback,
-        async_hooks: false,
         fs: false,
         net: false,
         tls: false,
@@ -33,7 +32,6 @@ const nextConfig = {
     // This catches any imports that try to sneak past the fallback
     config.resolve.alias = {
       ...config.resolve.alias,
-      'async_hooks': false,
     };
 
     return config;
