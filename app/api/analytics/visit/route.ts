@@ -5,6 +5,12 @@ export const runtime = 'edge'
 
 export async function POST(request: Request) {
   try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !serviceKey) {
+      return NextResponse.json({ success: true, skipped: true })
+    }
+
     const userAgent = request.headers.get('user-agent') || null
     const forwardedFor = request.headers.get('x-forwarded-for') || ''
     const ipAddress = forwardedFor.split(',')[0]?.trim() || null
@@ -18,9 +24,14 @@ export async function POST(request: Request) {
       ip_address: ipAddress,
     })
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.warn('[analytics] failed to record visit', error.message)
+      return NextResponse.json({ success: true, skipped: true, reason: 'db_error' })
+    }
+
     return NextResponse.json({ success: true })
   } catch (e: unknown) {
-    return NextResponse.json({ error: (e as Error).message || 'Unknown error' }, { status: 500 })
+    console.warn('[analytics] unexpected error', e)
+    return NextResponse.json({ success: true, skipped: true })
   }
 }
