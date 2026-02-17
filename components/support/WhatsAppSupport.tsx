@@ -1,11 +1,38 @@
 'use client'
 
+import { useEffect, useMemo, useState } from 'react'
 import React from 'react'
+import { supabaseBrowser } from '@/lib/supabase/browser'
+import {
+  DEFAULT_WHATSAPP_CONFIG,
+  normalizeWhatsAppNumber,
+  type WhatsAppConfig,
+} from '@/lib/whatsapp-config'
 
 export default function WhatsAppSupport() {
-  const whatsappNumber = "27123456789" // TODO: Replace with your actual WhatsApp number
-  const message = "Hi PUFFF Station, I need some help with..."
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`
+  const [config, setConfig] = useState<WhatsAppConfig>(DEFAULT_WHATSAPP_CONFIG)
+
+  useEffect(() => {
+    const load = async () => {
+      const { data, error } = await supabaseBrowser()
+        .from('settings')
+        .select('value')
+        .eq('key', 'whatsapp_config')
+        .maybeSingle()
+
+      if (!error && data?.value) {
+        setConfig((prev) => ({ ...prev, ...(data.value as Partial<WhatsAppConfig>) }))
+      }
+    }
+
+    void load()
+  }, [])
+
+  const whatsappUrl = useMemo(() => {
+    const whatsappNumber = normalizeWhatsAppNumber(config.whatsapp_number)
+    const message = config.support_message || DEFAULT_WHATSAPP_CONFIG.support_message
+    return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`
+  }, [config])
 
   return (
     <a

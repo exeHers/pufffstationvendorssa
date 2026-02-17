@@ -7,6 +7,12 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabaseBrowser } from '@/lib/supabase/browser'
 import { motion, AnimatePresence } from 'framer-motion'
+import {
+  DEFAULT_WHATSAPP_CONFIG,
+  normalizeWhatsAppNumber,
+  renderCheckoutTemplate,
+  type WhatsAppConfig,
+} from '@/lib/whatsapp-config'
 
 export default function CheckoutClient() {
   const { items, subtotal, clearCart } = useCart()
@@ -44,6 +50,7 @@ export default function CheckoutClient() {
   const [lockerLoading, setLockerLoading] = useState(false)
   const [lockerError, setLockerError] = useState<string | null>(null)
   const [selectedLocker, setSelectedLocker] = useState<any | null>(null)
+  const [whatsappConfig, setWhatsappConfig] = useState<WhatsAppConfig>(DEFAULT_WHATSAPP_CONFIG)
 
   // Calculate Totals
   const isFreeDelivery = subtotal >= 1000
@@ -75,6 +82,25 @@ export default function CheckoutClient() {
       }
     }
     fetchProfile()
+  }, [supabase])
+
+  useEffect(() => {
+    const loadWhatsappConfig = async () => {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'whatsapp_config')
+        .maybeSingle()
+
+      if (!error && data?.value) {
+        setWhatsappConfig((prev) => ({
+          ...prev,
+          ...(data.value as Partial<WhatsAppConfig>),
+        }))
+      }
+    }
+
+    void loadWhatsappConfig()
   }, [supabase])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -207,26 +233,33 @@ export default function CheckoutClient() {
 
       if (paymentMethod === 'whatsapp') {
         const itemsList = items
-          .map((item) => `- ${item.quantity} x ${item.name} (R${item.price * item.quantity})`)
-          .join('%0A')
+          .map((item) => `- ${item.quantity} x ${item.name} (R${(item.price * item.quantity).toFixed(2)})`)
+          .join('\n')
         const deliveryText =
           deliveryMethod === 'pudo'
             ? `PUDO Locker: ${pudoLocation}`
             : `Delivery Address: ${formData.address}, ${formData.city}`
 
-        const message =
-          `*NEW ORDER REQUEST*%0A` +
-          `Ref: #${order.id.slice(0, 8)}%0A%0A` +
-          `Customer: ${formData.fullName}%0A` +
-          `Phone: ${formData.phone}%0A%0A` +
-          `Order Details:%0A${itemsList}%0A%0A` +
-          `Delivery: ${deliveryMethod === 'door' ? 'Door-to-Door (fees included)' : `PUDO Locker (R${deliveryFee})`}%0A` +
-          `${deliveryText}%0A%0A` +
-          `TOTAL: R${total.toFixed(2)}%0A%0A` +
-          `_Please confirm stock and send banking details._`
+        const template =
+          whatsappConfig.checkout_message_template ||
+          DEFAULT_WHATSAPP_CONFIG.checkout_message_template
+        const message = renderCheckoutTemplate(template, {
+          order_ref: order.id.slice(0, 8),
+          customer_name: formData.fullName,
+          customer_phone: formData.phone,
+          items_list: itemsList,
+          delivery_method:
+            deliveryMethod === 'door'
+              ? 'Door-to-Door (fees included)'
+              : `PUDO Locker (R${deliveryFee})`,
+          delivery_text: deliveryText,
+          total: total.toFixed(2),
+        })
+
+        const whatsappNumber = normalizeWhatsAppNumber(whatsappConfig.whatsapp_number)
 
         clearCart()
-        window.open(`https://wa.me/27712345678?text=${message}`, '_blank')
+        window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank')
         router.push('/success')
       } else {
         alert('Yoco card checkout is coming soon. Please use WhatsApp for now.')

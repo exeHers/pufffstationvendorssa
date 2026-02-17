@@ -84,15 +84,18 @@ export default function ProductCard({ product }: { product: Product }) {
   }, [smokeHex, accentHex])
 
   return (
-    <Link
-      ref={ref as any}
-      href={`/shop/${product.id}`}
-      className="group relative flex flex-col items-center justify-center p-4 transition-transform duration-500 hover:-translate-y-2"
+    <div
+      className="group relative flex flex-col items-center justify-center p-4"
       style={{
         ...cssVars,
         contain: 'paint',
       }}
     >
+      <Link
+        ref={ref as any}
+        href={`/shop/${product.id}`}
+        className="w-full transition-transform duration-500 hover:-translate-y-2"
+      >
       {/* 
         NASTY LAYOUT UPDATE:
         - Removed card background/border
@@ -173,16 +176,17 @@ export default function ProductCard({ product }: { product: Product }) {
           {formatMoney(Number(product.price))}
         </p>
 
-        {/* Optional: Add to Cart button only appears on Hover/Focus for clean look */}
-        <button
-          onClick={handleAdd}
-          disabled={!inStock}
-          className="mt-4 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 text-[10px] font-black uppercase tracking-[0.25em] border border-white/20 hover:border-[var(--accent)] hover:text-[var(--accent)] bg-black/50 backdrop-blur px-6 py-3 rounded-full disabled:opacity-0"
-        >
-          Add to Cart
-        </button>
       </div>
+      </Link>
 
-    </Link>
+      <button
+        onClick={handleAdd}
+        disabled={!inStock}
+        className="relative z-30 mt-4 text-[10px] font-black uppercase tracking-[0.25em] border border-white/20 hover:border-[var(--accent)] hover:text-[var(--accent)] bg-black/50 backdrop-blur px-6 py-3 rounded-full transition-all duration-300 sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 disabled:opacity-40"
+      >
+        Add to Cart
+      </button>
+
+    </div>
   )
 }

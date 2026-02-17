@@ -45,7 +45,7 @@ export default function HeaderLinks() {
 
   return (
     <>
-      <div className="hidden items-center gap-7 md:flex">
+      <div className="hidden items-center gap-7 lg:flex">
         <div className="relative group pt-2">
           <button
             type="button"
@@ -105,7 +105,7 @@ export default function HeaderLinks() {
         </div>
       </div>
 
-      <div className="relative md:hidden">
+      <div className="relative lg:hidden">
         <button
           type="button"
           onClick={() => setMenuOpen((open) => !open)}

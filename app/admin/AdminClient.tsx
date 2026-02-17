@@ -9,6 +9,7 @@ import PulseTab from '@/components/admin/PulseTab'
 import QuickActionsTab from '@/components/admin/QuickActionsTab'
 import QuickAddPanel from '@/components/admin/QuickAddPanel'
 import RegistrationsTab from '@/components/admin/RegistrationsTab'
+import WhatsAppSettingsTab from '@/components/admin/WhatsAppSettingsTab'
 
 export default function AdminClient() {
   const [email, setEmail] = useState<string>('...')
@@ -92,6 +93,7 @@ function AdminTabs() {
         {[
           { id: 'dashboard', label: 'Dashboard' },
           { id: 'manage', label: 'Store Settings' },
+          { id: 'whatsapp', label: 'WhatsApp Settings' },
           { id: 'registrations', label: 'Registrations' },
           { id: 'reviews', label: 'Review Display' },
           { id: 'actions', label: 'Quick Operations' },
@@ -151,6 +153,17 @@ function AdminTabs() {
             exit={{ opacity: 0, y: -10 }}
           >
             <RegistrationsTab />
+          </motion.section>
+        )}
+
+        {activeTab === 'whatsapp' && (
+          <motion.section
+            key="whatsapp"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+          >
+            <WhatsAppSettingsTab />
           </motion.section>
         )}
 

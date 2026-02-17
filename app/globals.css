@@ -189,7 +189,8 @@ body {
 
 @media (max-width: 640px) {
   .marquee-track {
-    animation-duration: 48s;
+    animation-duration: 64s;
+    opacity: 0.86;
   }
 }
 
