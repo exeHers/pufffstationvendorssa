@@ -36,6 +36,7 @@ export default function CheckoutClient() {
     fullName: '',
     email: '',
     phone: '',
+    houseNumber: '',
     address: '',
     suburb: '',
     city: '',
@@ -122,6 +123,11 @@ export default function CheckoutClient() {
 
   const applyDoorAddress = useCallback((option: AddressSuggestion) => {
     const addr = option?.address || {}
+    const primaryLabelPart = String(option.label || '').split(',')[0]?.trim() || ''
+    const numberMatch = primaryLabelPart.match(/^([0-9A-Za-z\-/]+)\s+/)
+    const houseNumberFromLabel = numberMatch?.[1] || ''
+    const roadFromLabel = numberMatch?.[0] ? primaryLabelPart.slice(numberMatch[0].length).trim() : primaryLabelPart
+
     const suburb =
       addr.suburb ||
       addr.neighbourhood ||
@@ -136,19 +142,19 @@ export default function CheckoutClient() {
       addr.hamlet ||
       addr.suburb ||
       addr.city_district ||
+      addr.state_district ||
       addr.municipality ||
       addr.county ||
       ''
     const province = addr.state || addr.province || ''
-    const postalCode = addr.postcode || ''
-    const houseNumber = String(addr.house_number || '').trim()
-    const road = String(addr.road || addr.pedestrian || '').trim()
-    const streetFromParts = [houseNumber, road].filter(Boolean).join(' ').trim()
-    const street = streetFromParts || option.label || ''
+    const postalCode = String(addr.postcode || addr['ISO3166-2-lvl4'] || '').trim()
+    const houseNumber = String(addr.house_number || houseNumberFromLabel || '').trim()
+    const road = String(addr.road || addr.pedestrian || roadFromLabel || '').trim()
 
     setFormData((prev) => ({
       ...prev,
-      address: street || prev.address,
+      houseNumber: houseNumber || prev.houseNumber,
+      address: road || prev.address,
       suburb: suburb || prev.suburb,
       city: city || prev.city,
       province: province || prev.province,
@@ -274,8 +280,11 @@ export default function CheckoutClient() {
       return
     }
 
-    if (deliveryMethod === 'door' && (!formData.address || !formData.city || !formData.province || !formData.postalCode)) {
-      alert('Please enter full door delivery details: street address, town/city, province, and postal code.')
+    if (
+      deliveryMethod === 'door' &&
+      (!formData.houseNumber || !formData.address || !formData.city || !formData.province || !formData.postalCode)
+    ) {
+      alert('Please enter complete door delivery details: house number, street, town/city, province and postal code.')
       return
     }
 
@@ -299,7 +308,9 @@ export default function CheckoutClient() {
       const lockerProvince = selectedLocker?.province ?? null
       const lockerPostal = selectedLocker?.postalCode ?? null
 
-      const fullDoorAddress = [formData.address, formData.suburb].filter(Boolean).join(', ')
+      const fullDoorAddress = [`${formData.houseNumber} ${formData.address}`.trim(), formData.suburb]
+        .filter(Boolean)
+        .join(', ')
 
       const orderPayload = {
         user_id: user.id,
@@ -363,7 +374,15 @@ export default function CheckoutClient() {
         const deliveryText =
           deliveryMethod === 'pudo'
             ? `PUDO Locker: ${pudoLocation}`
-            : `Delivery Address: ${[formData.address, formData.suburb, formData.city, formData.province, formData.postalCode].filter(Boolean).join(', ')}`
+            : `Delivery Address: ${[
+                `${formData.houseNumber} ${formData.address}`.trim(),
+                formData.suburb,
+                formData.city,
+                formData.province,
+                formData.postalCode,
+              ]
+                .filter(Boolean)
+                .join(', ')}`
 
         const template =
           whatsappConfig.checkout_message_template ||
@@ -520,9 +539,23 @@ export default function CheckoutClient() {
                     exit={{ opacity: 0, y: -8 }}
                     className="space-y-6"
                   >
-                    <div className="space-y-2">
+                    <div className="grid gap-4 md:grid-cols-[180px,1fr]">
+                      <div className="space-y-2">
+                        <label className="text-xs uppercase tracking-[0.3em] text-slate-500">House No.</label>
+                        <input
+                          type="text"
+                          name="houseNumber"
+                          autoComplete="address-line1"
+                          value={formData.houseNumber}
+                          onChange={handleInputChange}
+                          placeholder="12"
+                          className="w-full rounded-2xl border border-white/10 bg-slate-900/50 px-4 py-3 focus:border-cyan-400 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
                       <div className="flex items-center justify-between gap-3">
-                        <label className="text-xs uppercase tracking-[0.3em] text-slate-500">Street address</label>
+                        <label className="text-xs uppercase tracking-[0.3em] text-slate-500">Street name</label>
                         <button
                           type="button"
                           onClick={useMyDoorLocation}
@@ -538,10 +571,10 @@ export default function CheckoutClient() {
                         autoComplete="street-address"
                         value={formData.address}
                         onChange={handleInputChange}
-                        placeholder="e.g. 12 Rivonia Road"
+                        placeholder="e.g. Rivonia Road"
                         className="w-full rounded-2xl border border-white/10 bg-slate-900/50 px-4 py-3 focus:border-cyan-400 focus:outline-none"
                       />
-                      <p className="text-[11px] text-slate-500">Include house/building number + street name for successful doorstep delivery.</p>
+                      <p className="text-[11px] text-slate-500">Select a suggested address to auto-fill town and postal code.</p>
                       {doorAddressLoading && <p className="text-xs text-cyan-300">Finding addresses…</p>}
                       {doorAddressError && <p className="text-xs text-red-400">{doorAddressError}</p>}
                       {!doorAddressLoading && doorAddressOptions.length > 0 && (
@@ -558,6 +591,7 @@ export default function CheckoutClient() {
                           ))}
                         </div>
                       )}
+                    </div>
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
@@ -620,7 +654,13 @@ export default function CheckoutClient() {
                     <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/5 px-4 py-3">
                       <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-200">Delivery address summary</p>
                       <p className="mt-1 text-sm text-slate-200">
-                        {[formData.address, formData.suburb, formData.city, formData.province, formData.postalCode]
+                        {[
+                          `${formData.houseNumber} ${formData.address}`.trim(),
+                          formData.suburb,
+                          formData.city,
+                          formData.province,
+                          formData.postalCode,
+                        ]
                           .filter(Boolean)
                           .join(', ') || 'Enter address details above'}
                       </p>
