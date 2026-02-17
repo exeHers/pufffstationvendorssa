@@ -1,10 +1,12 @@
 /** @type {import('next').NextConfig} */
 
 import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 
 // Your Supabase host for image optimization
 const SUPABASE_HOST = 'jtpifraxtevpxqyryacg.supabase.co';
 const require = createRequire(import.meta.url);
+const unenvRoot = dirname(require.resolve('unenv/package.json'));
 
 const nextConfig = {
   images: {
@@ -35,7 +37,7 @@ const nextConfig = {
     // This catches any imports that try to sneak past the fallback
     config.resolve.alias = {
       ...config.resolve.alias,
-      async_hooks: require.resolve('unenv/runtime/node/async_hooks'),
+      async_hooks: join(unenvRoot, 'dist/runtime/node/async_hooks.mjs'),
     };
 
     return config;
