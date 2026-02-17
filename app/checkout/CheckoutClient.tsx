@@ -121,11 +121,26 @@ export default function CheckoutClient() {
 
   const applyDoorAddress = useCallback((option: AddressSuggestion) => {
     const addr = option?.address || {}
-    const city = addr.city || addr.town || addr.village || addr.suburb || addr.county || ''
+    const city =
+      addr.city ||
+      addr.town ||
+      addr.village ||
+      addr.hamlet ||
+      addr.suburb ||
+      addr.city_district ||
+      addr.municipality ||
+      addr.county ||
+      ''
     const province = addr.state || addr.province || ''
     const postalCode = addr.postcode || ''
     const streetFromParts = [addr.house_number, addr.road].filter(Boolean).join(' ').trim()
-    const street = streetFromParts || option.label.split(',')[0]?.trim() || ''
+    const streetFromLabel = option.label
+      .split(',')
+      .slice(0, 3)
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .join(', ')
+    const street = streetFromParts || streetFromLabel || option.label || ''
 
     setFormData((prev) => ({
       ...prev,
@@ -254,8 +269,8 @@ export default function CheckoutClient() {
       return
     }
 
-    if (deliveryMethod === 'door' && !formData.address) {
-      alert('Please enter your delivery address.')
+    if (deliveryMethod === 'door' && (!formData.address || !formData.city)) {
+      alert('Please enter your full door delivery address, including street and town/city.')
       return
     }
 
@@ -341,7 +356,7 @@ export default function CheckoutClient() {
         const deliveryText =
           deliveryMethod === 'pudo'
             ? `PUDO Locker: ${pudoLocation}`
-            : `Delivery Address: ${formData.address}, ${formData.city}`
+            : `Delivery Address: ${formData.address}, ${formData.city}, ${formData.province} ${formData.postalCode}`.replace(/\s+,/g, ',').trim()
 
         const template =
           whatsappConfig.checkout_message_template ||
