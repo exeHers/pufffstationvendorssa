@@ -4,6 +4,7 @@ export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 const NOMINATIM_ENDPOINT = 'https://nominatim.openstreetmap.org/search'
+const NOMINATIM_REVERSE_ENDPOINT = 'https://nominatim.openstreetmap.org/reverse'
 
 function normalizeQuery(raw: string | null) {
   if (!raw) return ''
@@ -15,6 +16,40 @@ function normalizeQuery(raw: string | null) {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
+    const lat = searchParams.get('lat')
+    const lng = searchParams.get('lng') || searchParams.get('lon')
+
+    if (lat && lng) {
+      const reverseUrl = new URL(NOMINATIM_REVERSE_ENDPOINT)
+      reverseUrl.searchParams.set('format', 'json')
+      reverseUrl.searchParams.set('addressdetails', '1')
+      reverseUrl.searchParams.set('lat', lat)
+      reverseUrl.searchParams.set('lon', lng)
+
+      const reverseResponse = await fetch(reverseUrl.toString(), {
+        headers: {
+          'User-Agent': process.env.NOMINATIM_USER_AGENT || 'pufffstation-geocoder/1.0 (+https://pufffstation.co.za)',
+        },
+        next: { revalidate: 60 },
+      })
+
+      if (!reverseResponse.ok) {
+        const body = await reverseResponse.text()
+        console.error('[geocode] nominatim reverse error', reverseResponse.status, body.slice(0, 200))
+        return NextResponse.json({ error: 'Reverse geocoding service unavailable' }, { status: 503 })
+      }
+
+      const result = await reverseResponse.json()
+      const mapped = {
+        lat: parseFloat(result?.lat ?? lat),
+        lng: parseFloat(result?.lon ?? lng),
+        label: String(result?.display_name || ''),
+        address: result?.address || {},
+      }
+
+      return NextResponse.json({ data: mapped })
+    }
+
     const query = normalizeQuery(searchParams.get('q'))
 
     if (!query) {

@@ -14,6 +14,13 @@ import {
   type WhatsAppConfig,
 } from '@/lib/whatsapp-config'
 
+type AddressSuggestion = {
+  lat: number
+  lng: number
+  label: string
+  address?: Record<string, string>
+}
+
 export default function CheckoutClient() {
   const { items, subtotal, clearCart } = useCart()
   const router = useRouter()
@@ -51,6 +58,10 @@ export default function CheckoutClient() {
   const [lockerError, setLockerError] = useState<string | null>(null)
   const [selectedLocker, setSelectedLocker] = useState<any | null>(null)
   const [whatsappConfig, setWhatsappConfig] = useState<WhatsAppConfig>(DEFAULT_WHATSAPP_CONFIG)
+  const [doorAddressOptions, setDoorAddressOptions] = useState<AddressSuggestion[]>([])
+  const [doorAddressLoading, setDoorAddressLoading] = useState(false)
+  const [doorAddressError, setDoorAddressError] = useState<string | null>(null)
+  const [doorLocationLoading, setDoorLocationLoading] = useState(false)
 
   // Calculate Totals
   const isFreeDelivery = subtotal >= 1000
@@ -107,6 +118,98 @@ export default function CheckoutClient() {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
   }
+
+  const applyDoorAddress = useCallback((option: AddressSuggestion) => {
+    const addr = option?.address || {}
+    const city = addr.city || addr.town || addr.village || addr.suburb || addr.county || ''
+    const province = addr.state || addr.province || ''
+    const postalCode = addr.postcode || ''
+    const streetFromParts = [addr.house_number, addr.road].filter(Boolean).join(' ').trim()
+    const street = streetFromParts || option.label.split(',')[0]?.trim() || ''
+
+    setFormData((prev) => ({
+      ...prev,
+      address: street || prev.address,
+      city: city || prev.city,
+      province: province || prev.province,
+      postalCode: postalCode || prev.postalCode,
+    }))
+  }, [])
+
+  useEffect(() => {
+    if (deliveryMethod !== 'door') return
+
+    const q = formData.address.trim()
+    if (q.length < 3) {
+      setDoorAddressOptions([])
+      setDoorAddressError(null)
+      return
+    }
+
+    let cancelled = false
+    setDoorAddressLoading(true)
+    setDoorAddressError(null)
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}&limit=6`)
+        const json = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error(json?.error || 'Address lookup failed.')
+        if (cancelled) return
+
+        const list = (Array.isArray(json?.data) ? json.data : []) as AddressSuggestion[]
+        setDoorAddressOptions(list)
+        if (!list.length) setDoorAddressError('No physical addresses found yet. Keep typing.')
+      } catch (err: any) {
+        if (!cancelled) {
+          setDoorAddressOptions([])
+          setDoorAddressError(err?.message || 'Could not load suggestions.')
+        }
+      } finally {
+        if (!cancelled) setDoorAddressLoading(false)
+      }
+    }, 300)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [deliveryMethod, formData.address])
+
+  const useMyDoorLocation = useCallback(() => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setDoorAddressError('Geolocation is not supported on this device.')
+      return
+    }
+
+    setDoorAddressError(null)
+    setDoorLocationLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords
+          const res = await fetch(`/api/geocode?lat=${latitude}&lng=${longitude}`)
+          const json = await res.json().catch(() => ({}))
+          if (!res.ok || !json?.data) {
+            throw new Error(json?.error || 'Could not resolve your location.')
+          }
+
+          const result = json.data as AddressSuggestion
+          applyDoorAddress(result)
+          setDoorAddressOptions([result])
+        } catch (err: any) {
+          setDoorAddressError(err?.message || 'Unable to use your location right now.')
+        } finally {
+          setDoorLocationLoading(false)
+        }
+      },
+      () => {
+        setDoorLocationLoading(false)
+        setDoorAddressError('Unable to access your location.')
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }, [applyDoorAddress])
 
   const fetchLockers = useCallback(async (lat: number, lng: number) => {
     setLockerLoading(true)
@@ -396,15 +499,42 @@ export default function CheckoutClient() {
                     className="space-y-6"
                   >
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-[0.3em] text-slate-500">Street address</label>
+                      <div className="flex items-center justify-between gap-3">
+                        <label className="text-xs uppercase tracking-[0.3em] text-slate-500">Street address</label>
+                        <button
+                          type="button"
+                          onClick={useMyDoorLocation}
+                          disabled={doorLocationLoading}
+                          className="rounded-full border border-cyan-400/40 bg-cyan-400/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-200 hover:bg-cyan-400/20 disabled:opacity-60"
+                        >
+                          {doorLocationLoading ? 'Locating…' : 'Use my location'}
+                        </button>
+                      </div>
                       <input
                         type="text"
                         name="address"
                         autoComplete="street-address"
                         value={formData.address}
                         onChange={handleInputChange}
+                        placeholder="Start typing your physical street address"
                         className="w-full rounded-2xl border border-white/10 bg-slate-900/50 px-4 py-3 focus:border-cyan-400 focus:outline-none"
                       />
+                      {doorAddressLoading && <p className="text-xs text-cyan-300">Finding addresses…</p>}
+                      {doorAddressError && <p className="text-xs text-red-400">{doorAddressError}</p>}
+                      {!doorAddressLoading && doorAddressOptions.length > 0 && (
+                        <div className="grid gap-2">
+                          {doorAddressOptions.slice(0, 5).map((option) => (
+                            <button
+                              key={`${option.lat}-${option.lng}-${option.label}`}
+                              type="button"
+                              onClick={() => applyDoorAddress(option)}
+                              className="rounded-2xl border border-white/10 px-4 py-3 text-left text-xs text-slate-200 transition hover:border-cyan-400/60 hover:bg-cyan-400/10"
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
