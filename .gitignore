@@ -21,6 +21,8 @@
 # misc
 .DS_Store
 *.pem
+data/pudo_lockers.json
+data/pudo_lockers-*.json
 
 # debug
 npm-debug.log*

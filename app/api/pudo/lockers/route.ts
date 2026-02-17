@@ -1,8 +1,68 @@
 import { NextResponse } from 'next/server'
-import localLockers from '@/data/pudo_lockers.json'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 
 export const runtime = 'edge'
-export const dynamic = 'force-static'
+export const dynamic = 'force-dynamic'
+
+type RawLocker = {
+  locker_code: string | null
+  name: string | null
+  address: string | null
+  city?: string | null
+  province?: string | null
+  latitude: number | null
+  longitude: number | null
+}
+
+type Locker = {
+  code: string
+  name: string
+  address: string
+  city?: string | null
+  province?: string | null
+  lat: number
+  lng: number
+}
+
+const CACHE_TTL_MS = 1000 * 60 * 5 // 5 minutes
+let cachedLockers: Locker[] | null = null
+let lastFetched = 0
+
+function normalizeLocker(raw: RawLocker): Locker | null {
+  const lat = Number(raw.latitude)
+  const lng = Number(raw.longitude)
+  if (!raw.locker_code || Number.isNaN(lat) || Number.isNaN(lng)) return null
+
+  return {
+    code: raw.locker_code,
+    name: raw.name || 'Unknown Locker',
+    address: raw.address || 'Address unavailable',
+    city: raw.city ?? null,
+    province: raw.province ?? null,
+    lat,
+    lng,
+  }
+}
+
+async function loadLockers(force?: boolean) {
+  if (!force && cachedLockers && Date.now() - lastFetched < CACHE_TTL_MS) {
+    return cachedLockers
+  }
+
+  const db = supabaseAdmin()
+  const { data, error } = await db
+    .from('pudo_lockers')
+    .select('locker_code,name,address,city,province,latitude,longitude')
+
+  if (error) {
+    console.error('[pudo/lockers] Supabase query failed:', error.message)
+    throw new Error('Failed to load lockers')
+  }
+
+  cachedLockers = (data || []).map(normalizeLocker).filter((l): l is Locker => Boolean(l))
+  lastFetched = Date.now()
+  return cachedLockers
+}
 
 // Helper to calculate distance
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -29,50 +89,31 @@ export async function GET(request: Request) {
   const lng = searchParams.get('lng')
   const all = searchParams.get('all') // Return all lockers without distance filter
   
-  // Use the imported JSON data directly.
-  // We cannot read/write files on Edge runtime.
-  const allLockers = localLockers as any[]
-
   try {
-    // Return all normalized lockers when requested
-    if (all === 'true' && allLockers.length > 0) {
-        const normalizedAll = allLockers.map((l: any) => ({
-            ...l,
-            lat: parseFloat(l.latitude || l.lat),
-            lng: parseFloat(l.longitude || l.lng || l.lon || l.long),
-        })).filter((l: any) => !isNaN(l.lat) && !isNaN(l.lng))
+    const lockers = await loadLockers()
 
-        return NextResponse.json(normalizedAll)
+    // Return all normalized lockers when requested
+    if (all === 'true') {
+      return NextResponse.json(lockers)
     }
 
     // Filter by distance if coordinates provided
-    if (lat && lng && allLockers.length > 0) {
-        const userLat = parseFloat(lat)
-        const userLng = parseFloat(lng)
+    if (lat && lng && lockers.length > 0) {
+      const userLat = parseFloat(lat)
+      const userLng = parseFloat(lng)
 
-        // Filter out invalid coords in the data
-        const validLockers = allLockers.filter((l: any) =>
-            (l.latitude && (l.longitude || l.lon || l.long)) || (l.lat && (l.lng || l.lon || l.long))
-        );
+      const sorted = lockers
+        .map((locker) => ({
+          ...locker,
+          distance: getDistanceFromLatLonInKm(userLat, userLng, locker.lat, locker.lng)
+        }))
+        .sort((a, b) => a.distance - b.distance)
 
-        const sorted = validLockers.map((l: any) => ({
-            ...l,
-            // Normalize keys (API uses latitude/longitude, our mock used lat/lng)
-            lat: parseFloat(l.latitude || l.lat),
-            lng: parseFloat(l.longitude || l.lng || l.lon || l.long),
-            distance: getDistanceFromLatLonInKm(
-                userLat,
-                userLng,
-                parseFloat(l.latitude || l.lat),
-                parseFloat(l.longitude || l.lng || l.lon || l.long)
-            )
-        })).sort((a: any, b: any) => a.distance - b.distance)
-
-        // Return closest 50
-        return NextResponse.json(sorted.slice(0, 50))
+      // Return closest 50
+      return NextResponse.json(sorted.slice(0, 50))
     }
 
-    return NextResponse.json(allLockers)
+    return NextResponse.json(lockers)
 
   } catch (error) {
     console.error('Error in Pudo Route:', error)

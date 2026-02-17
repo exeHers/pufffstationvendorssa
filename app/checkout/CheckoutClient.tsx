@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useCart } from '@/components/cart/CartContext'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
@@ -21,9 +21,11 @@ export default function CheckoutClient() {
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     fullName: '',
+    email: '',
     phone: '',
     address: '',
     city: '',
+    province: '',
     postalCode: '',
     notes: ''
   })
@@ -33,6 +35,15 @@ export default function CheckoutClient() {
   const [pudoLocation, setPudoLocation] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<'yoco' | 'whatsapp'>('whatsapp')
   const [showPudoMap, setShowPudoMap] = useState(false)
+  const [addressQuery, setAddressQuery] = useState('')
+  const [addressOptions, setAddressOptions] = useState<any[]>([])
+  const [addressLoading, setAddressLoading] = useState(false)
+  const [addressError, setAddressError] = useState<string | null>(null)
+  const [selectedAddress, setSelectedAddress] = useState<any | null>(null)
+  const [lockerResults, setLockerResults] = useState<any[]>([])
+  const [lockerLoading, setLockerLoading] = useState(false)
+  const [lockerError, setLockerError] = useState<string | null>(null)
+  const [selectedLocker, setSelectedLocker] = useState<any | null>(null)
 
   // Calculate Totals
   const isFreeDelivery = subtotal >= 1000
@@ -57,6 +68,10 @@ export default function CheckoutClient() {
             phone: profile.phone || ''
           }))
         }
+        setFormData(prev => ({
+          ...prev,
+          email: user.email || prev.email
+        }))
       }
     }
     fetchProfile()
@@ -67,9 +82,46 @@ export default function CheckoutClient() {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
+  const fetchLockers = useCallback(async (lat: number, lng: number) => {
+    setLockerLoading(true)
+    setLockerError(null)
+    try {
+      const res = await fetch(`/api/pudo/lockers?lat=${lat}&lng=${lng}`)
+      const json = await res.json()
+      const list = Array.isArray(json) ? json : json?.data || []
+      if (!list.length) {
+        setLockerResults([])
+        setLockerError('No lockers found near that location.')
+        return
+      }
+      setLockerResults(list)
+    } catch (err: any) {
+      console.error('Locker lookup failed', err)
+      setLockerResults([])
+      setLockerError(err?.message || 'Failed to fetch lockers.')
+    } finally {
+      setLockerLoading(false)
+    }
+  }, [])
+
+  const selectAddress = useCallback(async (option: any) => {
+    setSelectedAddress(option)
+    setAddressQuery(option?.label || '')
+    setLockerResults([])
+    if (typeof option?.lat === 'number' && typeof option?.lng === 'number') {
+      await fetchLockers(option.lat, option.lng)
+    }
+  }, [fetchLockers])
+
+  const selectLocker = useCallback((locker: any) => {
+    if (!locker) return
+    setSelectedLocker(locker)
+    setPudoLocation(`${locker.name}${locker.city ? ` (${locker.city})` : ''}`)
+  }, [])
+
   const handleCheckout = async () => {
-    if (!formData.fullName || !formData.phone) {
-      alert('Please fill in your contact details.')
+    if (!formData.fullName || !formData.phone || !formData.email) {
+      alert('Please fill in your contact details (name, email, phone).')
       return
     }
 
@@ -84,81 +136,121 @@ export default function CheckoutClient() {
     }
 
     setLoading(true)
-    const noteSuffix = formData.notes ? ` | Note: ${formData.notes}` : ''
+    try {
+      const noteSuffix = formData.notes ? ` | Note: ${formData.notes}` : ''
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user?.id) {
+        alert('Please log in before checking out.')
+        router.push('/login?next=/checkout')
+        return
+      }
 
-    // 1. Create Order in Supabase
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert({
-        user_id: user?.id,
+      const lockerAddress = selectedLocker?.address ?? null
+      const lockerCity = selectedLocker?.city ?? null
+      const lockerProvince = selectedLocker?.province ?? null
+      const lockerPostal = selectedLocker?.postalCode ?? null
+
+      const orderPayload = {
+        user_id: user.id,
         total_amount: total,
-        status: 'pending',
-        shipping_address:
+        status: 'pending_payment',
+        delivery_type: deliveryMethod,
+        pudo_location: deliveryMethod === 'pudo' ? pudoLocation : null,
+        address_line1: deliveryMethod === 'door' ? formData.address : lockerAddress,
+        city: deliveryMethod === 'door' ? formData.city : lockerCity,
+        province: deliveryMethod === 'door' ? formData.province : lockerProvince,
+        postal_code: deliveryMethod === 'door' ? formData.postalCode : lockerPostal,
+        delivery_notes:
           deliveryMethod === 'pudo'
-            ? `PUDO: ${pudoLocation}${noteSuffix}`
-            : `${formData.address}, ${formData.city}, ${formData.postalCode}${noteSuffix}`,
-        payment_method: paymentMethod,
-        contact_number: formData.phone,
-        items: items.map(item => ({
+            ? `Collect from locker: ${pudoLocation}${noteSuffix}`
+            : formData.notes || null,
+        currency: 'ZAR',
+        email: formData.email,
+        phone: formData.phone,
+        full_name: formData.fullName,
+        payment_provider: paymentMethod === 'whatsapp' ? 'manual_whatsapp' : paymentMethod
+      }
+
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert(orderPayload)
+        .select()
+        .single()
+
+      if (orderError || !order) {
+        throw new Error(orderError?.message || 'Failed to create order.')
+      }
+
+      if (items.length) {
+        const lineItems = items.map((item) => ({
+          order_id: order.id,
           product_id: item.id,
           quantity: item.quantity,
-          price: item.price, // Store price at time of purchase
-          name: item.name
+          unit_price: item.price
         }))
-      })
-      .select()
-      .single()
+        const { error: lineError } = await supabase.from('order_items').insert(lineItems)
+        if (lineError) {
+          await supabase.from('orders').delete().eq('id', order.id)
+          throw new Error('Failed to save order items. Please try again.')
+        }
+      }
 
-    if (orderError) {
-      console.error('Order Error:', orderError)
-      alert('Failed to create order. Please try again.')
-      setLoading(false)
-      return
-    }
+      try {
+        await fetch('/api/email/order-confirmation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: order.id })
+        })
+      } catch (emailErr) {
+        console.warn('Order confirmation email failed:', emailErr)
+      }
 
-    // 2. Handle Payment Redirect
-    if (paymentMethod === 'whatsapp') {
-      // Construct WhatsApp Message
-      const itemsList = items
-        .map((item) => `- ${item.quantity} x ${item.name} (R${item.price * item.quantity})`)
-        .join('%0A')
-      const deliveryText =
-        deliveryMethod === 'pudo'
-          ? `PUDO Locker: ${pudoLocation}`
-          : `Delivery Address: ${formData.address}, ${formData.city}`
+      if (paymentMethod === 'whatsapp') {
+        const itemsList = items
+          .map((item) => `- ${item.quantity} x ${item.name} (R${item.price * item.quantity})`)
+          .join('%0A')
+        const deliveryText =
+          deliveryMethod === 'pudo'
+            ? `PUDO Locker: ${pudoLocation}`
+            : `Delivery Address: ${formData.address}, ${formData.city}`
 
-      const message =
-        `*NEW ORDER REQUEST*%0A` +
-        `Ref: #${order.id.slice(0, 8)}%0A%0A` +
-        `Customer: ${formData.fullName}%0A` +
-        `Phone: ${formData.phone}%0A%0A` +
-        `Order Details:%0A${itemsList}%0A%0A` +
-        `Delivery: ${deliveryMethod === 'door' ? 'Door-to-Door (fees included)' : `PUDO Locker (R${deliveryFee})`}%0A` +
-        `${deliveryText}%0A%0A` +
-        `TOTAL: R${total.toFixed(2)}%0A%0A` +
-        `_Please confirm stock and send banking details._`
+        const message =
+          `*NEW ORDER REQUEST*%0A` +
+          `Ref: #${order.id.slice(0, 8)}%0A%0A` +
+          `Customer: ${formData.fullName}%0A` +
+          `Phone: ${formData.phone}%0A%0A` +
+          `Order Details:%0A${itemsList}%0A%0A` +
+          `Delivery: ${deliveryMethod === 'door' ? 'Door-to-Door (fees included)' : `PUDO Locker (R${deliveryFee})`}%0A` +
+          `${deliveryText}%0A%0A` +
+          `TOTAL: R${total.toFixed(2)}%0A%0A` +
+          `_Please confirm stock and send banking details._`
 
-      // Clear cart and redirect
-      clearCart()
-      window.open(`https://wa.me/27712345678?text=${message}`, '_blank') // Replace with your number
-      router.push('/success')
-    } else {
-      // Yoco Integration (Placeholder)
-      alert('Yoco card checkout is coming soon. Please use WhatsApp for now.')
+        clearCart()
+        window.open(`https://wa.me/27712345678?text=${message}`, '_blank')
+        router.push('/success')
+      } else {
+        alert('Yoco card checkout is coming soon. Please use WhatsApp for now.')
+      }
+    } catch (error) {
+      console.error('Order Error:', error)
+      alert(error instanceof Error ? error.message : 'Failed to create order. Please try again.')
+    } finally {
       setLoading(false)
     }
   }
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center text-white">
-        <div className="text-center">
-          <h1 className="text-4xl font-black mb-4">DRY HIT!</h1>
-          <p className="text-slate-400 mb-8">Your cart is empty.</p>
-          <Link href="/" className="bg-cyan-600 px-8 py-3 font-bold uppercase tracking-widest hover:bg-cyan-500 transition-colors">
-            Reload
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <p className="text-sm uppercase tracking-[0.3em] text-cyan-400">Cart status</p>
+          <h1 className="text-4xl font-black tracking-tight">Nothing queued yet.</h1>
+          <p className="text-slate-400 max-w-sm mx-auto">Add your favourite PUFFF Station drops first, then slide back into checkout to reserve a locker or door delivery.</p>
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center px-8 py-3 rounded-full bg-gradient-to-r from-cyan-400 to-green-400 font-semibold uppercase tracking-wider text-slate-950"
+          >
+            Back to shop
           </Link>
         </div>
       </div>
@@ -166,289 +258,471 @@ export default function CheckoutClient() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-cyan-500 selection:text-white pb-20">
-      {/* Minimal Header */}
-      <header className="border-b border-slate-900 py-6 mb-12">
-        <div className="max-w-6xl mx-auto px-6 flex justify-between items-center">
-          <Link href="/" className="font-black text-2xl tracking-tighter">
-            PUFFF<span className="text-cyan-400">.</span>
+    <div className="relative min-h-screen bg-slate-950 text-white selection:bg-cyan-400 selection:text-slate-950 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-32 right-0 h-72 w-72 rounded-full bg-cyan-500/30 blur-3xl" />
+        <div className="absolute bottom-0 left-0 h-80 w-80 rounded-full bg-emerald-500/20 blur-[120px]" />
+      </div>
+
+      <header className="relative border-b border-white/10">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8 flex items-center justify-between">
+          <Link href="/" className="text-3xl font-black tracking-tight">
+            PUFFF<span className="text-cyan-400">/</span>Checkout
           </Link>
-          <div className="text-xs font-mono text-slate-500">
-            SECURE CHECKOUT // ENCRYPTED
+          <div className="text-xs uppercase tracking-[0.35em] text-slate-400">
+            Secure • Encrypted • Same-day dispatch
           </div>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-16">
-        
-        {/* LEFT COLUMN - FORMS */}
-        <div className="lg:col-span-7 space-y-20">
-          
-          {/* STEP 01: IDENTITY */}
-          <section className="relative pl-16">
-            <span className="absolute left-0 -top-4 text-8xl font-black text-slate-900 -z-10 select-none opacity-50">01</span>
-            <h2 className="text-2xl font-black uppercase tracking-widest mb-8 text-cyan-400">Identity</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="group">
-                <input
-                  type="text"
-                  name="fullName"
-                  placeholder="Full Name"
-                  autoComplete="name"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-slate-800 py-4 text-lg focus:outline-none focus:border-cyan-500 transition-colors placeholder:text-slate-600 font-medium"
-                />
+      <main className="relative max-w-6xl mx-auto px-6 lg:px-8 py-12">
+        <div className="grid gap-10 lg:grid-cols-[1.7fr,1fr]">
+          <div className="space-y-10">
+            <section className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur px-8 py-8 shadow-xl shadow-black/30">
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Step 01</p>
+                  <h2 className="text-2xl font-black tracking-tight">Customer Identity</h2>
+                </div>
+                <span className="text-xs font-mono text-slate-500">Required</span>
               </div>
-              <div className="group">
-                <input
-                  type="tel"
-                  name="phone"
-                  placeholder="Phone (WhatsApp)"
-                  autoComplete="tel"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="w-full bg-transparent border-b border-slate-800 py-4 text-lg focus:outline-none focus:border-cyan-500 transition-colors placeholder:text-slate-600 font-medium"
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* STEP 02: LOGISTICS */}
-          <section className="relative pl-16">
-            <span className="absolute left-0 -top-4 text-8xl font-black text-slate-900 -z-10 select-none opacity-50">02</span>
-            <h2 className="text-2xl font-black uppercase tracking-widest mb-8 text-cyan-500">Logistics</h2>
-
-            {/* Delivery Method Selector */}
-            <div className="flex gap-6 mb-8">
-              <label className={`cursor-pointer px-6 py-3 border ${deliveryMethod === 'door' ? 'border-cyan-500 bg-cyan-500/10 text-cyan-400' : 'border-slate-800 text-slate-500 hover:border-slate-600'} transition-all font-bold uppercase tracking-wider`}>
-                <input
-                  type="radio"
-                  name="delivery"
-                  value="door"
-                  checked={deliveryMethod === 'door'}
-                  onChange={() => setDeliveryMethod('door')}
-                  className="hidden"
-                />
-                Door Delivery (Fees included)
-              </label>
-              <label className={`cursor-pointer px-6 py-3 border ${deliveryMethod === 'pudo' ? 'border-cyan-500 bg-cyan-500/10 text-cyan-400' : 'border-slate-800 text-slate-500 hover:border-slate-600'} transition-all font-bold uppercase tracking-wider`}>
-                <input
-                  type="radio"
-                  name="delivery"
-                  value="pudo"
-                  checked={deliveryMethod === 'pudo'}
-                  onChange={() => setDeliveryMethod('pudo')}
-                  className="hidden"
-                />
-                PUDO Locker (R60)
-              </label>
-            </div>
-
-            {/* Dynamic Inputs based on Method */}
-            <AnimatePresence mode="wait">
-              {deliveryMethod === 'door' ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="space-y-8"
-                >
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-[0.3em] text-slate-500">Full Name</label>
                   <input
                     type="text"
-                    name="address"
-                    placeholder="Street Address"
-                    autoComplete="street-address"
-                    value={formData.address}
+                    name="fullName"
+                    autoComplete="name"
+                    value={formData.fullName}
                     onChange={handleInputChange}
-                    className="w-full bg-transparent border-b border-slate-800 py-4 text-lg focus:outline-none focus:border-cyan-500 transition-colors placeholder:text-slate-600 font-medium"
+                    className="w-full rounded-2xl border border-white/10 bg-slate-900/50 px-4 py-3 text-base focus:border-cyan-400 focus:outline-none"
                   />
-                  <div className="grid grid-cols-2 gap-8">
-                    <input
-                      type="text"
-                      name="city"
-                      placeholder="City"
-                      autoComplete="address-level2"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      className="w-full bg-transparent border-b border-slate-800 py-4 text-lg focus:outline-none focus:border-cyan-500 transition-colors placeholder:text-slate-600 font-medium"
-                    />
-                    <input
-                      type="text"
-                      name="postalCode"
-                      placeholder="Postal Code"
-                      autoComplete="postal-code"
-                      value={formData.postalCode}
-                      onChange={handleInputChange}
-                      className="w-full bg-transparent border-b border-slate-800 py-4 text-lg focus:outline-none focus:border-cyan-500 transition-colors placeholder:text-slate-600 font-medium"
-                    />
-                  </div>
-                  <textarea
-                    name="notes"
-                    placeholder="Delivery notes (optional)"
-                    value={formData.notes}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-[0.3em] text-slate-500">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    autoComplete="email"
+                    value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm text-white outline-none focus:border-cyan-500 transition-colors"
-                    rows={3}
+                    className="w-full rounded-2xl border border-white/10 bg-slate-900/50 px-4 py-3 text-base focus:border-cyan-400 focus:outline-none"
                   />
-                </motion.div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="space-y-6"
-                >
-                  <p className="text-slate-400 text-sm">Select your preferred PUDO locker using the official map.</p>
-                  
-                  {/* Map Button */}
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-xs uppercase tracking-[0.3em] text-slate-500">Phone / WhatsApp</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    autoComplete="tel"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className="w-full rounded-2xl border border-white/10 bg-slate-900/50 px-4 py-3 text-base focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-white/10 backdrop-blur px-8 py-8 shadow-xl shadow-black/30">
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Step 02</p>
+                  <h2 className="text-2xl font-black tracking-tight">Delivery logistics</h2>
+                </div>
+                <span className="text-xs font-semibold text-cyan-300">Fees included in total</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                {[
+                  { id: 'door', title: 'Door delivery', subtitle: 'Anywhere in SA' },
+                  { id: 'pudo', title: 'PUDO locker', subtitle: 'Collect when ready' }
+                ].map((option) => (
                   <button
-                    onClick={() => {
-                      setShowPudoMap(true)
-                    }}
-                    className="w-full bg-cyan-900/20 border border-cyan-500/50 text-cyan-400 py-4 font-bold uppercase tracking-widest hover:bg-cyan-900/40 transition-all flex items-center justify-center gap-2"
+                    key={option.id}
+                    type="button"
+                    onClick={() => setDeliveryMethod(option.id as 'door' | 'pudo')}
+                    className={`rounded-2xl border px-4 py-4 text-left transition ${
+                      deliveryMethod === option.id
+                        ? 'border-cyan-400 bg-cyan-400/10 text-white'
+                        : 'border-white/10 text-slate-300 hover:border-white/30'
+                    }`}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                    </svg>
-                    Select Locker
+                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{option.subtitle}</p>
+                    <p className="text-lg font-semibold">{option.title}</p>
                   </button>
-
-                  <input
-                    type="text"
-                    onChange={(e) => setPudoLocation(e.target.value)}
-                    value={pudoLocation}
-                    placeholder="Selected locker location"
-                    className="w-full bg-slate-900/50 border border-slate-800 p-4 text-white font-mono text-sm rounded"
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </section>
-
-          {/* STEP 03: EXECUTION */}
-          <section className="relative pl-16">
-            <span className="absolute left-0 -top-4 text-8xl font-black text-slate-900 -z-10 select-none opacity-50">03</span>
-            <h2 className="text-2xl font-black uppercase tracking-widest mb-8 text-green-500">Execution</h2>
-
-            <div className="space-y-4">
-              <label className={`block cursor-pointer p-6 border ${paymentMethod === 'whatsapp' ? 'border-green-500 bg-green-500/5' : 'border-slate-800 hover:border-slate-600'} transition-all`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-4 h-4 rounded-full border-2 ${paymentMethod === 'whatsapp' ? 'border-green-500 bg-green-500' : 'border-slate-600'}`} />
-                    <div>
-                      <span className="block font-bold uppercase text-white">Manual via WhatsApp</span>
-                      <span className="text-sm text-slate-500">Confirm stock & pay via EFT</span>
-                    </div>
-                  </div>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <input
-                  type="radio"
-                  name="payment"
-                  value="whatsapp"
-                  checked={paymentMethod === 'whatsapp'}
-                  onChange={() => setPaymentMethod('whatsapp')}
-                  className="hidden"
-                />
-              </label>
-
-              <label className={`block cursor-pointer p-6 border ${paymentMethod === 'yoco' ? 'border-slate-700 opacity-50' : 'border-slate-800 opacity-50'} transition-all`}>
-                <div className="flex items-center justify-between">
-                   <div className="flex items-center gap-4">
-                    <div className={`w-4 h-4 rounded-full border-2 border-slate-600`} />
-                    <div>
-                      <span className="block font-bold uppercase text-slate-400">Card Checkout (Yoco)</span>
-                      <span className="text-xs text-red-500 font-bold uppercase tracking-wider">Currently Offline</span>
-                    </div>
-                  </div>
-                </div>
-                <input
-                  type="radio"
-                  name="payment"
-                  value="yoco"
-                  disabled
-                  className="hidden"
-                />
-              </label>
-            </div>
-          </section>
-
-        </div>
-
-        {/* RIGHT COLUMN - RECEIPT SUMMARY */}
-        <div className="lg:col-span-5">
-          <div className="sticky top-12">
-            <div className="bg-white text-black p-8 font-mono relative pb-12" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 20px), 95% 100%, 90% calc(100% - 20px), 85% 100%, 80% calc(100% - 20px), 75% 100%, 70% calc(100% - 20px), 65% 100%, 60% calc(100% - 20px), 55% 100%, 50% calc(100% - 20px), 45% 100%, 40% calc(100% - 20px), 35% 100%, 30% calc(100% - 20px), 25% 100%, 20% calc(100% - 20px), 15% 100%, 10% calc(100% - 20px), 5% 100%, 0 calc(100% - 20px))' }}>
-              
-              <div className="text-center border-b-2 border-dashed border-black pb-6 mb-6">
-                <h3 className="text-2xl font-black uppercase tracking-tighter">PUFFF RECEIPT</h3>
-                <p className="text-xs mt-2">{new Date().toLocaleDateString()} {' | '} {new Date().toLocaleTimeString()}</p>
-              </div>
-
-              <div className="space-y-4 mb-8 text-sm">
-                {items.map((item) => (
-                  <div key={item.id} className="flex justify-between items-start">
-                    <span className="uppercase">{item.quantity} x {item.name}</span>
-                    <span>R{(item.price * item.quantity).toFixed(2)}</span>
-                  </div>
                 ))}
               </div>
 
-              <div className="border-t-2 border-dashed border-black pt-4 space-y-2 mb-8">
-                <div className="flex justify-between text-sm">
-                  <span>SUBTOTAL</span>
-                  <span>R{subtotal.toFixed(2)}</span>
+              <AnimatePresence mode="wait">
+                {deliveryMethod === 'door' ? (
+                  <motion.div
+                    key="door"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    className="space-y-6"
+                  >
+                    <div className="space-y-2">
+                      <label className="text-xs uppercase tracking-[0.3em] text-slate-500">Street address</label>
+                      <input
+                        type="text"
+                        name="address"
+                        autoComplete="street-address"
+                        value={formData.address}
+                        onChange={handleInputChange}
+                        className="w-full rounded-2xl border border-white/10 bg-slate-900/50 px-4 py-3 focus:border-cyan-400 focus:outline-none"
+                      />
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-xs uppercase tracking-[0.3em] text-slate-500">City</label>
+                        <input
+                          type="text"
+                          name="city"
+                          autoComplete="address-level2"
+                          value={formData.city}
+                          onChange={handleInputChange}
+                          className="w-full rounded-2xl border border-white/10 bg-slate-900/50 px-4 py-3 focus:border-cyan-400 focus:outline-none"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs uppercase tracking-[0.3em] text-slate-500">Province</label>
+                        <input
+                          type="text"
+                          name="province"
+                          autoComplete="address-level1"
+                          value={formData.province}
+                          onChange={handleInputChange}
+                          className="w-full rounded-2xl border border-white/10 bg-slate-900/50 px-4 py-3 focus:border-cyan-400 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-xs uppercase tracking-[0.3em] text-slate-500">Postal Code</label>
+                        <input
+                          type="text"
+                          name="postalCode"
+                          autoComplete="postal-code"
+                          value={formData.postalCode}
+                          onChange={handleInputChange}
+                          className="w-full rounded-2xl border border-white/10 bg-slate-900/50 px-4 py-3 focus:border-cyan-400 focus:outline-none"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs uppercase tracking-[0.3em] text-slate-500">Notes</label>
+                        <textarea
+                          name="notes"
+                          rows={3}
+                          value={formData.notes}
+                          onChange={handleInputChange}
+                          className="w-full rounded-2xl border border-white/10 bg-slate-900/50 px-4 py-3 focus:border-cyan-400 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="pudo"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    className="space-y-6"
+                  >
+                    <div className="space-y-3">
+                      <label className="text-xs uppercase tracking-[0.3em] text-slate-500">Search suburb or landmark</label>
+                      <div className="flex flex-col gap-3 sm:flex-row">
+                        <input
+                          type="text"
+                          value={addressQuery}
+                          onChange={(e) => setAddressQuery(e.target.value)}
+                          placeholder="e.g. Sandton City, Johannesburg"
+                          className="flex-1 rounded-2xl border border-white/10 bg-slate-900/50 px-4 py-3 text-sm focus:border-cyan-400 focus:outline-none"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              setAddressError(null)
+                              if (!addressQuery.trim()) {
+                                setAddressError('Enter an address or suburb to search.')
+                                return
+                              }
+                              setAddressLoading(true)
+                              try {
+                                const res = await fetch(`/api/geocode?q=${encodeURIComponent(addressQuery)}`)
+                                const json = await res.json()
+                                if (!res.ok) {
+                                  throw new Error(json?.error || 'Failed to geocode address.')
+                                }
+                                const list = json.data || []
+                                if (!list.length) {
+                                  setAddressOptions([])
+                                  setSelectedAddress(null)
+                                  setAddressError('No matches found. Try refining your search.')
+                                  return
+                                }
+                                setAddressOptions(list)
+                                selectAddress(list[0])
+                              } catch (err: any) {
+                                setAddressOptions([])
+                                setSelectedAddress(null)
+                                setAddressError(err?.message || 'Search failed.')
+                              } finally {
+                                setAddressLoading(false)
+                              }
+                            }}
+                            className="rounded-2xl bg-cyan-500 px-4 py-3 text-xs font-bold uppercase tracking-[0.3em] text-slate-950 hover:bg-cyan-400"
+                          >
+                            {addressLoading ? 'Searching…' : 'Locate'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (typeof window === 'undefined' || !navigator.geolocation) {
+                                setAddressError('Geolocation is not supported on this device.')
+                                return
+                              }
+                              setAddressError(null)
+                              setAddressLoading(true)
+                              navigator.geolocation.getCurrentPosition(
+                                async (pos) => {
+                                  setAddressLoading(false)
+                                  const { latitude, longitude } = pos.coords
+                                  const label = `Current location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`
+                                  setSelectedAddress({ lat: latitude, lng: longitude, label })
+                                  setAddressQuery(label)
+                                  await fetchLockers(latitude, longitude)
+                                },
+                                () => {
+                                  setAddressLoading(false)
+                                  setAddressError('Unable to access your location.')
+                                }
+                              )
+                            }}
+                            className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-xs font-bold uppercase tracking-[0.3em] text-white hover:border-white/30"
+                          >
+                            Use my location
+                          </button>
+                        </div>
+                      </div>
+                      {addressError && <p className="text-xs text-red-400">{addressError}</p>}
+                      {addressOptions.length > 1 && (
+                        <div className="grid gap-2">
+                          {addressOptions.slice(0, 3).map((option) => (
+                            <button
+                              key={`${option.lat}-${option.lng}`}
+                              type="button"
+                              onClick={() => selectAddress(option)}
+                              className={`rounded-2xl border px-4 py-3 text-left text-xs transition ${
+                                selectedAddress?.lat === option.lat && selectedAddress?.lng === option.lng
+                                  ? 'border-cyan-400 bg-cyan-400/10'
+                                  : 'border-white/10 hover:border-white/30'
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-slate-500">
+                        <span>Nearest lockers</span>
+                        {lockerLoading && <span className="text-cyan-300">Syncing…</span>}
+                      </div>
+                      {lockerError && <p className="text-xs text-red-400">{lockerError}</p>}
+                      {!lockerLoading && lockerResults.length === 0 && (
+                        <p className="text-xs text-slate-500">Search an address to load nearby lockers.</p>
+                      )}
+                      <div className="grid gap-2">
+                        {lockerResults.slice(0, 5).map((locker) => (
+                          <button
+                            key={locker.code}
+                            type="button"
+                            onClick={() => selectLocker(locker)}
+                            className={`rounded-2xl border px-4 py-3 text-left transition ${
+                              selectedLocker?.code === locker.code
+                                ? 'border-cyan-400 bg-cyan-400/10'
+                                : 'border-white/10 hover:border-white/30'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm font-semibold">{locker.name}</p>
+                                <p className="text-[11px] text-slate-400">{locker.address}</p>
+                              </div>
+                              {typeof locker.distance === 'number' && (
+                                <span className="text-[11px] text-cyan-300 font-semibold">{locker.distance.toFixed(1)} km</span>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                      <input
+                        type="text"
+                        readOnly
+                        value={pudoLocation}
+                        placeholder="Selected locker"
+                        className="flex-1 rounded-2xl border border-white/10 bg-slate-900/50 px-4 py-3 text-sm font-mono text-white"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowPudoMap(true)}
+                          className="rounded-2xl border border-cyan-400/60 bg-cyan-400/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.3em] text-cyan-200 hover:bg-cyan-400/20"
+                        >
+                          Browse locker list
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedLocker(null)
+                            setPudoLocation('')
+                          }}
+                          className="rounded-2xl border border-white/10 px-4 py-3 text-xs uppercase tracking-[0.3em] text-slate-400 hover:border-white/30"
+                        >
+                          Reset
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </section>
+
+            <section className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur px-8 py-8 shadow-xl shadow-black/30">
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Step 03</p>
+                  <h2 className="text-2xl font-black tracking-tight">Payment preference</h2>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span>{deliveryMethod === 'door' ? 'DELIVERY FEES INCLUDED' : 'DELIVERY (PUDO)'}</span>
-                  <span>R{deliveryFee.toFixed(2)}</span>
-                </div>
+                <span className="text-xs text-slate-400">Card coming soon</span>
               </div>
+              <div className="space-y-4">
+                <label className={`flex items-center justify-between gap-4 rounded-2xl border px-6 py-5 transition ${
+                  paymentMethod === 'whatsapp' ? 'border-green-400 bg-green-400/10' : 'border-white/10 hover:border-white/30'
+                }`}>
+                  <div className="flex items-center gap-4">
+                    <span className={`h-4 w-4 rounded-full border-2 ${
+                      paymentMethod === 'whatsapp' ? 'border-green-400 bg-green-400' : 'border-white/40'
+                    }`} />
+                    <div>
+                      <p className="text-base font-semibold">WhatsApp / EFT</p>
+                      <p className="text-xs text-slate-400">Manual confirmation with the PUFFF team</p>
+                    </div>
+                  </div>
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="whatsapp"
+                    checked={paymentMethod === 'whatsapp'}
+                    onChange={() => setPaymentMethod('whatsapp')}
+                    className="hidden"
+                  />
+                </label>
 
-              <div className="flex justify-between items-end text-xl font-bold mb-8">
-                <span>TOTAL</span>
-                <span>R{total.toFixed(2)}</span>
+                <label className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 px-6 py-5 opacity-60">
+                  <div className="flex items-center gap-4">
+                    <span className="h-4 w-4 rounded-full border-2 border-white/30" />
+                    <div>
+                      <p className="text-base font-semibold text-slate-400">Card via Yoco</p>
+                      <p className="text-xs text-red-400 uppercase tracking-[0.3em]">Offline for calibration</p>
+                    </div>
+                  </div>
+                  <input type="radio" name="payment" value="yoco" disabled className="hidden" />
+                </label>
               </div>
-
-              <button
-                onClick={handleCheckout}
-                disabled={loading}
-                className="w-full bg-black text-white py-4 font-black uppercase tracking-widest hover:bg-slate-900 transition-colors flex justify-center items-center gap-2"
-              >
-                {loading ? 'Processing...' : 'CONFIRM ORDER'}
-                {!loading && <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>}
-              </button>
-
-              <div className="mt-6 flex justify-center gap-4 opacity-50 grayscale">
-                {/* Simple SVG Icons for Trust Badges */}
-                <div className="flex flex-col items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                  <span className="text-[10px] mt-1 uppercase font-bold">Secure</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                  <span className="text-[10px] mt-1 uppercase font-bold">Instant</span>
-                </div>
-              </div>
-
-            </div>
-            
-            {/* Free Delivery Progress */}
-            {!isFreeDelivery && (
-               <div className="mt-4 text-center">
-                 <p className="text-xs text-slate-500 uppercase tracking-widest mb-2">Spend R{(1000 - subtotal).toFixed(0)} more for free shipping</p>
-                 <div className="h-1 bg-slate-900 rounded-full overflow-hidden">
-                   <div className="h-full bg-cyan-500" style={{ width: `${(subtotal / 1000) * 100}%` }} />
-                 </div>
-               </div>
-            )}
+            </section>
           </div>
+
+          <aside className="space-y-6">
+            <div className="sticky top-12">
+              <div className="rounded-[32px] bg-white text-slate-900 p-8 shadow-2xl shadow-cyan-500/20">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-6">
+                  <div>
+                    <p className="text-xs tracking-[0.4em] text-slate-500">Receipt</p>
+                    <p className="text-xl font-black">PUFFF Station</p>
+                  </div>
+                  <p className="text-xs font-mono text-slate-400">{new Date().toLocaleDateString()}</p>
+                </div>
+
+                <div className="space-y-3 text-sm">
+                  {items.map((item) => (
+                    <div key={item.id} className="flex items-start justify-between">
+                      <span className="font-semibold">
+                        {item.quantity} × {item.name}
+                      </span>
+                      <span>R{(item.price * item.quantity).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="my-6 h-px bg-slate-200" />
+
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Subtotal</span>
+                    <span>R{subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>{deliveryMethod === 'door' ? 'Door delivery' : 'PUDO handling'}</span>
+                    <span>R{deliveryFee.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <div className="my-6 h-px bg-slate-200" />
+
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.4em] text-slate-500">Total</p>
+                    <p className="text-3xl font-black">R{total.toFixed(2)}</p>
+                  </div>
+                  <button
+                    onClick={handleCheckout}
+                    disabled={loading}
+                    className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-bold uppercase tracking-[0.3em] text-white hover:bg-slate-800 disabled:opacity-60"
+                  >
+                    {loading ? 'Processing…' : 'Confirm order'}
+                    {!loading && (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path
+                          fillRule="evenodd"
+                          d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+
+                {!isFreeDelivery && (
+                  <div className="mt-6 text-xs text-slate-500">
+                    Spend R{(1000 - subtotal).toFixed(0)} more for free shipping
+                    <div className="mt-2 h-1 rounded-full bg-slate-200">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-green-400"
+                        style={{ width: `${Math.min((subtotal / 1000) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-6 grid grid-cols-3 gap-3 text-[10px] uppercase tracking-[0.3em] text-slate-400">
+                <div className="rounded-2xl border border-white/10 bg-white/5 py-3 text-center">Ssl-secured</div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 py-3 text-center">Same-day</div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 py-3 text-center">PUDO partner</div>
+              </div>
+            </div>
+          </aside>
         </div>
-      </div>
+      </main>
+
       {showPudoMap && (
         <PudoSelector
           onClose={() => setShowPudoMap(false)}
