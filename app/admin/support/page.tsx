@@ -14,6 +14,7 @@ function parseAdminEmails(value?: string) {
 }
 
 type Ticket = Tables<'support_messages'>
+type Reply = Tables<'support_replies'>
 
 export default function AdminSupportPage() {
   const router = useRouter()
@@ -33,9 +34,33 @@ export default function AdminSupportPage() {
   const [reply, setReply] = useState('')
   const [sending, setSending] = useState(false)
   const [closeAfter, setCloseAfter] = useState(false)
+  const [repliesByTicket, setRepliesByTicket] = useState<Record<string, Reply[]>>({})
 
   
   const active = useMemo(() => tickets.find((t) => t.id === activeId), [tickets, activeId])
+
+  const refreshReplies = useCallback(async () => {
+    try {
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess.session?.access_token
+      if (!token) throw new Error('No session token. Please log in again.')
+
+      const res = await fetch('/api/admin/support/replies', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json?.error ?? `Failed to load replies (HTTP ${res.status})`)
+
+      const grouped: Record<string, Reply[]> = {}
+      for (const item of (json.replies ?? []) as Reply[]) {
+        if (!grouped[item.ticket_id]) grouped[item.ticket_id] = []
+        grouped[item.ticket_id].push(item)
+      }
+      setRepliesByTicket(grouped)
+    } catch (e: unknown) {
+      console.warn('Support replies refresh error:', e)
+    }
+  }, [])
 
   const fetchTickets = useCallback(async (firstLoad = false) => {
     setError(null)
@@ -54,6 +79,7 @@ export default function AdminSupportPage() {
 
       const list = (json.tickets ?? []) as Ticket[]
       setTickets(list)
+      await refreshReplies()
 
       if (firstLoad) {
         if (list.length > 0) setActiveId(list[0].id)
@@ -70,7 +96,7 @@ export default function AdminSupportPage() {
     } finally {
       setLoadingTickets(false)
     }
-  }, [])
+  }, [refreshReplies])
 
   useEffect(() => {
     ;(async () => {
@@ -101,7 +127,10 @@ export default function AdminSupportPage() {
     })()
   }, [adminEmails, fetchTickets, router])
 
-  async function setStatus(ticketId: string, status: 'open' | 'replied' | 'closed') {
+  async function setStatus(
+    ticketId: string,
+    status: 'open' | 'waiting_agent' | 'in_progress' | 'replied' | 'closed'
+  ) {
     setError(null)
     setOk(null)
     try {
@@ -159,6 +188,7 @@ export default function AdminSupportPage() {
       setOk('Reply sent ...')
       setReply('')
       setCloseAfter(false)
+      await refreshReplies()
     } catch (e: unknown) {
       setError((e as Error).message ?? 'Failed to send reply.')
     } finally {
@@ -301,10 +331,14 @@ export default function AdminSupportPage() {
 
                     <select
                       value={(active.status ?? 'open').toLowerCase()}
-                      onChange={(e) => setStatus(active.id, e.target.value as 'open' | 'replied' | 'closed')}
+                      onChange={(e) =>
+                        setStatus(active.id, e.target.value as 'open' | 'waiting_agent' | 'in_progress' | 'replied' | 'closed')
+                      }
                       className="w-full rounded-full border border-slate-700 bg-black/40 px-3 py-2 text-sm text-slate-100 sm:w-auto"
                     >
                       <option value="open">Open</option>
+                      <option value="waiting_agent">Waiting agent</option>
+                      <option value="in_progress">In progress</option>
                       <option value="replied">Replied</option>
                       <option value="closed">Closed</option>
                     </select>
@@ -313,6 +347,31 @@ export default function AdminSupportPage() {
                   <div className="mt-5 rounded-2xl border border-slate-800 bg-black/30 p-4">
                     <p className="whitespace-pre-line text-sm text-slate-100">{active.message ?? '-'}</p>
                   </div>
+
+                  {(repliesByTicket[active.id]?.length ?? 0) > 0 && (
+                    <div className="mt-4 space-y-2 rounded-2xl border border-slate-800 bg-black/20 p-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">Thread</p>
+                      {repliesByTicket[active.id].map((r) => {
+                        const isSystem = r.admin_email === 'system@pufffstation.local'
+                        return (
+                          <div
+                            key={r.id}
+                            className={`rounded-xl border px-3 py-2 text-xs ${
+                              isSystem
+                                ? 'border-amber-500/30 bg-amber-500/10 text-amber-100'
+                                : 'border-cyan-500/30 bg-cyan-500/10 text-cyan-100'
+                            }`}
+                          >
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em]">
+                              {isSystem ? 'System queue notice' : r.admin_email}
+                            </p>
+                            <p className="mt-1 whitespace-pre-line">{r.body}</p>
+                            <p className="mt-1 text-[10px] opacity-70">{new Date(r.created_at).toLocaleString()}</p>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
 
                   <div className="mt-6">
                     <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-300">Reply</p>

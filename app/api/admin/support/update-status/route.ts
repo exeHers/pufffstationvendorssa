@@ -42,8 +42,11 @@ export async function POST(request: Request) {
     const status = String(body?.status ?? '').trim().toLowerCase()
 
     if (!ticketId) return NextResponse.json({ error: 'Missing ticketId' }, { status: 400 })
-    if (!['open', 'replied', 'closed'].includes(status)) {
-      return NextResponse.json({ error: 'Invalid status (use open|replied|closed)' }, { status: 400 })
+    if (!['open', 'waiting_agent', 'in_progress', 'replied', 'closed'].includes(status)) {
+      return NextResponse.json(
+        { error: 'Invalid status (use open|waiting_agent|in_progress|replied|closed)' },
+        { status: 400 }
+      )
     }
 
     const db = supabaseAdmin()

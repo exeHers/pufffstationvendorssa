@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
@@ -13,6 +13,14 @@ type TicketRow = {
   created_at?: string | null
 }
 
+type ReplyRow = {
+  id: string
+  ticket_id: string
+  admin_email: string
+  body: string
+  created_at: string
+}
+
 export default function SupportClient() {
   const router = useRouter()
 
@@ -20,13 +28,34 @@ export default function SupportClient() {
   const [error, setError] = useState<string | null>(null)
   const [ok, setOk] = useState<string | null>(null)
   const [tickets, setTickets] = useState<TicketRow[]>([])
+  const [repliesByTicket, setRepliesByTicket] = useState<Record<string, ReplyRow[]>>({})
   const [subject, setSubject] = useState('')
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
+  const [requestingAgent, setRequestingAgent] = useState(false)
 
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@pufffstationsa.co.za'
 
-  async function refreshTickets() {
+  const refreshReplies = useCallback(async () => {
+    const { data: sess } = await supabase.auth.getSession()
+    const token = sess.session?.access_token
+    if (!token) return
+
+    const res = await fetch('/api/support/replies', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) return
+
+    const grouped: Record<string, ReplyRow[]> = {}
+    for (const reply of (json.replies ?? []) as ReplyRow[]) {
+      if (!grouped[reply.ticket_id]) grouped[reply.ticket_id] = []
+      grouped[reply.ticket_id].push(reply)
+    }
+    setRepliesByTicket(grouped)
+  }, [])
+
+  const refreshTickets = useCallback(async () => {
     const { data, error: err } = await supabase
       .from('support_messages')
       .select('*')
@@ -39,7 +68,32 @@ export default function SupportClient() {
       return
     }
     setTickets((data ?? []) as TicketRow[])
-  }
+    await refreshReplies()
+  }, [refreshReplies])
+
+  const maybeSendQueueNotice = useCallback(async (ticket: TicketRow) => {
+    if (!ticket.id || (ticket.status ?? '').toLowerCase() !== 'waiting_agent') return
+    if (!ticket.created_at) return
+
+    const ageMs = Date.now() - new Date(ticket.created_at).getTime()
+    if (ageMs < 5 * 60 * 1000) return
+
+    const hasAnyReply = (repliesByTicket[ticket.id]?.length ?? 0) > 0
+    if (hasAnyReply) return
+
+    const { data: sess } = await supabase.auth.getSession()
+    const token = sess.session?.access_token
+    if (!token) return
+
+    await fetch('/api/support/queue-notice', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ ticketId: ticket.id }),
+    })
+  }, [repliesByTicket])
 
   useEffect(() => {
     let mounted = true
@@ -63,7 +117,68 @@ export default function SupportClient() {
     return () => {
       mounted = false
     }
-  }, [router])
+  }, [refreshTickets, router])
+
+  useEffect(() => {
+    if (loading) return
+    const timer = window.setInterval(async () => {
+      await refreshTickets()
+    }, 15000)
+    return () => window.clearInterval(timer)
+  }, [loading, refreshTickets])
+
+  useEffect(() => {
+    const run = async () => {
+      for (const t of tickets) {
+        await maybeSendQueueNotice(t)
+      }
+    }
+    void run()
+  }, [maybeSendQueueNotice, tickets])
+
+  async function requestLiveAgent() {
+    if (!message.trim()) {
+      setError('Please describe your issue so the live agent can assist properly.')
+      return
+    }
+
+    setError(null)
+    setOk(null)
+    setRequestingAgent(true)
+
+    try {
+      const { data: sess } = await supabase.auth.getSession()
+      const token = sess.session?.access_token
+      if (!token) {
+        router.replace('/login?next=/support')
+        return
+      }
+
+      const res = await fetch('/api/support/live-agent-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          subject: subject.trim() || 'Live agent request',
+          message: message.trim(),
+        }),
+      })
+
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json?.error || `Failed to request live agent (HTTP ${res.status})`)
+
+      setSubject('')
+      setMessage('')
+      setOk('Live agent requested. We notified support and put you in queue.')
+      await refreshTickets()
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to request live agent.')
+    } finally {
+      setRequestingAgent(false)
+    }
+  }
 
   async function submitTicket(e: React.FormEvent) {
     e.preventDefault()
@@ -187,13 +302,24 @@ export default function SupportClient() {
             />
           </label>
 
-          <button
-            type="submit"
-            disabled={sending}
-            className="w-full rounded-full bg-cyan-600 px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_24px_rgba(6,182,212,0.6)] transition hover:brightness-110 active:scale-95 disabled:opacity-60"
-          >
-            {sending ? 'Sending...' : 'Submit ticket'}
-          </button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="submit"
+              disabled={sending}
+              className="w-full rounded-full bg-cyan-600 px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_24px_rgba(6,182,212,0.6)] transition hover:brightness-110 active:scale-95 disabled:opacity-60"
+            >
+              {sending ? 'Sending...' : 'Submit ticket'}
+            </button>
+
+            <button
+              type="button"
+              onClick={requestLiveAgent}
+              disabled={requestingAgent}
+              className="w-full rounded-full border border-emerald-400/50 bg-emerald-500/10 px-4 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-200 transition hover:bg-emerald-500/20 active:scale-95 disabled:opacity-60"
+            >
+              {requestingAgent ? 'Requesting...' : 'Request live agent'}
+            </button>
+          </div>
         </form>
       </section>
 
@@ -242,6 +368,30 @@ export default function SupportClient() {
                   </span>
                 </div>
                 <p className="mt-3 whitespace-pre-line text-xs text-slate-200">{t.message || '-'}</p>
+
+                {(repliesByTicket[t.id]?.length ?? 0) > 0 && (
+                  <div className="mt-4 space-y-2 border-t border-white/[0.05] pt-4">
+                    {repliesByTicket[t.id].map((reply) => {
+                      const isSystem = reply.admin_email === 'system@pufffstation.local'
+                      return (
+                        <div
+                          key={reply.id}
+                          className={`rounded-2xl border px-3 py-2 text-xs ${
+                            isSystem
+                              ? 'border-amber-500/30 bg-amber-500/10 text-amber-100'
+                              : 'border-cyan-500/30 bg-cyan-500/10 text-cyan-100'
+                          }`}
+                        >
+                          <p className="font-semibold uppercase tracking-[0.16em] text-[10px]">
+                            {isSystem ? 'System' : 'Live agent'}
+                          </p>
+                          <p className="mt-1 whitespace-pre-line">{reply.body}</p>
+                          <p className="mt-1 text-[10px] opacity-70">{new Date(reply.created_at).toLocaleString()}</p>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </article>
             ))
           : null}
